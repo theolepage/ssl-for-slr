@@ -1,23 +1,4 @@
-frame_length = 20480   # 1.28s at 16kHz (LibriSpeech)
-frame_stride = 20480   # 1.28s at 16kHz (LibriSpeech)
-
-nb_timesteps = int(frame_length // 160)  # 128
-nb_timesteps_to_predict = 12
-nb_timesteps_for_context = nb_timesteps - nb_timesteps_to_predict
-
-encoded_dim = 512
-
-batch_size = 64
-
-max_frames_per_utterance = 1
-nb_speakers = 64
-max_utterances = 1000
-
-
-
-
-
-
+import numpy as np
 import tensorflow as tf
 
 from tensorflow.keras import Model
@@ -32,37 +13,15 @@ from tensorflow.keras.layers import GRU
 from tensorflow.keras.layers import Lambda
 from tensorflow.keras.layers import TimeDistributed
 
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import ModelCheckpoint
-
-
-
-
-from LibriSpeech import LibriSpeechLoader
-
-lb = LibriSpeechLoader("D:/Datasets/LibriSpeech/train-clean-100/*",
-                       frame_length=frame_length,
-                       frame_stride=frame_stride,
-                       max_frames_per_utterance=max_frames_per_utterance,
-                       max_speakers=nb_speakers,
-                       max_utterances=max_utterances,
-                       val_split=0.2)
-
-train_gen, val_gen = lb.load(batch_size)
-
-print("Number of training batches:", len(train_gen))
-print("Number of validation batches:", len(val_gen))
-
-
-
-import numpy as np
-
 class Encoder(Model):
 
-    def __init__(self):
+    def __init__(self, encoded_dim, nb_timesteps):
         super(Encoder, self).__init__()
 
-        nb_filters = [512, 512, 512, 512, encoded_dim]
+        self.encoded_dim = encoded_dim
+        self.nb_timesteps = nb_timesteps
+
+        nb_filters = [512, 512, 512, 512, self.encoded_dim]
         kernel_sizes = [10, 8, 4, 4, 4]
         strides = [5, 4, 2, 2, 2]
 
@@ -81,10 +40,7 @@ class Encoder(Model):
         return X
 
     def compute_output_shape(self, input_shape):
-        return (nb_timesteps, encoded_dim)
-
-
-
+        return (self.nb_timesteps, self.encoded_dim)
 
 class Autoregressive(Model):
 
@@ -96,11 +52,9 @@ class Autoregressive(Model):
     def call(self, X):
         return self.rnn(X)
 
-
-
 class Predictor(Model):
 
-    def __init__(self):
+    def __init__(self, encoded_dim, nb_timesteps_to_predict):
         super(Predictor, self).__init__()
 
         self.layers_ = []
@@ -116,20 +70,22 @@ class Predictor(Model):
 
         return output
 
-
 class CPCLayer(Layer):
 
-    def __init__(self, **kwargs):
+    def __init__(self, batch_size, nb_timesteps_to_predict, **kwargs):
         super(CPCLayer, self).__init__(**kwargs)
+
+        self.batch_size = batch_size
+        self.nb_timesteps_to_predict = nb_timesteps_to_predict
 
     def call(self, data):
         predictions, X_future_encoded = data
         # Shape: (batch_size, nb_timesteps_to_predict, encoded_dim)
         
-        losses = tf.zeros((batch_size))
-        accuracies = tf.zeros((batch_size), dtype=tf.float64)
+        losses = tf.zeros((self.batch_size))
+        accuracies = tf.zeros((self.batch_size), dtype=tf.float64)
 
-        for t in range(nb_timesteps_to_predict):
+        for t in range(self.nb_timesteps_to_predict):
             dot = tf.linalg.matmul(X_future_encoded[:, t, :],
                                    predictions[:, t, :],
                                    transpose_b=True)
@@ -142,11 +98,11 @@ class CPCLayer(Layer):
             # Determine accuracy
             softmax_dot = tf.nn.softmax(dot, axis=0)
             pred_indices = tf.math.argmax(softmax_dot, axis=0)
-            preds_acc = tf.math.equal(pred_indices, np.arange(0, batch_size))
-            accuracies += tf.math.count_nonzero(preds_acc) / batch_size
+            preds_acc = tf.math.equal(pred_indices, np.arange(0, self.batch_size))
+            accuracies += tf.math.count_nonzero(preds_acc) / self.batch_size
 
-        losses /= nb_timesteps_to_predict
-        accuracies /= nb_timesteps_to_predict
+        losses /= self.nb_timesteps_to_predict
+        accuracies /= self.nb_timesteps_to_predict
 
         # Compute the average loss and accuracy across all batches
         loss = tf.math.reduce_mean(losses)
@@ -154,34 +110,44 @@ class CPCLayer(Layer):
 
         return -1.0 * loss, accuracy
 
-
-
 class CPCModel(Model):
 
-    def __init__(self):
+    def __init__(self,
+                 batch_size,
+                 encoded_dim,
+                 nb_timesteps,
+                 nb_timesteps_for_context,
+                 nb_timesteps_to_predict):
         super(CPCModel, self).__init__()
-        self.encoder = Encoder()
+
+        self.batch_size = batch_size
+        self.encoded_dim = encoded_dim
+        self.nb_timesteps = nb_timesteps
+        self.nb_timesteps_for_context = nb_timesteps_for_context
+        self.nb_timesteps_to_predict = nb_timesteps_to_predict
+
+        self.encoder = Encoder(self.encoded_dim, self.nb_timesteps)
         self.ar = Autoregressive()
-        self.predictor = Predictor()
+        self.predictor = Predictor(self.encoded_dim, self.nb_timesteps_to_predict)
 
     def compile(self, optimizer):
         super(CPCModel, self).compile()
         self.optimizer = optimizer
 
     def call(self, X):
-        return self.encoder(X) # or self.ar(X)?
+        return self.encoder(X) # FIXME: or self.ar(X)?
 
     def train_step(self, data):
         X, _ = data # Discard Y provided by the dataset generator
-        
+
         with tf.GradientTape() as tape:
             # X shape: (batch_size, frame_length, 1)
 
             X_encoded = self.encoder(X, training=True)
             # Out shape: (batch_size, frame_length / 160, encoded_dim)
 
-            X_past_encoded = X_encoded[:, 0:nb_timesteps_for_context, ...]
-            X_future_encoded = X_encoded[:, nb_timesteps_for_context:, ...]
+            X_past_encoded = X_encoded[:, 0:self.nb_timesteps_for_context, ...]
+            X_future_encoded = X_encoded[:, self.nb_timesteps_for_context:, ...]
 
             X_past_context = self.ar(X_past_encoded, training=True)
             # Out shape: (batch_size, 256)
@@ -189,7 +155,8 @@ class CPCModel(Model):
             predictions = self.predictor(X_past_context, training=True)
             # Out shape: (batch_size, nb_timesteps_to_predict, encoded_dim)
 
-            loss, accuracy = CPCLayer()([predictions, X_future_encoded])
+            loss, accuracy = CPCLayer(self.batch_size, self.nb_timesteps_to_predict)(
+                [predictions, X_future_encoded])
             # Out shape: (batch_size)
 
         trainable_params = self.encoder.trainable_weights
@@ -204,40 +171,13 @@ class CPCModel(Model):
         X, _ = data # Discard Y provided by the dataset generator
         
         X_encoded = self.encoder(X, training=False)
-        X_past_encoded = X_encoded[:, 0:nb_timesteps_for_context, ...]
-        X_future_encoded = X_encoded[:, nb_timesteps_for_context:, ...]
+        X_past_encoded = X_encoded[:, 0:self.nb_timesteps_for_context, ...]
+        X_future_encoded = X_encoded[:, self.nb_timesteps_for_context:, ...]
 
         X_past_context = self.ar(X_past_encoded, training=False)
         predictions = self.predictor(X_past_context, training=False)
 
-        loss, accuracy = CPCLayer()([predictions, X_future_encoded])
+        loss, accuracy = CPCLayer(self.batch_size, self.nb_timesteps_to_predict)(
+            [predictions, X_future_encoded])
 
         return { 'loss': loss, 'accuracy': accuracy }
-
-
-cpc_model = CPCModel()
-cpc_model.compile(Adam(learning_rate=0.0001))
-
-checkpoint_path = "./checkpoints/cpc-training-{epoch:04d}.ckpt"
-save_callback = ModelCheckpoint(filepath=checkpoint_path,
-                                monitor="loss",
-                                save_best_only=True,
-                                save_weights_only=True,
-                                verbose=1)
-
-# negative samples from same speaker + current and other sentences
-# accuracy only on last timestep
-# early stopping, reduce lr on plateau
-
-history = cpc_model.fit(train_gen,
-                        validation_data=val_gen,
-                        epochs=30,
-                        callbacks=[save_callback])
-
-
-import pandas as pd
-
-hist_df = pd.DataFrame(history.history)
-hist_json_file = './checkpoints/history.json' 
-with open(hist_json_file, mode='w') as f:
-    hist_df.to_json(f)

@@ -35,15 +35,17 @@ class LibriSpeechGenerator(Sequence):
 
 class LibriSpeechLoader:
 
-    def __init__(self, path, frame_length, frame_stride, max_frames_per_utterance,
-        max_speakers=10, max_utterances=10, val_split=0.2):
+    def __init__(self, seed, path, frame_length, frame_stride, max_frames_per_utterance,
+        max_speakers=10, max_utterances=10, val_ratio=0.2, test_ratio=0.1):
+        self.seed = seed
         self.path = path
         self.frame_length = frame_length
         self.frame_stride = frame_stride
         self.max_frames_per_utterance = max_frames_per_utterance
         self.max_speakers = max_speakers
         self.max_utterances = max_utterances
-        self.val_split = val_split
+        self.val_ratio = val_ratio
+        self.test_ratio = test_ratio
 
     def get_frames_indices(self, filename):
         signal, fs = sf.read(filename)
@@ -84,8 +86,15 @@ class LibriSpeechLoader:
                     
                     nb_utterances_for_speaker += 1
 
-        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=self.val_split)
-        
+            print('LibriSpeech: loaded {}/{} speakers'.format(speaker_id, min(self.max_speakers, len(files))), end='\r')
+
+        print()
+        print('LibriSpeech: done')
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=self.val_ratio + self.test_ratio, random_state=self.seed)
+        X_val, X_test, y_val, y_test = train_test_split(X_test, y_test, test_size=self.test_ratio / (self.test_ratio + self.val_ratio), random_state=self.seed)
+
         train_gen = LibriSpeechGenerator(X_train, y_train, batch_size, self.frame_length)
         val_gen = LibriSpeechGenerator(X_val, y_val, batch_size, self.frame_length)
-        return train_gen, val_gen
+        test_gen = LibriSpeechGenerator(X_test, y_test, batch_size, self.frame_length)
+        return train_gen, val_gen, test_gen
