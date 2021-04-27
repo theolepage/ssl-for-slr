@@ -88,7 +88,7 @@ class LIMModel(Model):
             loss = loss - tf.math.log(tf.math.reduce_mean(tf.math.exp(neg)))
             return loss, acc
 
-        else: # self.loss_fn == 'nce'
+        elif self.loss_fn == 'nce':
             loss = tf.math.log(pos + tf.math.reduce_sum(tf.math.exp(neg)))
             loss = tf.math.reduce_mean(pos - loss)
             return loss, acc

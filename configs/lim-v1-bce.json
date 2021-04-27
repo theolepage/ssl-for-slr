@@ -1,10 +1,10 @@
 {
-    "name": "cpc-v1",
+    "name": "lim-v1-bce",
     "seed": 1717,
     "model": {
-        "type": "CPC",
+        "type": "LIM",
         "encoded_dim": 512,
-        "nb_timesteps_to_predict": 12
+        "loss_fn": "mine"
     },
     "dataset": {
         "type": "LibriSpeech",
@@ -20,6 +20,6 @@
     "training": {
         "epochs": 50,
         "batch_size": 64,
-        "learning_rate": 0.0001
+        "learning_rate": 0.001
     }
 }

@@ -28,6 +28,7 @@ def load_config(config_path, create_checkpoint_dir=False):
 
     seed = config['seed']
     batch_size = config['training']['batch_size']
+    learning_rate = config['training']['learning_rate']
     encoded_dim = config['model']['encoded_dim']
     model_type = config['model']['type']
     
@@ -44,23 +45,22 @@ def load_config(config_path, create_checkpoint_dir=False):
     dataset = LibriSpeechLoader(seed=seed, config=config['dataset'])
 
     # Create and compile model
-    if (model_type == 'CPC'):
+    if model_type == 'CPC':
         nb_timesteps_to_predict = config['model']['nb_timesteps_to_predict']
-
         model = CPCModel(batch_size, encoded_dim, nb_timesteps, nb_timesteps_to_predict)
-        model.compile(Adam(learning_rate=0.0001)) # 1e-4
-
-    elif (model_type == 'LIM'):
+        model.compile(Adam(learning_rate=learning_rate))
+    elif model_type == 'LIM':
         loss_fn = config['model']['loss_fn']
-
         model = LIMModel(batch_size, encoded_dim, nb_timesteps, loss_fn)
-        model.compile(Adam(learning_rate=0.001)) # 1e-3
+        model.compile(Adam(learning_rate=learning_rate))
+    else:
+        raise Exception('Config: model {} is not supported.'.format(model_type))
     
     summary_for_shape(model.encoder, (frame_length, 1))
 
     # Create subfolder for saving checkpoints
     checkpoint_dir = './checkpoints/' + config['name']
-    if (create_checkpoint_dir):
+    if create_checkpoint_dir:
         Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
 
     return config, model, dataset, checkpoint_dir

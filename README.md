@@ -2,30 +2,19 @@
 
 Framework to train a speech encoder in a **self-supervised** way for **speaker and language recognition** tasks.
 
-## Training
-
-1. Self-supervised: encoder + CPC/LIM/GIM
-2. Supervised (transfer learning, fine-tuning): encoder (pre-trained) + classifier
-3. Supervised: encoder (scratch) + classifier
-
-## Evaluation
-
-1. Learning curves
-2. Speaker ID
-    - Scores
-    - Confusion matrix
-    - Error analysis
-    - t-SNE
-3. Speaker verification on VoxCelebs
-
 ## To-Do
 
-- [ ] train_spkid.py (steps 2 and 3) args: path to config. If no model in config => supervised
-- [ ] Push, start trainings on GPU
-- [ ] evaluate.py (same test set?)
+- [ ] Rewrite logs and push, start trainings on GPU
+- [ ] evaluate.py
+    - Learning curves
+    - Speaker ID: scores, confusion matrix, error analysis, t-SNE
+    - Speaker verification on VoxCelebs
+    - Same test set?
 
 ---
 
+- [ ] Improve encoder (SincConv) and classifier (dropout, normalization)
+- [ ] Improve config: encoder, multiple training type (pretext, downstream)
 - [ ] Merge self-supervised modules and add modules (GIM, LPS, FBANKS)
 - [ ] Implement new ideas (more params in encoder, bi-directional) and benchmark
 - [ ] Data augmentation / preprocessing step

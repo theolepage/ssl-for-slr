@@ -42,7 +42,7 @@ class LibriSpeechLoader:
         self.frame_stride = config['frame_stride']
         self.max_frames_per_utterance = config['max_frames_per_utterance']
         self.max_speakers = config['nb_speakers']
-        self.max_utterances = config['max_utterances']
+        self.max_utterances_per_speaker = config['max_utterances_per_speaker']
         self.val_ratio = config['val_ratio'] # default 0.2
         self.test_ratio = config['test_ratio'] # default 0.1
 
@@ -73,7 +73,7 @@ class LibriSpeechLoader:
                 sentence_files = glob.glob(speaker_files[sentence_id] + '/*.flac')
 
                 for utterance_id in range(len(sentence_files)):
-                    if nb_utterances_for_speaker >= self.max_utterances:
+                    if nb_utterances_for_speaker >= self.max_utterances_per_speaker:
                         break
 
                     filename = sentence_files[utterance_id]
