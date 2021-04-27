@@ -35,17 +35,16 @@ class LibriSpeechGenerator(Sequence):
 
 class LibriSpeechLoader:
 
-    def __init__(self, seed, path, frame_length, frame_stride, max_frames_per_utterance,
-        max_speakers=10, max_utterances=10, val_ratio=0.2, test_ratio=0.1):
+    def __init__(self, seed, config):
         self.seed = seed
-        self.path = path
-        self.frame_length = frame_length
-        self.frame_stride = frame_stride
-        self.max_frames_per_utterance = max_frames_per_utterance
-        self.max_speakers = max_speakers
-        self.max_utterances = max_utterances
-        self.val_ratio = val_ratio
-        self.test_ratio = test_ratio
+        self.path = config['path']
+        self.frame_length = config['frame_length']
+        self.frame_stride = config['frame_stride']
+        self.max_frames_per_utterance = config['max_frames_per_utterance']
+        self.max_speakers = config['nb_speakers']
+        self.max_utterances = config['max_utterances']
+        self.val_ratio = config['val_ratio'] # default 0.2
+        self.test_ratio = config['test_ratio'] # default 0.1
 
     def get_frames_indices(self, filename):
         signal, fs = sf.read(filename)

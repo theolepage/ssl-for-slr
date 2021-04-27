@@ -1,0 +1,24 @@
+{
+    "name": "cpc-v1",
+    "seed": 1717,
+    "model": {
+        "type": "CPC",
+        "encoded_dim": 512,
+        "nb_timesteps_to_predict": 12
+    },
+    "dataset": {
+        "type": "LibriSpeech",
+        "path": "D:/Datasets/LibriSpeech/train-clean-100/*",
+        "frame_length": 20480,
+        "frame_stride": 20480,
+        "max_frames_per_utterance": 1,
+        "nb_speakers": 64,
+        "max_utterances": 1000,
+        "val_ratio": 0.2,
+        "test_ratio": 0.1
+    },
+    "training": {
+        "epochs": 50,
+        "batch_size": 64
+    }
+}

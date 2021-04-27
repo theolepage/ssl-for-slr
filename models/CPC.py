@@ -116,15 +116,14 @@ class CPCModel(Model):
                  batch_size,
                  encoded_dim,
                  nb_timesteps,
-                 nb_timesteps_for_context,
                  nb_timesteps_to_predict):
         super(CPCModel, self).__init__()
 
         self.batch_size = batch_size
         self.encoded_dim = encoded_dim
         self.nb_timesteps = nb_timesteps
-        self.nb_timesteps_for_context = nb_timesteps_for_context
         self.nb_timesteps_to_predict = nb_timesteps_to_predict
+        self.nb_timesteps_for_context = nb_timesteps - nb_timesteps_to_predict
 
         self.encoder = Encoder(self.encoded_dim, self.nb_timesteps)
         self.ar = Autoregressive()

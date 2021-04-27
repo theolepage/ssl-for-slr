@@ -10,28 +10,31 @@ Framework to train a speech encoder in a **self-supervised** way for **speaker a
 
 ## Evaluation
 
-1. Scores
-2. Confusion matrix
-3. Learning curves
-4. Error analysis
-5. Speaker verification on VoxCelebs
+1. Learning curves
+2. Speaker ID
+    - Scores
+    - Confusion matrix
+    - Error analysis
+    - t-SNE
+3. Speaker verification on VoxCelebs
 
 ## To-Do
 
-- [ ] Config files JSON
-- [ ] train_spkid.py (steps 2 and 3)
-- [ ] Test training on GPU
-- [ ] evaluate.py
+- [ ] train_spkid.py (steps 2 and 3) args: path to config. If no model in config => supervised
+- [ ] Push, start trainings on GPU
+- [ ] evaluate.py (same test set?)
+
+---
+
+- [ ] Merge self-supervised modules and add modules (GIM, LPS, FBANKS)
+- [ ] Implement new ideas (more params in encoder, bi-directional) and benchmark
+- [ ] Data augmentation / preprocessing step
 
 ---
 
 - [ ] CPC: negative samples from same speaker + current and other sentences, accuracy only on last timestep?
-- [ ] Merge self-supervised modules
-- [ ] More self-supervised modules (GIM, LPS, FBANKS)
-- [ ] Implement new ideas (more params in encoder, bi-directional) and benchmark
-- [ ] Data augmentation / preprocessing step
 - [ ] Comment code
-- [ ] Properly set SEED
+- [ ] Properly set seed
 
 ## References
 
