@@ -1,3 +1,5 @@
 tensorflow
 numpy
 pandas
+sklearn
+soundfile

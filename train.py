@@ -21,7 +21,8 @@ def train(config_path):
 
     # Load weights
     if (Path(last_checkpoint_path).exists()):
-        model.load_weights(last_checkpoint_path)
+        raise Exception('Train: model has already been trained.')
+        # FIXME: model.load_weights(last_checkpoint_path)
 
     # Setup callbacks
     save_callback = ModelCheckpoint(filepath=last_checkpoint_path,

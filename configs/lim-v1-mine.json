@@ -8,7 +8,7 @@
     },
     "dataset": {
         "type": "LibriSpeech",
-        "path": "D:/Datasets/LibriSpeech/train-clean-100/*",
+        "path": "/work2/home/ing2/datasets/LibriSpeech/train-clean-100/*",
         "frame_length": 20480,
         "frame_stride": 20480,
         "max_frames_per_utterance": 1,
