@@ -27,7 +27,6 @@ def load_config(config_path, create_checkpoint_dir=False):
         config = json.load(config_file)
 
     seed = config['seed']
-    batch_size = config['training']['batch_size']
     learning_rate = config['training']['learning_rate']
     encoded_dim = config['model']['encoded_dim']
     model_type = config['model']['type']
@@ -47,11 +46,11 @@ def load_config(config_path, create_checkpoint_dir=False):
     # Create and compile model
     if model_type == 'CPC':
         nb_timesteps_to_predict = config['model']['nb_timesteps_to_predict']
-        model = CPCModel(batch_size, encoded_dim, nb_timesteps, nb_timesteps_to_predict)
+        model = CPCModel(encoded_dim, nb_timesteps, nb_timesteps_to_predict)
         model.compile(Adam(learning_rate=learning_rate))
     elif model_type == 'LIM':
         loss_fn = config['model']['loss_fn']
-        model = LIMModel(batch_size, encoded_dim, nb_timesteps, loss_fn)
+        model = LIMModel(encoded_dim, nb_timesteps, loss_fn)
         model.compile(Adam(learning_rate=learning_rate))
     else:
         raise Exception('Config: model {} is not supported.'.format(model_type))

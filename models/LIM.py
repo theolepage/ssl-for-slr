@@ -1,5 +1,4 @@
 import tensorflow as tf
-
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input
 from tensorflow.keras.layers import Dense
@@ -48,10 +47,9 @@ class Discriminator(Model):
 
 class LIMModel(Model):
 
-    def __init__(self, batch_size, encoded_dim, nb_timesteps, loss_fn='bce'):
+    def __init__(self, encoded_dim, nb_timesteps, loss_fn='bce'):
         super(LIMModel, self).__init__()
 
-        self.batch_size = batch_size
         self.encoded_dim = encoded_dim
         self.nb_timesteps = nb_timesteps
         self.loss_fn = loss_fn
@@ -66,16 +64,19 @@ class LIMModel(Model):
     def call(self, X):
         return self.encoder(X)
 
+    @tf.function
     def compute_loss(self, pos, neg):
         # pos and neg shape: (batch_size, 1)
+
+        batch_size = tf.shape(pos)[0]
 
         # Prevent numerical instability with log(x)
         epsilon = 1e-07
         pos = tf.clip_by_value(pos, epsilon, 1.0 - epsilon)
         neg = tf.clip_by_value(neg, epsilon, 1.0 - epsilon)
 
-        acc = tf.math.count_nonzero(tf.math.greater(neg, pos))
-        acc = acc / self.batch_size
+        acc = tf.math.count_nonzero(tf.math.greater(neg, pos), dtype=tf.int32)
+        acc = acc / batch_size
         acc = tf.math.reduce_mean(acc)
 
         if self.loss_fn == 'bce':
@@ -95,7 +96,10 @@ class LIMModel(Model):
 
         raise Exception('LIM: loss {} is not supported.'.format(self.loss_fn))
 
+    @tf.function
     def extract_chunks(self, X):
+        batch_size = tf.shape(X)[0]
+
         idx = tf.random.uniform(shape=[3],
                                 minval=0,
                                 maxval=self.nb_timesteps,
@@ -103,7 +107,7 @@ class LIMModel(Model):
 
         shift = tf.random.uniform(shape=[1],
                                   minval=1,
-                                  maxval=self.batch_size,
+                                  maxval=batch_size,
                                   dtype=tf.int32)
 
         C1 = X[:, idx[0], ...]

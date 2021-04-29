@@ -1,6 +1,4 @@
-import numpy as np
 import tensorflow as tf
-
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Layer
 from tensorflow.keras.layers import Input
@@ -70,56 +68,48 @@ class Predictor(Model):
 
         return output
 
-class CPCLayer(Layer):
+@tf.function
+def cpc_loss(nb_timesteps_to_predict, predictions, X_future_encoded):
+    # Shape: (batch_size, nb_timesteps_to_predict, encoded_dim)
+    
+    batch_size = tf.shape(predictions)[0]
 
-    def __init__(self, batch_size, nb_timesteps_to_predict, **kwargs):
-        super(CPCLayer, self).__init__(**kwargs)
+    losses = tf.zeros((batch_size))
+    accuracies = tf.zeros((batch_size), dtype=tf.float64)
 
-        self.batch_size = batch_size
-        self.nb_timesteps_to_predict = nb_timesteps_to_predict
-
-    def call(self, data):
-        predictions, X_future_encoded = data
-        # Shape: (batch_size, nb_timesteps_to_predict, encoded_dim)
+    for t in range(nb_timesteps_to_predict):
+        dot = tf.linalg.matmul(X_future_encoded[:, t, :],
+                                predictions[:, t, :],
+                                transpose_b=True)
         
-        losses = tf.zeros((self.batch_size))
-        accuracies = tf.zeros((self.batch_size), dtype=tf.float64)
+        # Determine loss
+        log_softmax_dot = tf.nn.log_softmax(dot, axis=0)
+        diag = tf.linalg.tensor_diag_part(log_softmax_dot)
+        losses += diag
 
-        for t in range(self.nb_timesteps_to_predict):
-            dot = tf.linalg.matmul(X_future_encoded[:, t, :],
-                                   predictions[:, t, :],
-                                   transpose_b=True)
-            
-            # Determine loss
-            log_softmax_dot = tf.nn.log_softmax(dot, axis=0)
-            diag = tf.linalg.tensor_diag_part(log_softmax_dot)
-            losses += diag
+        # Determine accuracy
+        softmax_dot = tf.nn.softmax(dot, axis=0)
+        pred_indices = tf.math.argmax(softmax_dot, axis=0, output_type=tf.int32)
+        preds_acc = tf.math.equal(pred_indices, tf.range(0, batch_size))
+        accuracies += tf.math.count_nonzero(preds_acc, dtype=tf.int32) / batch_size
 
-            # Determine accuracy
-            softmax_dot = tf.nn.softmax(dot, axis=0)
-            pred_indices = tf.math.argmax(softmax_dot, axis=0)
-            preds_acc = tf.math.equal(pred_indices, np.arange(0, self.batch_size))
-            accuracies += tf.math.count_nonzero(preds_acc) / self.batch_size
+    losses /= tf.cast(nb_timesteps_to_predict, dtype=tf.float32)
+    accuracies /= tf.cast(nb_timesteps_to_predict, dtype=tf.float64)
 
-        losses /= self.nb_timesteps_to_predict
-        accuracies /= self.nb_timesteps_to_predict
+    # Compute the average loss and accuracy across all batches
+    loss = tf.math.reduce_mean(losses)
+    accuracy = tf.math.reduce_mean(accuracies)
 
-        # Compute the average loss and accuracy across all batches
-        loss = tf.math.reduce_mean(losses)
-        accuracy = tf.math.reduce_mean(accuracies)
-
-        return -1.0 * loss, accuracy
+    return -1.0 * loss, accuracy
 
 class CPCModel(Model):
 
     def __init__(self,
-                 batch_size,
                  encoded_dim,
                  nb_timesteps,
                  nb_timesteps_to_predict):
         super(CPCModel, self).__init__()
 
-        self.batch_size = batch_size
         self.encoded_dim = encoded_dim
         self.nb_timesteps = nb_timesteps
         self.nb_timesteps_to_predict = nb_timesteps_to_predict
@@ -154,8 +144,9 @@ class CPCModel(Model):
             predictions = self.predictor(X_past_context, training=True)
             # Out shape: (batch_size, nb_timesteps_to_predict, encoded_dim)
 
-            loss, accuracy = CPCLayer(self.batch_size, self.nb_timesteps_to_predict)(
-                [predictions, X_future_encoded])
+            loss, accuracy = cpc_loss(self.nb_timesteps_to_predict,
+                                      predictions,
+                                      X_future_encoded)
             # Out shape: (batch_size)
 
         trainable_params = self.encoder.trainable_weights
@@ -176,7 +167,8 @@ class CPCModel(Model):
         X_past_context = self.ar(X_past_encoded, training=False)
         predictions = self.predictor(X_past_context, training=False)
 
-        loss, accuracy = CPCLayer(self.batch_size, self.nb_timesteps_to_predict)(
-            [predictions, X_future_encoded])
+        loss, accuracy = cpc_loss(self.nb_timesteps_to_predict,
+                                  predictions,
+                                  X_future_encoded)
 
         return { 'loss': loss, 'accuracy': accuracy }
