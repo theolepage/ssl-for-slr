@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split
 import soundfile as sf
 import glob
 import numpy as np
+from pathlib import Path
 
 class LibriSpeechGenerator(Sequence):
   
@@ -26,6 +27,10 @@ class LibriSpeechGenerator(Sequence):
                 id = np.random.randint(0, len(self.y))
 
             path, frame = self.X[id]
+
+            #FIX: when loading frame indices from file, all values are string
+            frame = int(frame)
+
             signal, fs = sf.read(path)
 
             X_batch[i, :, 0] = signal[frame:frame+self.frame_length]
@@ -35,16 +40,17 @@ class LibriSpeechGenerator(Sequence):
 
 class LibriSpeechLoader:
 
-    def __init__(self, seed, config):
+    def __init__(self, seed, config, checkpoint_dir):
         self.seed = seed
+        self.checkpoint_path = checkpoint_dir + '/librispeech_data.tmp'
         self.path = config['path']
         self.frame_length = config['frame_length']
         self.frame_stride = config['frame_stride']
         self.max_frames_per_utterance = config['max_frames_per_utterance']
         self.max_speakers = config['nb_speakers']
         self.max_utterances_per_speaker = config['max_utterances_per_speaker']
-        self.val_ratio = config['val_ratio'] # default 0.2
-        self.test_ratio = config['test_ratio'] # default 0.1
+        self.val_ratio = config['val_ratio']
+        self.test_ratio = config['test_ratio']
 
     def get_frames_indices(self, filename):
         signal, fs = sf.read(filename)
@@ -59,11 +65,14 @@ class LibriSpeechLoader:
 
         return np.arange(0, num_frames * self.frame_stride, self.frame_stride)
 
-    def load(self, batch_size):
+    def create_frames_list(self):
         X = []
         y = []
 
         files = glob.glob(self.path)
+        if (len(files) == 0):
+            raise Exception('LibriSpeech: no data files found.')
+
         for speaker_id in range(min(self.max_speakers, len(files))):
             speaker_files = glob.glob(files[speaker_id] + '/*')
 
@@ -90,9 +99,25 @@ class LibriSpeechLoader:
         print()
         print('LibriSpeech: done')
 
+        return X, y
+
+    def load(self, batch_size):
+        # Load pre-existing frames list
+        if (Path(self.checkpoint_path).exists()):
+            with open(self.checkpoint_path, 'rb') as file:
+                X = np.load(file)
+                y = np.load(file)
+        else:
+            X, y = self.create_frames_list()
+            with open(self.checkpoint_path, 'wb') as file:
+                np.save(file, X)
+                np.save(file, y)
+
+        # Split in train, val and test sets
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=self.val_ratio + self.test_ratio, random_state=self.seed)
         X_val, X_test, y_val, y_test = train_test_split(X_test, y_test, test_size=self.test_ratio / (self.test_ratio + self.val_ratio), random_state=self.seed)
 
+        # Create Keras generators
         train_gen = LibriSpeechGenerator(X_train, y_train, batch_size, self.frame_length)
         val_gen = LibriSpeechGenerator(X_val, y_val, batch_size, self.frame_length)
         test_gen = LibriSpeechGenerator(X_test, y_test, batch_size, self.frame_length)
