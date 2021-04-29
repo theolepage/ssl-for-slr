@@ -2,26 +2,43 @@
 
 Framework to train a speech encoder in a **self-supervised** way for **speaker and language recognition** tasks.
 
+## Usage
+
+### Install dependencies (inside a virtual env)
+
+1. `virtualenv ~/ssl-for-slr-env && source ~/ssl-for-slr-env/bin/activate`
+2. `pip install -r requirements.txt`
+
+*Type `deactivate` to exit the virtual env after use.*
+
+### Start self-supervised training
+
+Multiple config files are located in the `config/` folder.
+
+```
+python train.py configs/cpc-v1.json
+```
+
+### Evaluate the model
+
+To evaluate the model we train a speaker id classifier on top of the pre-trained encoder with the following steps:
+
+1. `python train_spkid.py configs/cpc-v1.json`
+2. `python evaluate.py configs/cpc-v1.json`
+
 ## To-Do
-
-- [ ] Rewrite logs and push, start trainings on GPU
-- [ ] evaluate.py
-    - Learning curves
-    - Speaker ID: scores, confusion matrix, error analysis, t-SNE
-    - Speaker verification on VoxCelebs
-    - Same test set?
-
----
 
 - [ ] Improve encoder (SincConv) and classifier (dropout, normalization)
 - [ ] Improve config: encoder, multiple training type (pretext, downstream)
 - [ ] Merge self-supervised modules and add modules (GIM, LPS, FBANKS)
-- [ ] Implement new ideas (more params in encoder, bi-directional) and benchmark
+- [ ] Implement new ideas (more params, CPC sampling, bi-directional) and benchmark
 - [ ] Data augmentation / preprocessing step
+- [ ] Evaluate: speaker verification on VoxCelebs
 
 ---
 
-- [ ] CPC: negative samples from same speaker + current and other sentences, accuracy only on last timestep?
+- [ ] CPC/LIM: @tf.function warning
+- [ ] Ability to resume training (load/save weights of optimizer) (https://stackoverflow.com/questions/49503748/save-and-load-model-optimizer-state)
 - [ ] Comment code
 - [ ] Properly set seed
 
