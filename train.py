@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 import numpy as np
 
+import tensorflow as tf
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.callbacks import EarlyStopping
 
@@ -35,7 +36,7 @@ def train(config_path):
                                     save_weights_only=True,
                                     verbose=1)
     early_stopping = EarlyStopping(monitor='loss',
-                                   patience=3)
+                                   patience=5)
 
     # Start training
     history = model.fit(train_gen,
