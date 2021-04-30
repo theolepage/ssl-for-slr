@@ -4,7 +4,7 @@
     "model": {
         "type": "LIM",
         "encoded_dim": 512,
-        "loss_fn": "mine"
+        "loss_fn": "bce"
     },
     "dataset": {
         "type": "LibriSpeech",

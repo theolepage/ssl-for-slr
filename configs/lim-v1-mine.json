@@ -1,10 +1,10 @@
 {
-    "name": "lim-v1-bce",
+    "name": "lim-v1-mine",
     "seed": 1717,
     "model": {
         "type": "LIM",
         "encoded_dim": 512,
-        "loss_fn": "nce"
+        "loss_fn": "mine"
     },
     "dataset": {
         "type": "LibriSpeech",

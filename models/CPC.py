@@ -75,7 +75,6 @@ def cpc_loss(nb_timesteps_to_predict, predictions, X_future_encoded):
     batch_size = tf.shape(predictions)[0]
 
     losses = tf.zeros((batch_size))
-    accuracies = tf.zeros((batch_size), dtype=tf.float64)
 
     for t in range(nb_timesteps_to_predict):
         dot = tf.linalg.matmul(X_future_encoded[:, t, :],
@@ -87,14 +86,13 @@ def cpc_loss(nb_timesteps_to_predict, predictions, X_future_encoded):
         diag = tf.linalg.tensor_diag_part(log_softmax_dot)
         losses += diag
 
-        # Determine accuracy
-        softmax_dot = tf.nn.softmax(dot, axis=0)
-        pred_indices = tf.math.argmax(softmax_dot, axis=0, output_type=tf.int32)
-        preds_acc = tf.math.equal(pred_indices, tf.range(0, batch_size))
-        accuracies += tf.math.count_nonzero(preds_acc, dtype=tf.int32) / batch_size
-
     losses /= tf.cast(nb_timesteps_to_predict, dtype=tf.float32)
-    accuracies /= tf.cast(nb_timesteps_to_predict, dtype=tf.float64)
+
+    # Determine accuracy
+    softmax_dot = tf.nn.softmax(dot, axis=0)
+    pred_indices = tf.math.argmax(softmax_dot, axis=0, output_type=tf.int32)
+    preds_acc = tf.math.equal(pred_indices, tf.range(0, batch_size))
+    accuracies = tf.math.count_nonzero(preds_acc, dtype=tf.int32) / batch_size
 
     # Compute the average loss and accuracy across all batches
     loss = tf.math.reduce_mean(losses)

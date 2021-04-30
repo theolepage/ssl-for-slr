@@ -31,11 +31,11 @@ def train(config_path):
 
     # Setup callbacks
     save_callback = ModelCheckpoint(filepath=last_checkpoint_path,
-                                    monitor='loss',
+                                    monitor='val_loss',
                                     save_best_only=True,
                                     save_weights_only=True,
                                     verbose=1)
-    early_stopping = EarlyStopping(monitor='loss',
+    early_stopping = EarlyStopping(monitor='val_loss',
                                    patience=5)
 
     # Start training
