@@ -21,12 +21,11 @@ def summary_for_shape(model, input_shape):
     model_ = Model(inputs=x, outputs=model_copy.call(x))
     return model_.summary()
 
-def load_config(config_path, create_checkpoint_dir=False):
+def load_config(config_path, name_suffix=''):
     # Load config file
     with open(config_path) as config_file:
         config = json.load(config_file)
 
-    checkpoint_dir = './checkpoints/' + config['name']
     seed = config['seed']
     learning_rate = config['training']['learning_rate']
     encoded_dim = config['model']['encoded_dim']
@@ -41,12 +40,8 @@ def load_config(config_path, create_checkpoint_dir=False):
     np.random.seed(seed)
     tf.random.set_seed(seed)
 
-    # Create subfolder for saving checkpoints
-    if create_checkpoint_dir:
-        Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
-
     # Load dataset
-    dataset = LibriSpeechLoader(seed, config['dataset'], checkpoint_dir)
+    dataset = LibriSpeechLoader(seed, config['dataset'])
 
     # Create and compile model
     if model_type == 'CPC':
@@ -60,6 +55,6 @@ def load_config(config_path, create_checkpoint_dir=False):
     else:
         raise Exception('Config: model {} is not supported.'.format(model_type))
     
-    summary_for_shape(model.encoder, (frame_length, 1))
+    summary_for_shape(model, (frame_length, 1))
 
-    return config, model, dataset, checkpoint_dir
+    return config, model, dataset

@@ -30,13 +30,20 @@ To evaluate the model we train a speaker id classifier on top of the pre-trained
 
 - [ ] Improve encoder (SincConv) and classifier (dropout, normalization)
 - [ ] Improve config: encoder, multiple training type (pretext, downstream)
-- [ ] Merge self-supervised modules and add modules (GIM, LPS, FBANKS)
-- [ ] Implement new ideas (more params, CPC sampling, bi-directional) and benchmark
-- [ ] Data augmentation / preprocessing step
-- [ ] Evaluate: speaker verification on VoxCelebs
+- [ ] Merge self-supervised modules
 
 ---
 
+- [ ] Implement new modules (GIM, LPS, FBANKS)
+- [ ] Implement new ideas (more params, CPC sampling, bi-directional) and benchmark
+- [ ] Data augmentation / preprocessing step
+- [ ] Evaluate: speaker verification on VoxCelebs
+- [ ] Evaluate: language recognition
+
+---
+
+- [ ] Fix warning loading weights not used
+- [ ] LibriSpeech: correct way of extracting a frame from an audio file?
 - [ ] CPC/LIM: @tf.function warning
 - [ ] Ability to resume training (load/save weights of optimizer) (https://stackoverflow.com/questions/49503748/save-and-load-model-optimizer-state)
 - [ ] Comment code

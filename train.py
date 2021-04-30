@@ -1,6 +1,6 @@
 import argparse
 from pathlib import Path
-import pandas as pd
+import numpy as np
 
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.callbacks import EarlyStopping
@@ -8,20 +8,24 @@ from tensorflow.keras.callbacks import EarlyStopping
 from utils.helpers import load_config
 
 def train(config_path):
-    config, model, dataset, checkpoint_dir = load_config(config_path,
-                                                         create_checkpoint_dir=True)
+    config, model, dataset = load_config(config_path)
 
+    checkpoint_dir = './checkpoints/' + config['name']
+    last_checkpoint_path = checkpoint_dir + '/training'
     batch_size = config['training']['batch_size']
     nb_epochs = config['training']['epochs']
-    last_checkpoint_path = checkpoint_dir + '/' + config['name'] + '.ckpt'
-    
-    train_gen, val_gen, test_gen = dataset.load(batch_size)
+   
+    # Create subfolder for saving checkpoints
+    Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
+
+    # Load dataset
+    train_gen, val_gen, test_gen = dataset.load(batch_size, checkpoint_dir)
     print("Number of training batches:", len(train_gen))
     print("Number of validation batches:", len(val_gen))
 
     # Load weights
-    if (Path(last_checkpoint_path).exists()):
-        raise Exception('Train: model has already been trained.')
+    if (tf.train.latest_checkpoint(checkpoint_dir)):
+        raise Exception('Train: model {} has already been trained.'.format(config['name']))
         # FIXME: model.load_weights(last_checkpoint_path)
 
     # Setup callbacks
@@ -40,9 +44,8 @@ def train(config_path):
                         callbacks=[save_callback, early_stopping])
 
     # Save training history
-    hist_json_path = checkpoint_dir + '/history.json'
-    with open(hist_json_path, mode='w') as file:
-        pd.DataFrame(history.history).to_json(file)
+    hist_path = checkpoint_dir + '/history.npy'
+    np.save(hist_path, history.history)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

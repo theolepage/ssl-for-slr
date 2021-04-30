@@ -1,8 +1,9 @@
+import numpy as np
+import math
 from tensorflow.keras.utils import Sequence
 from sklearn.model_selection import train_test_split
 import soundfile as sf
 import glob
-import numpy as np
 from pathlib import Path
 
 class LibriSpeechGenerator(Sequence):
@@ -15,20 +16,25 @@ class LibriSpeechGenerator(Sequence):
 
     def __len__(self):
         nb_batches = len(self.y) / float(self.batch_size)
-        return np.ceil(nb_batches).astype(np.int)
+        return int(math.ceil(nb_batches))
   
     def __getitem__(self, batch_id):
-        X_batch = np.zeros((self.batch_size, self.frame_length, 1))
-        y_batch = np.zeros(self.batch_size)
+        batch_size = self.batch_size
 
-        for i in range(self.batch_size):
+        # Last batch may have fewer samples
+        is_last_batch = batch_id == self.__len__() - 1
+        remaining_samples = len(self.y) % self.batch_size
+        if is_last_batch and remaining_samples != 0:
+            batch_size = remaining_samples
+
+        X_batch = np.zeros((batch_size, self.frame_length, 1))
+        y_batch = np.zeros(batch_size)
+
+        for i in range(batch_size):
             id = batch_id * self.batch_size + i
-            if id >= len(self.y):
-                id = np.random.randint(0, len(self.y))
-
             path, frame = self.X[id]
 
-            #FIX: when loading frame indices from file, all values are string
+            #FIX: when loading frames indices from file, all values are string
             frame = int(frame)
 
             signal, fs = sf.read(path)
@@ -40,9 +46,8 @@ class LibriSpeechGenerator(Sequence):
 
 class LibriSpeechLoader:
 
-    def __init__(self, seed, config, checkpoint_dir):
+    def __init__(self, seed, config):
         self.seed = seed
-        self.checkpoint_path = checkpoint_dir + '/librispeech_data.tmp'
         self.path = config['path']
         self.frame_length = config['frame_length']
         self.frame_stride = config['frame_stride']
@@ -75,7 +80,6 @@ class LibriSpeechLoader:
 
         for speaker_id in range(min(self.max_speakers, len(files))):
             speaker_files = glob.glob(files[speaker_id] + '/*')
-
             nb_utterances_for_speaker = 0
 
             for sentence_id in range(len(speaker_files)):
@@ -101,15 +105,16 @@ class LibriSpeechLoader:
 
         return X, y
 
-    def load(self, batch_size):
+    def load(self, batch_size, checkpoint_dir):
         # Load pre-existing frames list
-        if (Path(self.checkpoint_path).exists()):
-            with open(self.checkpoint_path, 'rb') as file:
+        checkpoint_path = checkpoint_dir + '/librispeech_data.npy'
+        if (Path(checkpoint_path).exists()):
+            with open(checkpoint_path, 'rb') as file:
                 X = np.load(file)
                 y = np.load(file)
         else:
             X, y = self.create_frames_list()
-            with open(self.checkpoint_path, 'wb') as file:
+            with open(checkpoint_path, 'wb') as file:
                 np.save(file, X)
                 np.save(file, y)
 
