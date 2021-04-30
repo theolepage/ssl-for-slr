@@ -40,7 +40,7 @@ class Discriminator(Model):
         super(Discriminator, self).__init__()
 
         self.dense1 = Dense(units=256, activation='relu')
-        self.dense2 = Dense(units=1, activation='sigmoid')
+        self.dense2 = Dense(units=1)
 
     def call(self, X):
         return self.dense2(self.dense1(X))
@@ -70,29 +70,29 @@ class LIMModel(Model):
 
         batch_size = tf.shape(pos)[0]
 
-        # Prevent numerical instability with log(x)
-        epsilon = 1e-07
-        pos = tf.clip_by_value(pos, epsilon, 1.0 - epsilon)
-        neg = tf.clip_by_value(neg, epsilon, 1.0 - epsilon)
-
-        acc = tf.math.count_nonzero(tf.math.greater(neg, pos), dtype=tf.int32)
+        acc = tf.math.count_nonzero(tf.math.greater(pos, neg), dtype=tf.int32)
         acc = acc / batch_size
         acc = tf.math.reduce_mean(acc)
 
         if self.loss_fn == 'bce':
+            # Prevent numerical instability with log(x)
+            epsilon = 1e-07
+            pos = tf.clip_by_value(tf.math.sigmoid(pos), epsilon, 1.0 - epsilon)
+            neg = tf.clip_by_value(tf.math.sigmoid(neg), epsilon, 1.0 - epsilon)
+
             loss = tf.math.reduce_mean(tf.math.log(pos))
             loss = loss + tf.math.reduce_mean(tf.math.log(1 - neg))
-            return loss, acc
+            return -loss, acc
 
         elif self.loss_fn == 'mine':
             loss = tf.math.reduce_mean(pos)
             loss = loss - tf.math.log(tf.math.reduce_mean(tf.math.exp(neg)))
-            return loss, acc
+            return -loss, acc
 
         elif self.loss_fn == 'nce':
             loss = tf.math.log(pos + tf.math.reduce_sum(tf.math.exp(neg)))
             loss = tf.math.reduce_mean(pos - loss)
-            return loss, acc
+            return -loss, acc
 
         raise Exception('LIM: loss {} is not supported.'.format(self.loss_fn))
 

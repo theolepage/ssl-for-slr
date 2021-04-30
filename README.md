@@ -42,6 +42,7 @@ To evaluate the model we train a speaker id classifier on top of the pre-trained
 
 ---
 
+- [ ] Add training time in history.npy
 - [ ] Fix warning loading weights not used
 - [ ] LibriSpeech: correct way of extracting a frame from an audio file?
 - [ ] CPC/LIM: @tf.function warning
