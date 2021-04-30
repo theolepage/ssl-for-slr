@@ -70,9 +70,7 @@ class LIMModel(Model):
 
         batch_size = tf.shape(pos)[0]
 
-        acc = tf.math.count_nonzero(tf.math.greater(pos, neg), dtype=tf.int32)
-        acc = acc / batch_size
-        acc = tf.math.reduce_mean(acc)
+        acc = tf.math.count_nonzero(tf.math.greater(pos, neg), dtype=tf.int32) / batch_size
 
         if self.loss_fn == 'bce':
             # Prevent numerical instability with log(x)
@@ -90,7 +88,7 @@ class LIMModel(Model):
             return -loss, acc
 
         elif self.loss_fn == 'nce':
-            loss = tf.math.log(pos + tf.math.reduce_sum(tf.math.exp(neg)))
+            loss = tf.math.log(tf.math.exp(pos) + tf.math.reduce_sum(tf.math.exp(neg)))
             loss = tf.math.reduce_mean(pos - loss)
             return -loss, acc
 
