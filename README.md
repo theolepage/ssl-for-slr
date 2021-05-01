@@ -39,6 +39,8 @@ To evaluate the model we train a speaker id classifier on top of the pre-trained
 - [ ] Data augmentation / preprocessing step
 - [ ] Evaluate: speaker verification on VoxCelebs
 - [ ] Evaluate: language recognition
+- [ ] Evaluate: data-efficient
+- [ ] Demo web app
 
 ---
 
