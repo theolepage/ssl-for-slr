@@ -27,7 +27,6 @@ def train(config_path):
     # Load weights
     if (tf.train.latest_checkpoint(checkpoint_dir)):
         raise Exception('Train: model {} has already been trained.'.format(config['name']))
-        # FIXME: model.load_weights(last_checkpoint_path)
 
     # Setup callbacks
     save_callback = ModelCheckpoint(filepath=last_checkpoint_path,

@@ -12,7 +12,7 @@ class SpeakerIdClassifier(Model):
         self.nb_speakers = nb_speakers
 
         self.flatten = Flatten()
-        self.dense1 = Dense(units=256, activation='relu')
+        self.dense1 = Dense(units=256)
         self.dense2 = Dense(units=nb_speakers, activation='softmax')
 
     def call(self, X):
