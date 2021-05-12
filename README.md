@@ -19,24 +19,35 @@ Multiple config files are located in the `config/` folder.
 python train.py configs/cpc-v1.json
 ```
 
-### Evaluate the model
+### Train a speaker id classifier
 
-To evaluate the model we train a speaker id classifier on top of the pre-trained encoder with the following steps:
+To evaluate the model we train a speaker id classifier on top of the pre-trained encoder with `python train_spkid.py configs/cpc-v1.json`.
 
-1. `python train_spkid.py configs/cpc-v1.json`
-2. `python evaluate.py configs/cpc-v1.json`
+### Evaluate model
+
+Use notebook `evaluate.ipnyb` to evaluate model on the previous downstream task (speaker id).
 
 ## To-Do
 
-- [ ] Improve encoder (SincConv) and classifier (dropout, normalization)
-- [ ] Improve config: encoder, multiple training type (pretext, downstream)
+- [ ] Check if different params for Adam are interestig (betas=(0.9, 0.98), eps=1e-09, weight_decay=1e-4, amsgrad=True)
+- [ ] Common encoder (simple or SincConv) + config
+- [ ] Add other spkid classifier (more params, dropout, normalization)
 - [ ] Merge self-supervised modules
+- [ ] Helper function to add global weight decay
+- [ ] LibriSpeech: handle multiple dirs (360 and 500)
+- [ ] LibriSpeech: option to select frames sequentially or random
 
 ---
 
-- [ ] Implement new modules (GIM, LPS, FBANKS)
-- [ ] Implement new ideas (more params, CPC sampling, bi-directional) and benchmark
+- [ ] Implement new modules (GIM, LPS, FBANKS and long versions)
+- [ ] Implement new ideas (more params, CPC sampling, bi-directional, ln)
+
+---
+
 - [ ] Data augmentation / preprocessing step
+
+---
+
 - [ ] Evaluate: speaker verification on VoxCelebs
 - [ ] Evaluate: language recognition
 - [ ] Evaluate: data-efficient
@@ -44,13 +55,17 @@ To evaluate the model we train a speaker id classifier on top of the pre-trained
 
 ---
 
+- [ ] Benchmarks and add personal idea (wave2vec / transformers)
+
+---
+
 - [ ] Add training time in history.npy
 - [ ] Fix warning loading weights not used
-- [ ] LibriSpeech: correct way of extracting a frame from an audio file?
 - [ ] CPC/LIM: @tf.function warning
 - [ ] Ability to resume training (load/save weights of optimizer) (https://stackoverflow.com/questions/49503748/save-and-load-model-optimizer-state)
 - [ ] Comment code
 - [ ] Properly set seed
+- [ ] Tensorboard?
 
 ## References
 

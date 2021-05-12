@@ -122,7 +122,7 @@ class CPCModel(Model):
         self.optimizer = optimizer
 
     def call(self, X):
-        return self.encoder(X) # FIXME: or self.ar(X)?
+        return self.ar(self.encoder(X))
 
     def train_step(self, data):
         X, _ = data # Discard Y provided by the dataset generator
