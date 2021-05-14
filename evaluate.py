@@ -17,7 +17,7 @@ def load(config_path):
     checkpoint_dir_spkid = './checkpoints/' + config['name'] + '_spkid'
     batch_size = config['training']['batch_size']
     nb_speakers = config['dataset']['nb_speakers']
-    frame_length = config['dataset']['frame_length']
+    frame_length = config['dataset']['frames']['length']
 
     _, _, test_gen = dataset.load(batch_size, checkpoint_dir)
 

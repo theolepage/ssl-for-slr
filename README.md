@@ -29,25 +29,19 @@ Use notebook `evaluate.ipnyb` to evaluate model on the previous downstream task 
 
 ## To-Do
 
-- [ ] Check if different params for Adam are interestig (betas=(0.9, 0.98), eps=1e-09, weight_decay=1e-4, amsgrad=True)
+- [ ] Check if new LibriSpeech is faster
 - [ ] Common encoder (simple or SincConv) + config
-- [ ] Add other spkid classifier (more params, dropout, normalization)
-- [ ] Merge self-supervised modules
-- [ ] Helper function to add global weight decay
-- [ ] LibriSpeech: handle multiple dirs (360 and 500)
-- [ ] LibriSpeech: option to select frames sequentially or random
+- [ ] Add weight decay option CPC, LIM, Encoder (weight_decay=1e-4)
 
 ---
 
+- [ ] Merge self-supervised modules (PASE)
 - [ ] Implement new modules (GIM, LPS, FBANKS and long versions)
 - [ ] Implement new ideas (more params, CPC sampling, bi-directional, ln)
 
 ---
 
 - [ ] Data augmentation / preprocessing step
-
----
-
 - [ ] Evaluate: speaker verification on VoxCelebs
 - [ ] Evaluate: language recognition
 - [ ] Evaluate: data-efficient

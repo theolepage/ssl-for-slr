@@ -19,7 +19,7 @@ def train(config_path, batch_size, epochs, lr, epochs_ft, lr_ft, layers_ft, no_f
     last_checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
     checkpoint_dir_spkid = './checkpoints/' + config['name'] + '_spkid'
     last_checkpoint_spkid_path = checkpoint_dir_spkid + '/training'
-    frame_length = config['dataset']['frame_length']
+    frame_length = config['dataset']['frames']['length']
     nb_speakers = config['dataset']['nb_speakers']
     
     # Create subfolder for saving checkpoints

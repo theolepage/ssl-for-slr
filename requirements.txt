@@ -2,3 +2,4 @@ tensorflow
 numpy
 sklearn
 soundfile
+h5py

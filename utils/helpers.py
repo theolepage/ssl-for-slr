@@ -33,7 +33,7 @@ def load_config(config_path, name_suffix=''):
     
     # Usually 20480 (1.28s at 16kHz on LibriSpeech)
     # => nb_timesteps = 128
-    frame_length = config['dataset']['frame_length']
+    frame_length = config['dataset']['frames']['length']
     nb_timesteps = int(frame_length // 160)
     
     # Set seed

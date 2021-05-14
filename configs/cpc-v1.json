@@ -8,14 +8,15 @@
     },
     "dataset": {
         "type": "LibriSpeech",
-        "path": "/work2/home/ing2/datasets/LibriSpeech/train-clean-100/*",
-        "frame_length": 20480,
-        "frame_stride": 20480,
-        "max_frames_per_utterance": 1,
-        "nb_speakers": 251,
-        "max_utterances_per_speaker": 10000000000000,
-        "val_ratio": 0.2,
-        "test_ratio": 0.1
+        "train_paths": ["/work2/home/ing2/datasets/LibriSpeech/train-clean-100/*"],
+        "val_paths": ["/work2/home/ing2/datasets/LibriSpeech/dev-clean/*"],
+        "test_paths": ["/work2/home/ing2/datasets/LibriSpeech/test-clean/*"],
+        "frames": {
+            "pick": "sequence",
+            "length": 20480,
+            "stride": 20480,
+            "count": 1
+        }
     },
     "training": {
         "epochs": 50,
