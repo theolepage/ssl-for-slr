@@ -73,17 +73,17 @@ class LibriSpeechLoader:
         self.val_paths = config['val_paths']
         self.test_paths = config['test_paths']
         self.frames = config['frames']
-        self.limits = config['limits']
+        self.limits = config['limits'] if 'limits' in config else {}
 
     def get_frames(self, filename):
-        signal, fs = sf.read(filename)
-        signal_length = len(signal)
         length = self.frames['length']
+        with sf.SoundFile(filename, 'r') as f:
+            signal_length = f.frames
 
         assert signal_length > length
 
         if self.frames['pick'] == 'random':
-            return [signal]
+            return [-1]
 
         elif self.frames['pick'] == 'sequence':
             stride = self.frames['stride']
@@ -94,7 +94,7 @@ class LibriSpeechLoader:
             num_frames = min(num_frames, count)
             indexes = np.arange(0, num_frames * stride, stride)
 
-            return [signal[i:i+length] for i in indexes]
+            return indexes
 
         raise Exception('LibriSpeech: frames picking method not handled')
 
@@ -114,6 +114,9 @@ class LibriSpeechLoader:
         for dataset_id in range(len(paths)):
             speaker_dirs = glob.glob(paths[dataset_id])
 
+            if (len(speaker_dirs) == 0):
+                raise Exception('LibriSpeech: no data found in {}'.format(paths[dataset_id]))
+
             for speaker_id in range(len(speaker_dirs)):
                 if nb_speakers == limit_speakers:
                     break
@@ -129,45 +132,53 @@ class LibriSpeechLoader:
                         if nb_speaker_utterances == limit_utterances:
                             break
 
-                        filenames.append(file)
-                        speakers.append(speaker_id)
-                        nb_speaker_utterances += 1
+                        for frame in self.get_frames(file):
+                            filenames.append([file, frame])
+                            speakers.append(speaker_id)
 
-        if (len(filenames) == 0):
-            raise Exception('LibriSpeech: no data found')
+                        nb_speaker_utterances += 1
 
         return filenames, speakers
 
     def create_cache(self, name, cache, paths):
         start = time.time()
         filenames, speakers = self.scan_directories(paths)
-        X, y = [], []
+        nb_samples = len(filenames)
+        frame_length = self.frames['length']
 
-        # Create frames list for each file
-        for i in range(len(filenames)):
-            filename = filenames[i]
+        # Create h5py dataset
+        if self.frames['pick'] == 'random':
+            # Picking frames randomly online implies storing
+            # frames of different length
+            dt = h5py.vlen_dtype(np.float64)
+            X = cache.create_dataset(name + '_x', (nb_samples,), dtype=dt)
+        else:
+            X = cache.create_dataset(name + '_x', (nb_samples, frame_length))
+        y = cache.create_dataset(name + '_y', (nb_samples))
+
+        if nb_samples == 0:
+            return
+
+        for i in range(nb_samples):
+            filename, frame = filenames[i]
             speaker = speakers[i]
+            data, fs = sf.read(filename)
 
-            for frame in self.get_frames(filename):
-                X.append(frame)
-                y.append(speaker)
+            if self.frames['pick'] == 'sequence':
+                data = data[frame:frame+frame_length]
+
+            X[i] = data
+            y[i] = speaker
             
             # Log progress
-            if (i + 1) % 10 == 0:
-                progress = math.ceil(100 * (i + 1) / len(filenames))
+            progress = math.ceil(100 * (i + 1) / nb_samples)
+            if progress % 5 == 0:
                 progress_text = '{}% {} files'.format(progress, name)
                 print('LibriSpeech: caching ' + progress_text, end='\r')
 
         end = time.time()
         print()
         print('LibriSpeech: done in {}s'.format(end - start))
-        
-        if self.frames['pick'] == 'random':
-            dt = h5py.vlen_dtype(np.float64)
-            cache.create_dataset(name + '_x', data=X, dtype=dt)
-        else:
-            cache.create_dataset(name + '_x', data=np.array(X))
-        cache.create_dataset(name + '_y', data=np.array(y))
 
     def load(self, batch_size, checkpoint_dir):
         # Create cache during first use
