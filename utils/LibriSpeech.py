@@ -90,7 +90,7 @@ class LibriSpeechLoader:
             count = self.frames['count']
 
             # Determine frames indexes
-            num_frames = int(np.floor((signal_length - length) / stride))
+            num_frames = 1 + math.floor((signal_length - length) / stride)
             num_frames = min(num_frames, count)
             indexes = np.arange(0, num_frames * stride, stride)
 
@@ -142,6 +142,8 @@ class LibriSpeechLoader:
 
     def create_cache(self, name, cache, paths):
         start = time.time()
+        print('LibriSpeech: creating dataset...')
+
         filenames, speakers = self.scan_directories(paths)
         nb_samples = len(filenames)
         frame_length = self.frames['length']

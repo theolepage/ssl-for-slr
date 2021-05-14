@@ -29,9 +29,8 @@ Use notebook `evaluate.ipnyb` to evaluate model on the previous downstream task 
 
 ## To-Do
 
-- [ ] Check if new LibriSpeech is faster
 - [ ] Common encoder (simple or SincConv) + config
-- [ ] Add weight decay option CPC, LIM, Encoder (weight_decay=1e-4)
+- [ ] Add weight decay op tion CPC, LIM, Encoder (weight_decay=1e-4)
 
 ---
 

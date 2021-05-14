@@ -10,7 +10,7 @@
         "type": "LibriSpeech",
         "train_paths": ["/work2/home/ing2/datasets/LibriSpeech/train-clean-100/*"],
         "val_paths": ["/work2/home/ing2/datasets/LibriSpeech/dev-clean/*"],
-        "test_paths": ["/work2/home/ing2/datasets/LibriSpeech/test-clean/*"],
+        "test_paths": [],
         "frames": {
             "pick": "sequence",
             "length": 20480,
