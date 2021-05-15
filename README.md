@@ -29,12 +29,10 @@ Use notebook `evaluate.ipnyb` to evaluate model on the previous downstream task 
 
 ## To-Do
 
-- [ ] Common encoder (simple or SincConv) + config
-- [ ] Add weight decay op tion CPC, LIM, Encoder (weight_decay=1e-4)
+- [ ] Merge self-supervised modules (PASE)
 
 ---
 
-- [ ] Merge self-supervised modules (PASE)
 - [ ] Implement new modules (GIM, LPS, FBANKS and long versions)
 - [ ] Implement new ideas (more params, CPC sampling, bi-directional, ln)
 

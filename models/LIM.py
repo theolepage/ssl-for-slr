@@ -8,54 +8,39 @@ from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import ReLU
 from tensorflow.keras.layers import LeakyReLU
-
-class Encoder(Model):
-
-    def __init__(self, encoded_dim):
-        super(Encoder, self).__init__()
-
-        self.encoded_dim = encoded_dim
-
-        nb_filters = [512, 512, 512, 512, self.encoded_dim]
-        kernel_sizes = [10, 8, 4, 4, 4]
-        strides = [5, 4, 2, 2, 2]
-
-        self.blocks = []
-        for i in range(5):
-            self.blocks.append(Conv1D(nb_filters[i],
-                                      kernel_size=kernel_sizes[i],
-                                      strides=strides[i],
-                                      padding='same'))
-            self.blocks.append(BatchNormalization())
-            self.blocks.append(ReLU())
-
-    def call(self, X):
-        for layer in self.blocks:
-            X = layer(X)
-        return X
+from tensorflow.keras import regularizers
 
 class Discriminator(Model):
 
-    def __init__(self):
+    def __init__(self, reg):
         super(Discriminator, self).__init__()
 
-        self.dense1 = Dense(units=256, activation='relu')
-        self.dense2 = Dense(units=1)
+        self.dense1 = Dense(units=256,
+                            activation='relu',
+                            kernel_regularizer=self.reg,
+                            bias_regularizer=self.reg)
+        self.dense2 = Dense(units=1,
+                            kernel_regularizer=self.reg,
+                            bias_regularizer=self.reg)
 
     def call(self, X):
         return self.dense2(self.dense1(X))
 
 class LIMModel(Model):
 
-    def __init__(self, encoded_dim, nb_timesteps, loss_fn='bce'):
+    def __init__(self,
+                 encoder,
+                 nb_timesteps,
+                 loss_fn='bce',
+                 weight_regularizer=0.0):
         super(LIMModel, self).__init__()
 
-        self.encoded_dim = encoded_dim
         self.nb_timesteps = nb_timesteps
         self.loss_fn = loss_fn
+        self.reg = regularizers.l2(weight_regularizer)
 
-        self.encoder = Encoder(self.encoded_dim)
-        self.discriminator = Discriminator()
+        self.encoder = encoder
+        self.discriminator = Discriminator(self.reg)
 
     def compile(self, optimizer):
         super(LIMModel, self).compile()

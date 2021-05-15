@@ -10,54 +10,32 @@ from tensorflow.keras.layers import ReLU
 from tensorflow.keras.layers import GRU
 from tensorflow.keras.layers import Lambda
 from tensorflow.keras.layers import TimeDistributed
-
-class Encoder(Model):
-
-    def __init__(self, encoded_dim, nb_timesteps):
-        super(Encoder, self).__init__()
-
-        self.encoded_dim = encoded_dim
-        self.nb_timesteps = nb_timesteps
-
-        nb_filters = [512, 512, 512, 512, self.encoded_dim]
-        kernel_sizes = [10, 8, 4, 4, 4]
-        strides = [5, 4, 2, 2, 2]
-
-        self.blocks = []
-        for i in range(5):
-            self.blocks.append(Conv1D(nb_filters[i],
-                                      kernel_size=kernel_sizes[i],
-                                      strides=strides[i],
-                                      padding='same'))
-            self.blocks.append(BatchNormalization())
-            self.blocks.append(ReLU())
-
-    def call(self, X):
-        for layer in self.blocks:
-            X = layer(X)
-        return X
-
-    def compute_output_shape(self, input_shape):
-        return (self.nb_timesteps, self.encoded_dim)
+from tensorflow.keras import regularizers
 
 class Autoregressive(Model):
 
-    def __init__(self):
+    def __init__(self, reg):
         super(Autoregressive, self).__init__()
 
-        self.rnn = GRU(units=256, return_sequences=False)
+        self.rnn = GRU(units=256,
+                       return_sequences=False,
+                       kernel_regularizer=reg,
+                       recurrent_regularizer=reg,
+                       bias_regularizer=reg)
 
     def call(self, X):
         return self.rnn(X)
 
 class Predictor(Model):
 
-    def __init__(self, encoded_dim, nb_timesteps_to_predict):
+    def __init__(self, encoded_dim, nb_timesteps_to_predict, reg):
         super(Predictor, self).__init__()
 
         self.layers_ = []
         for i in range(nb_timesteps_to_predict):
-            self.layers_.append(Dense(units=encoded_dim))
+            self.layers_.append(Dense(units=encoded_dim,
+                                      kernel_regularizer=reg,
+                                      bias_regularizer=reg))
 
     def call(self, context):
         outputs = []
@@ -103,9 +81,11 @@ def cpc_loss(nb_timesteps_to_predict, predictions, X_future_encoded):
 class CPCModel(Model):
 
     def __init__(self,
+                 encoder,
                  encoded_dim,
                  nb_timesteps,
-                 nb_timesteps_to_predict):
+                 nb_timesteps_to_predict,
+                 weight_regularizer=0.0):
         super(CPCModel, self).__init__()
 
         self.encoded_dim = encoded_dim
@@ -113,9 +93,13 @@ class CPCModel(Model):
         self.nb_timesteps_to_predict = nb_timesteps_to_predict
         self.nb_timesteps_for_context = nb_timesteps - nb_timesteps_to_predict
 
-        self.encoder = Encoder(self.encoded_dim, self.nb_timesteps)
-        self.ar = Autoregressive()
-        self.predictor = Predictor(self.encoded_dim, self.nb_timesteps_to_predict)
+        self.reg = regularizers.l2(weight_regularizer)
+
+        self.encoder = encoder
+        self.ar = Autoregressive(self.reg)
+        self.predictor = Predictor(self.encoded_dim,
+                                   self.nb_timesteps_to_predict,
+                                   self.reg)
 
     def compile(self, optimizer):
         super(CPCModel, self).compile()

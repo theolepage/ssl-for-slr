@@ -73,7 +73,7 @@ class LibriSpeechLoader:
         self.val_paths = config['val_paths']
         self.test_paths = config['test_paths']
         self.frames = config['frames']
-        self.limits = config['limits'] if 'limits' in config else {}
+        self.limits = config.get('limits', {})
 
     def get_frames(self, filename):
         length = self.frames['length']
@@ -103,12 +103,8 @@ class LibriSpeechLoader:
         filenames = []
         speakers = []
 
-        limit_speakers = -1
-        limit_utterances = -1
-        if 'utterances_per_speaker' in self.limits:
-            limit_utterances = self.limits['utterances_per_speaker']
-        if 'speakers' in self.limits:
-            limit_speakers = self.limits['speakers']
+        limit_speakers = self.limits.get('speakers', -1)
+        limit_utterances = self.limits.get('utterances_per_speaker', -1)
 
         # Scan datasets
         for dataset_id in range(len(paths)):

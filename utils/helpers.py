@@ -9,6 +9,8 @@ from tensorflow.keras.layers import Input
 from tensorflow.keras import Model
 from tensorflow.keras.optimizers import Adam
 
+from models.CPCEncoder import CPCEncoder
+from models.SincEncoder import SincEncoder
 from models.CPC import CPCModel
 from models.LIM import LIMModel
 from .LibriSpeech import LibriSpeechLoader
@@ -28,14 +30,32 @@ def load_config(config_path, name_suffix=''):
 
     seed = config['seed']
     learning_rate = config['training']['learning_rate']
-    encoded_dim = config['model']['encoded_dim']
     model_type = config['model']['type']
+    encoder_type = config['encoder']['type']
+    encoded_dim = config['encoder']['encoded_dim']
     
+    # Create encoder
+    encoder_weight_regularizer = config['encoder'].get('weight_regularizer', 0.0)
+    if encoder_type == 'CPC':
+        encoder = CPCEncoder(encoded_dim, encoder_weight_regularizer)
+    elif encoder_type == 'CPC':
+        sample_frequency = config['dataset']['sample_frequency']
+        skip_connections_enabled = config['encoder'].get('skip_connections_enabled')
+        rnn_enabled = config['encoder'].get('rnn_enabled')
+        encoder = SincEncoder(encoded_dim,
+                              sample_frequency,
+                              skip_connections_enabled,
+                              rnn_enabled,
+                              encoder_weight_regularizer)
+    else:
+        raise Exception('Config: encoder {} is not supported.'.format(encoder_type))
+
     # Usually 20480 (1.28s at 16kHz on LibriSpeech)
     # => nb_timesteps = 128
     frame_length = config['dataset']['frames']['length']
-    nb_timesteps = int(frame_length // 160)
-    
+    input_shape = (frame_length, 1)
+    nb_timesteps = encoder.compute_output_shape(input_shape)[0]
+
     # Set seed
     np.random.seed(seed)
     tf.random.set_seed(seed)
@@ -44,13 +64,21 @@ def load_config(config_path, name_suffix=''):
     dataset = LibriSpeechLoader(seed, config['dataset'])
 
     # Create and compile model
+    model_weight_regularizer = config['model'].get('weight_regularizer', 0.0)
     if model_type == 'CPC':
         nb_timesteps_to_predict = config['model']['nb_timesteps_to_predict']
-        model = CPCModel(encoded_dim, nb_timesteps, nb_timesteps_to_predict)
+        model = CPCModel(encoder,
+                         encoded_dim,
+                         nb_timesteps,
+                         nb_timesteps_to_predict,
+                         model_weight_regularizer)
         model.compile(Adam(learning_rate=learning_rate))
     elif model_type == 'LIM':
         loss_fn = config['model']['loss_fn']
-        model = LIMModel(encoded_dim, nb_timesteps, loss_fn)
+        model = LIMModel(encoder,
+                         nb_timesteps,
+                         loss_fn,
+                         model_weight_regularizer)
         model.compile(Adam(learning_rate=learning_rate))
     else:
         raise Exception('Config: model {} is not supported.'.format(model_type))
