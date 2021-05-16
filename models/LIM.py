@@ -55,11 +55,13 @@ class LIMModel(Model):
                  encoder,
                  nb_timesteps,
                  loss_fn='bce',
+                 context_length=1,
                  weight_regularizer=0.0):
         super(LIMModel, self).__init__()
 
         self.nb_timesteps = nb_timesteps
         self.loss_fn = loss_fn
+        self.context_length = context_length
         self.reg = regularizers.l2(weight_regularizer)
 
         self.encoder = encoder
@@ -76,9 +78,10 @@ class LIMModel(Model):
     def extract_chunks(self, X):
         batch_size = tf.shape(X)[0]
 
+        max_idx = self.nb_timesteps - self.context_length + 1
         idx = tf.random.uniform(shape=[3],
                                 minval=0,
-                                maxval=self.nb_timesteps,
+                                maxval=max_idx,
                                 dtype=tf.int32)
 
         shift = tf.random.uniform(shape=[1],
@@ -86,9 +89,14 @@ class LIMModel(Model):
                                   maxval=batch_size,
                                   dtype=tf.int32)
 
-        C1 = X[:, idx[0], ...]
-        C2 = X[:, idx[1], ...]
-        CR = X[:, idx[2], ...]
+        C1 = X[:, idx[0]:idx[0]+self.context_length, ...]
+        C1 = tf.math.reduce_mean(C1, axis=1)
+
+        C2 = X[:, idx[1]:idx[1]+self.context_length, ...]
+        C2 = tf.math.reduce_mean(C2, axis=1)
+
+        CR = X[:, idx[2]:idx[2]+self.context_length, ...]
+        CR = tf.math.reduce_mean(CR, axis=1)
         CR = tf.roll(CR, shift=shift[0], axis=0)
 
         return C1, C2, CR

@@ -18,9 +18,11 @@ def create_model(model_config, encoder, input_shape):
                          weight_regularizer)
     elif model_type == 'LIM':
         loss_fn = model_config['loss_fn']
+        context_length = model_config.get('context_length', 1)
         model = LIMModel(encoder,
                          nb_timesteps,
                          loss_fn,
+                         context_length,
                          weight_regularizer)
     else:
         raise Exception('Config: model {} is not supported.'.format(model_type))

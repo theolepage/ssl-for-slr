@@ -17,6 +17,7 @@
             {
                 "type": "LIM",
                 "loss_fn": "bce",
+                "context_length": 32,
                 "loss_scaler": 1.0
             },
             {

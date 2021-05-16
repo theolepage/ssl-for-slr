@@ -31,7 +31,6 @@ Use notebook `evaluate.ipnyb` to evaluate model on the previous downstream task 
 
 ## To-Do
 
-- [ ] GIM
 - [ ] CPC bi-directional
 
 ---
