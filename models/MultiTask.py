@@ -20,6 +20,58 @@ from .LIM import LIMModel
 from .LIM import lim_loss
 from utils.create_model import create_model
 
+class LPSWorker(Model):
+
+    def __init__(self,
+                 weight_regularizer,
+                 loss_scaler,
+                 fft_length=2048,
+                 hop_length=160):
+        super(LPSWorker, self).__init__()
+
+        self.reg = regularizers.l2(weight_regularizer)
+        self.loss_scaler = loss_scaler
+
+        self.fft_length = fft_length
+        self.hop_length = hop_length
+        self.nb_outputs = fft_length // 2 + 1
+
+        self.conv1 = Conv1D(filters=256,
+                            kernel_size=1,
+                            padding='same',
+                            kernel_regularizer=self.reg,
+                            bias_regularizer=self.reg)
+        
+        # PReLU shared_axes option implies that one parameter
+        # per channel will be learned.
+        self.activation1 = PReLU(shared_axes=[1]) 
+
+        self.last_conv = Conv1D(filters=self.nb_outputs,
+                                kernel_size=1,
+                                padding='same',
+                                kernel_regularizer=self.reg,
+                                bias_regularizer=self.reg)
+
+    def call(self, X):
+        X = self.conv1(X)
+        X = self.activation1(X)
+        X = self.last_conv(X)
+        return X
+
+    def get_target(self, X):
+        frame_length = X.shape[1]
+
+        Y = tf.signal.stft(np.squeeze(X, axis=-1),
+                           frame_length=self.hop_length,
+                           frame_step=self.hop_length,
+                           fft_length=self.fft_length)
+        Y = tf.math.abs(Y)
+        Y = 10 * tf.experimental.numpy.log10(Y ** 2)
+        return Y
+
+    def compute_loss(self, Y, Y_pred):
+        return MeanSquaredError()(Y, Y_pred) * self.loss_scaler
+
 class MFCCWorker(Model):
 
     def __init__(self,
@@ -208,15 +260,12 @@ class WorkerTargetsGenerator(Sequence):
         Y = {}
 
         for module_type, model in self.modules.items():
-            if module_type == 'Waveform' or module_type == 'MFCC':
+            if module_type in ['Waveform', 'MFCC', 'LPS']:
                 Y[module_type] = model.get_target(X)
 
         return X, Y
 
 class MultiTaskModel(Model):
-
-    REGRESSORS_NAMES = ['Waveform', 'MFCC']
-    DISCRIMINATORS_NAMES = ['CPC', 'LIM']
 
     def __init__(self, encoder, in_shape, modules):
         super(MultiTaskModel, self).__init__()
@@ -233,7 +282,7 @@ class MultiTaskModel(Model):
             loss_scaler = module.get('loss_scaler', 1.0)
             weight_regularizer = module.get('weight_regularizer', 0.0)
 
-            if module_type in self.DISCRIMINATORS_NAMES:
+            if module_type in ['CPC', 'LIM']:
                 module_model = create_model(module,
                                             self.encoder,
                                             self.in_shape)
@@ -246,6 +295,8 @@ class MultiTaskModel(Model):
                 modules[module_type] = WaveformWorker(weight_regularizer, loss_scaler)
             elif module_type == 'MFCC':
                 modules[module_type] = MFCCWorker(weight_regularizer, loss_scaler)
+            elif module_type == 'LPS':
+                modules[module_type] = LPSWorker(weight_regularizer, loss_scaler)
 
         return modules
 

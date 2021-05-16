@@ -26,6 +26,10 @@
             {
                 "type": "MFCC",
                 "loss_scaler": 1.0
+            },
+            {
+                "type": "LPS",
+                "loss_scaler": 1.0
             }
         ]
     },
