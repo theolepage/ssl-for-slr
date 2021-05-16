@@ -11,20 +11,16 @@ from models.SpeakerIdClassifier import SpeakerIdClassifier
 from utils.helpers import load_config
 
 def load(config_path):
-    config, model, dataset = load_config(config_path)
+    config, model, gens, checkpoint_dir = load_config(config_path)
+    _, _, test_gen = gens
 
-    checkpoint_dir = './checkpoints/' + config['name']
     checkpoint_dir_spkid = './checkpoints/' + config['name'] + '_spkid'
-    batch_size = config['training']['batch_size']
-    nb_speakers = config['dataset']['nb_speakers']
-    frame_length = config['dataset']['frames']['length']
-
-    _, _, test_gen = dataset.load(batch_size, checkpoint_dir)
-
     history = np.load(checkpoint_dir + '/history.npy', allow_pickle=True).item()
     history_spkid = np.load(checkpoint_dir_spkid + '/history.npy', allow_pickle=True).item()
 
     # Create model: model + classifier
+    nb_speakers = # FIXME
+    frame_length = config['dataset']['frames']['length']
     inputs = Input((frame_length, 1))
     inputs_encoded = model(inputs)
     outputs = SpeakerIdClassifier(nb_speakers)(inputs_encoded)

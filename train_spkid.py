@@ -4,7 +4,7 @@ import numpy as np
 
 import tensorflow as tf
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Input, BatchNormalization
+from tensorflow.keras.layers import Input
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.callbacks import EarlyStopping

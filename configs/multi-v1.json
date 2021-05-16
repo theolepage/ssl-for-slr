@@ -1,0 +1,54 @@
+{
+    "name": "multi-v1",
+    "seed": 1717,
+    "encoder": {
+        "type": "CPC",
+        "encoded_dim": 512,
+        "weight_regularizer": 1e-4
+    },
+    "model": {
+        "type": "multitask",
+        "modules": [
+            {
+                "type": "CPC",
+                "nb_timesteps_to_predict": 12,
+                "loss_scaler": 1.0
+            },
+            {
+                "type": "LIM",
+                "loss_fn": "bce",
+                "loss_scaler": 1.0
+            },
+            {
+                "type": "Waveform",
+                "loss_scaler": 1.0
+            },
+            {
+                "type": "MFCC",
+                "loss_scaler": 1.0
+            }
+        ]
+    },
+    "dataset": {
+        "type": "LibriSpeech",
+        "sample_frequency": 16000,
+        "train_paths": ["D:/Datasets/LibriSpeech/train-clean-100/*"],
+        "val_paths": ["D:/Datasets/LibriSpeech/dev-clean/*"],
+        "test_paths": [],
+        "frames": {
+            "pick": "sequence",
+            "length": 20480,
+            "stride": 20480,
+            "count": 1
+        },
+        "limits": {
+            "speakers": 10,
+            "utterances_per_speaker": 10
+        }
+    },
+    "training": {
+        "epochs": 50,
+        "batch_size": 64,
+        "learning_rate": 0.0001
+    }
+}

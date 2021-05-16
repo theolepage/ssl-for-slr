@@ -1,3 +1,4 @@
+import tensorflow_addons as tfa
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Layer
 from tensorflow.keras.layers import Add

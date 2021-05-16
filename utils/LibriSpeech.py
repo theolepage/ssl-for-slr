@@ -198,4 +198,4 @@ class LibriSpeechLoader:
         test = LibriSpeechGenerator(path, 'test',
                                     batch_size, frame_length, pick_random)
 
-        return train, val, test
+        return [train, val, test]

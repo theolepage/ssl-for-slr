@@ -2,6 +2,8 @@
 
 Framework to train a speech encoder in a **self-supervised** way for **speaker and language recognition** tasks.
 
+![model_multitask](https://raw.githubusercontent.com/theolepage/ssl-for-slr/master/docs/model_multitask.png)
+
 ## Usage
 
 ### Install dependencies (inside a virtual env)
@@ -29,15 +31,13 @@ Use notebook `evaluate.ipnyb` to evaluate model on the previous downstream task 
 
 ## To-Do
 
-- [ ] Merge self-supervised modules (PASE)
+- [ ] GIM
+- [ ] LPS
+- [ ] CPC bi-directional
 
 ---
 
-- [ ] Implement new modules (GIM, LPS, FBANKS and long versions)
-- [ ] Implement new ideas (more params, CPC sampling, bi-directional, ln)
-
----
-
+- [ ] Adapt evaluate/train_spkid to new LibriSpeech
 - [ ] Data augmentation / preprocessing step
 - [ ] Evaluate: speaker verification on VoxCelebs
 - [ ] Evaluate: language recognition
@@ -46,10 +46,12 @@ Use notebook `evaluate.ipnyb` to evaluate model on the previous downstream task 
 
 ---
 
+- [ ] CPC sampling strategies: one batch = sentences from same speaker
 - [ ] Benchmarks and add personal idea (wave2vec / transformers)
 
 ---
 
+- [ ] Fix warning tensorflow: create custom training loop (https://stackoverflow.com/questions/57971007/tensorflow-2-0-display-progress-bar-in-custom-training-loop)
 - [ ] Add training time in history.npy
 - [ ] Fix warning loading weights not used
 - [ ] CPC/LIM: @tf.function warning

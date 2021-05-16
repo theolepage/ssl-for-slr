@@ -9,27 +9,15 @@ from tensorflow.keras.callbacks import EarlyStopping
 from utils.helpers import load_config
 
 def train(config_path):
-    config, model, dataset = load_config(config_path)
-
-    checkpoint_dir = './checkpoints/' + config['name']
-    last_checkpoint_path = checkpoint_dir + '/training'
-    batch_size = config['training']['batch_size']
-    nb_epochs = config['training']['epochs']
-   
-    # Create subfolder for saving checkpoints
-    Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
-
-    # Load dataset
-    train_gen, val_gen, test_gen = dataset.load(batch_size, checkpoint_dir)
-    print("Number of training batches:", len(train_gen))
-    print("Number of validation batches:", len(val_gen))
+    config, model, gens, checkpoint_dir = load_config(config_path)
+    train_gen, val_gen, test_gen = gens
 
     # Load weights
     if (tf.train.latest_checkpoint(checkpoint_dir)):
         raise Exception('Train: model {} has already been trained.'.format(config['name']))
 
     # Setup callbacks
-    save_callback = ModelCheckpoint(filepath=last_checkpoint_path,
+    save_callback = ModelCheckpoint(filepath=checkpoint_dir + '/training',
                                     monitor='val_loss',
                                     save_best_only=True,
                                     save_weights_only=True,
@@ -38,6 +26,7 @@ def train(config_path):
                                    patience=5)
 
     # Start training
+    nb_epochs = config['training']['epochs']
     history = model.fit(train_gen,
                         validation_data=val_gen,
                         epochs=nb_epochs,

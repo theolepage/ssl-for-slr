@@ -3,3 +3,5 @@ numpy
 sklearn
 soundfile
 h5py
+tensorflow-addons
+librosa
