@@ -11,10 +11,12 @@ def create_model(model_config, encoder, input_shape):
 
     if model_type == 'CPC':
         nb_timesteps_to_predict = model_config['nb_timesteps_to_predict']
+        bidirectional = model_config.get('bidirectional', False)
         model = CPCModel(encoder,
                          encoded_dim,
                          nb_timesteps,
                          nb_timesteps_to_predict,
+                         bidirectional,
                          weight_regularizer)
     elif model_type == 'LIM':
         loss_fn = model_config['loss_fn']

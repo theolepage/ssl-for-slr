@@ -13,6 +13,7 @@ from models.CPCEncoder import CPCEncoder
 from models.SincEncoder import SincEncoder
 from models.MultiTask import MultiTaskModel
 from .LibriSpeech import LibriSpeechLoader
+from .create_model import create_model
 
 def summary_for_shape(model, input_shape):
     x = Input(shape=input_shape)

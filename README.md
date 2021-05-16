@@ -31,11 +31,8 @@ Use notebook `evaluate.ipnyb` to evaluate model on the previous downstream task 
 
 ## To-Do
 
-- [ ] CPC bi-directional
-
----
-
-- [ ] Adapt evaluate/train_spkid to new LibriSpeech
+- [ ] Fix: CPC bidirectional in MultiTask model
+- [ ] Fix: adapt evaluate/train_spkid to new LibriSpeech
 - [ ] Data augmentation / preprocessing step
 - [ ] Evaluate: speaker verification on VoxCelebs
 - [ ] Evaluate: language recognition

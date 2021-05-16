@@ -33,13 +33,11 @@ class Predictor(Model):
                                       bias_regularizer=reg))
 
     def call(self, context):
-        outputs = []
+        predictions = []
         for layer in self.layers_:
-            outputs.append(layer(context))
+            predictions.append(layer(context))
 
-        output = Lambda(lambda X: tf.stack(X, axis=1))(outputs)
-
-        return output
+        return tf.stack(predictions, axis=1)
 
 @tf.function
 def cpc_loss(nb_timesteps_to_predict, predictions, X_future_encoded):
@@ -80,6 +78,7 @@ class CPCModel(Model):
                  encoded_dim,
                  nb_timesteps,
                  nb_timesteps_to_predict,
+                 bidirectional=False,
                  weight_regularizer=0.0):
         super(CPCModel, self).__init__()
 
@@ -87,48 +86,84 @@ class CPCModel(Model):
         self.nb_timesteps = nb_timesteps
         self.nb_timesteps_to_predict = nb_timesteps_to_predict
         self.nb_timesteps_for_context = nb_timesteps - nb_timesteps_to_predict
+        self.bidirectional = bidirectional
 
         self.reg = regularizers.l2(weight_regularizer)
 
+        # Instantiate sub models
         self.encoder = encoder
-        self.ar = Autoregressive(self.reg)
-        self.predictor = Predictor(self.encoded_dim,
-                                   self.nb_timesteps_to_predict,
-                                   self.reg)
+        self.ar1 = Autoregressive(self.reg)
+        self.predictor1 = Predictor(self.encoded_dim,
+                                    self.nb_timesteps_to_predict,
+                                    self.reg)
+
+        if self.bidirectional:
+            self.ar2 = Autoregressive(self.reg)
+            self.predictor2 = Predictor(self.encoded_dim,
+                                        self.nb_timesteps_to_predict,
+                                        self.reg)
 
     def compile(self, optimizer):
         super(CPCModel, self).compile()
         self.optimizer = optimizer
 
     def call(self, X):
-        return self.ar(self.encoder(X))
+        if self.bidirectional:
+            X_r = tf.reverse(X, axis=[1])
+            X_1 = self.ar1(self.encoder(X))
+            X_2 = self.ar2(self.encoder(X_r))
+            return tf.concat([X_1, X_2], axis=-1)
+
+        return self.ar1(self.encoder(X))
 
     def train_step(self, data):
         X, _ = data # Discard Y provided by the dataset generator
+        # X shape: (batch_size, frame_length, 1)
 
         with tf.GradientTape() as tape:
-            # X shape: (batch_size, frame_length, 1)
-
             X_encoded = self.encoder(X, training=True)
             # Out shape: (batch_size, frame_length / 160, encoded_dim)
 
             X_past_encoded = X_encoded[:, 0:self.nb_timesteps_for_context, ...]
             X_future_encoded = X_encoded[:, self.nb_timesteps_for_context:, ...]
 
-            X_past_context = self.ar(X_past_encoded, training=True)
+            X_past_context = self.ar1(X_past_encoded, training=True)
             # Out shape: (batch_size, 256)
 
-            predictions = self.predictor(X_past_context, training=True)
+            predictions = self.predictor1(X_past_context, training=True)
             # Out shape: (batch_size, nb_timesteps_to_predict, encoded_dim)
 
             loss, accuracy = cpc_loss(self.nb_timesteps_to_predict,
-                                      predictions,
-                                      X_future_encoded)
+                                    predictions,
+                                    X_future_encoded)
             # Out shape: (batch_size)
 
+            if self.bidirectional:
+                X_r = tf.reverse(X, axis=[1])
+
+                X_encoded = self.encoder(X_r, training=True)
+
+                X_past_encoded = X_encoded[:, 0:self.nb_timesteps_for_context, ...]
+                X_future_encoded = X_encoded[:, self.nb_timesteps_for_context:, ...]
+
+                X_past_context = self.ar2(X_past_encoded, training=True)
+
+                predictions = self.predictor2(X_past_context, training=True)
+
+                loss2, accuracy2 = cpc_loss(self.nb_timesteps_to_predict,
+                                            predictions,
+                                            X_future_encoded)
+
+                loss = (loss + loss2) / 2.0
+                accuracy = (accuracy + accuracy2) / 2.0
+
         trainable_params = self.encoder.trainable_weights
-        trainable_params += self.ar.trainable_weights
-        trainable_params += self.predictor.trainable_weights
+        trainable_params += self.ar1.trainable_weights
+        trainable_params += self.predictor1.trainable_weights
+        if self.bidirectional:
+            trainable_params += self.ar2.trainable_weights
+            trainable_params += self.predictor2.trainable_weights
+
         grads = tape.gradient(loss, trainable_params)
         self.optimizer.apply_gradients(zip(grads, trainable_params))
 
@@ -141,11 +176,28 @@ class CPCModel(Model):
         X_past_encoded = X_encoded[:, 0:self.nb_timesteps_for_context, ...]
         X_future_encoded = X_encoded[:, self.nb_timesteps_for_context:, ...]
 
-        X_past_context = self.ar(X_past_encoded, training=False)
-        predictions = self.predictor(X_past_context, training=False)
+        X_past_context = self.ar1(X_past_encoded, training=False)
+        predictions = self.predictor1(X_past_context, training=False)
 
         loss, accuracy = cpc_loss(self.nb_timesteps_to_predict,
                                   predictions,
                                   X_future_encoded)
+
+        if self.bidirectional:
+            X_r = tf.reverse(X, axis=[1])
+           
+            X_encoded = self.encoder(X, training=False)
+            X_past_encoded = X_encoded[:, 0:self.nb_timesteps_for_context, ...]
+            X_future_encoded = X_encoded[:, self.nb_timesteps_for_context:, ...]
+
+            X_past_context = self.ar2(X_past_encoded, training=False)
+            predictions = self.predictor2(X_past_context, training=False)
+
+            loss2, accuracy2 = cpc_loss(self.nb_timesteps_to_predict,
+                                        predictions,
+                                        X_future_encoded)
+
+            loss = (loss + loss2) / 2.0
+            accuracy = (accuracy + accuracy2) / 2.0
 
         return { 'loss': loss, 'accuracy': accuracy }
