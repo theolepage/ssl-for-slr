@@ -110,6 +110,7 @@ class LibriSpeechLoader:
 
         limit_speakers = self.limits.get('speakers', -1)
         limit_utterances = self.limits.get('utterances_per_speaker', -1)
+        total_ratio = self.limits.get('total_ratio', 1.0)
 
         # Scan datasets
         for dataset_id in range(len(paths)):
@@ -138,6 +139,11 @@ class LibriSpeechLoader:
                             speakers.append(speaker_id)
 
                         nb_speaker_utterances += 1
+
+        # Keep only a specific ratio of all samples
+        split_idx = int(total_ratio * len(filenames))
+        filenames = filenames[0:split_idx]
+        speakers = speakers[0:split_idx]
 
         return filenames, speakers
 
