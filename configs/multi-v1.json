@@ -12,6 +12,7 @@
             {
                 "type": "CPC",
                 "nb_timesteps_to_predict": 12,
+                "bidirectional": true,
                 "loss_scaler": 1.0
             },
             {

@@ -200,22 +200,43 @@ class CPCWorker(Model):
         self.loss_scaler = loss_scaler
 
     def call(self, X_encoded):
+        if self.cpc.bidirectional:
+            X_encoded, X_encoded_r = X_encoded[0], X_encoded[1]
+
+        # X_encoded = audio sequence in correct order
         X_past_encoded = X_encoded[:, 0:self.cpc.nb_timesteps_for_context, ...]
         X_future_encoded = X_encoded[:, self.cpc.nb_timesteps_for_context:, ...]
+        X_past_context = self.cpc.ar1(X_past_encoded, training=True)
+        predictions = self.cpc.predictor1(X_past_context, training=True)
 
-        X_past_context = self.cpc.ar(X_past_encoded, training=True)
+        if not self.cpc.bidirectional:
+            return predictions, X_future_encoded
 
-        predictions = self.cpc.predictor(X_past_context, training=True)
+        # X_encoded_r = audio sequence in reversed order
+        X_past_encoded_r = X_encoded_r[:, 0:self.cpc.nb_timesteps_for_context, ...]
+        X_future_encoded_r = X_encoded_r[:, self.cpc.nb_timesteps_for_context:, ...]
+        X_past_context_r = self.cpc.ar2(X_past_encoded_r, training=True)
+        predictions_r = self.cpc.predictor2(X_past_context_r, training=True)
 
-        return predictions, X_future_encoded
+        return predictions, X_future_encoded, predictions_r, X_future_encoded_r
 
     def compute_loss(self, Y, Y_pred):
         # Y is empty and Y_pred contains tensors computed during last call
-        predictions, X_future_encoded = Y_pred
+        if self.cpc.bidirectional:
+            predictions, X_future_encoded, predictions_r, X_future_encoded_r = Y_pred
+        else:
+            predictions, X_future_encoded = Y_pred
 
         loss, _ = cpc_loss(self.cpc.nb_timesteps_to_predict,
                            predictions,
                            X_future_encoded)
+
+        if self.cpc.bidirectional:
+            loss2, _ = cpc_loss(self.cpc.nb_timesteps_to_predict,
+                                predictions_r,
+                                X_future_encoded_r)
+            loss = (loss + loss2) / 2.0
+
         return loss * self.loss_scaler
 
 class LIMWorker(Model):
@@ -318,10 +339,17 @@ class MultiTaskModel(Model):
 
         with tf.GradientTape() as tape:
             X_encoded = self.encoder(X, training=True)
-            
+
             for module_type, model in self.modules.items():
+                # Handle module CPC bidirectional
+                if module_type == 'CPC' and model.cpc.bidirectional:
+                    X_r = tf.reverse(X, axis=[1])
+                    X_encoded_r = self.encoder(X_r, training=True)
+                    Y_pred = model((X_encoded, X_encoded_r), training=True)
+                else:
+                    Y_pred = model(X_encoded, training=True)
+                
                 Y_target = Y.get(module_type, None)
-                Y_pred = model(X_encoded, training=True)
 
                 loss = model.compute_loss(Y_target, Y_pred)
 
@@ -344,8 +372,15 @@ class MultiTaskModel(Model):
         X_encoded = self.encoder(X, training=False)
 
         for module_type, model in self.modules.items():
+            # Handle module CPC bidirectional
+            if module_type == 'CPC' and model.cpc.bidirectional:
+                X_r = tf.reverse(X, axis=[1])
+                X_encoded_r = self.encoder(X_r, training=False)
+                Y_pred = model((X_encoded, X_encoded_r), training=False)
+            else:
+                Y_pred = model(X_encoded, training=False)
+            
             Y_target = Y.get(module_type, None)
-            Y_pred = model(X_encoded, training=False)
 
             loss = model.compute_loss(Y_target, Y_pred)
 
