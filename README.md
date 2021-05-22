@@ -23,7 +23,7 @@ python train.py configs/cpc-v1.json
 
 ### Train a speaker id classifier
 
-To evaluate the model we train a speaker id classifier on top of the pre-trained encoder with `python train_spkid.py configs/cpc-v1.json`.
+To evaluate the model we train a speaker id classifier on top of the pre-trained encoder with `python train_evaluate.py configs/cpc-v1.json`.
 
 ### Evaluate model
 
@@ -31,18 +31,17 @@ Use notebook `evaluate.ipnyb` to evaluate model on the previous downstream task 
 
 ## To-Do
 
-- [ ] Fix: CPC bidirectional in MultiTask model
-- [ ] Fix: adapt evaluate/train_spkid to new LibriSpeech
+- [ ] Evaluate: data-efficient
+- [ ] Evaluate: language recognition
 - [ ] Data augmentation / preprocessing step
 - [ ] Evaluate: speaker verification on VoxCelebs
-- [ ] Evaluate: language recognition
-- [ ] Evaluate: data-efficient
-- [ ] Demo web app
 
 ---
 
-- [ ] CPC sampling strategies: one batch = sentences from same speaker
-- [ ] Benchmarks and add personal idea (wave2vec / transformers)
+- [ ] Demo web app
+- [ ] Implement wave2vec 2.0
+- [ ] Create custom model: wave2vec + CPC bi-directional
+- [ ] Benchmark models (tensorboard)
 
 ---
 
@@ -53,7 +52,6 @@ Use notebook `evaluate.ipnyb` to evaluate model on the previous downstream task 
 - [ ] Ability to resume training (load/save weights of optimizer) (https://stackoverflow.com/questions/49503748/save-and-load-model-optimizer-state)
 - [ ] Comment code
 - [ ] Properly set seed
-- [ ] Tensorboard?
 
 ## References
 

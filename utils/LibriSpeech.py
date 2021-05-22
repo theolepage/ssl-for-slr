@@ -2,6 +2,7 @@ import numpy as np
 import math
 import time
 from tensorflow.keras.utils import Sequence
+from sklearn.model_selection import train_test_split
 import soundfile as sf
 import glob
 import h5py
@@ -9,22 +10,24 @@ import h5py
 class LibriSpeechGenerator(Sequence):
   
     def __init__(self,
-                 path,
-                 name,
+                 cache_path,
                  batch_size,
                  frame_length,
+                 subset='train',
+                 indices=None,
                  pick_random=False):
-        cache = h5py.File(path, 'r')
-        self.X = cache[name + '_x']
-        self.y = cache[name + '_y']
-        self.indices = np.arange(len(self.y))
+        cache = h5py.File(cache_path, 'r')
+        self.X = cache[subset + '_x']
+        self.y = cache[subset + '_y']
 
+        self.indices = np.arange(len(self.y)) if indices is None else indices
+        
         self.batch_size = batch_size
         self.frame_length = frame_length
         self.pick_random = pick_random
 
     def __len__(self):
-        return math.ceil(len(self.y) / self.batch_size)
+        return math.ceil(len(self.indices) / self.batch_size)
   
     def get_random_frame(self, curr_batch_size, signals):
         X_batch = np.empty((curr_batch_size, self.frame_length, 1))
@@ -41,7 +44,7 @@ class LibriSpeechGenerator(Sequence):
 
         # Last batch may have fewer samples
         is_last_batch = i == self.__len__() - 1
-        remaining_samples = len(self.y) % self.batch_size
+        remaining_samples = len(self.indices) % self.batch_size
         if is_last_batch and remaining_samples != 0:
             curr_batch_size = remaining_samples
         
@@ -69,9 +72,11 @@ class LibriSpeechLoader:
     def __init__(self, seed, config):
         np.random.seed(seed)
 
-        self.train_paths = config['train_paths']
-        self.val_paths = config['val_paths']
-        self.test_paths = config['test_paths']
+        self.train_paths = config.get('train_paths', [])
+        self.val_paths = config.get('val_paths', [])
+        self.test_paths = config.get('test_paths', [])
+        self.val_ratio = config.get('val_ratio', 0.0)
+        self.test_ratio = config.get('test_ratio', 0.0)
         self.frames = config['frames']
         self.limits = config.get('limits', {})
 
@@ -155,7 +160,7 @@ class LibriSpeechLoader:
         y = cache.create_dataset(name + '_y', (nb_samples))
 
         if nb_samples == 0:
-            return
+            return 0
 
         for i in range(nb_samples):
             filename, frame = filenames[i]
@@ -178,24 +183,83 @@ class LibriSpeechLoader:
         print()
         print('LibriSpeech: done in {}s'.format(end - start))
 
+        return len(np.unique(speakers))
+
+    def create_gens(self, cache_path, batch_size):
+        random = (self.frames['pick'] == 'random')
+        frame_length = self.frames['length']
+
+        train = LibriSpeechGenerator(cache_path,
+                                     batch_size, 
+                                     frame_length,
+                                     subset='train',
+                                     pick_random=random)
+
+        val = LibriSpeechGenerator(cache_path,
+                                   batch_size,
+                                   frame_length,
+                                   subset='val',
+                                   pick_random=random)
+
+        test = LibriSpeechGenerator(cache_path,
+                                    batch_size,
+                                    frame_length,
+                                    subset='test',
+                                    pick_random=random)
+
+        return [train, val, test]
+
+    def create_gens_with_ratio(self, cache_path, nb_train_samples, batch_size):
+        random = (self.frames['pick'] == 'random')
+        frame_length = self.frames['length']
+        indices = np.arange(nb_train_samples)
+
+        ratio = self.val_ratio + self.test_ratio
+        indices_train, indices_test = train_test_split(indices,
+                                                       test_size=ratio)
+        ratio = self.test_ratio / (self.test_ratio + self.val_ratio)
+        indices_val, indices_test = train_test_split(indices_test,
+                                                     test_size=ratio)
+        train = LibriSpeechGenerator(cache_path,
+                                     batch_size, 
+                                     frame_length,
+                                     indices=indices_train,
+                                     pick_random=random)
+
+        val = LibriSpeechGenerator(cache_path,
+                                   batch_size,
+                                   frame_length,
+                                   indices=indices_val,
+                                   pick_random=random)
+
+        test = LibriSpeechGenerator(cache_path,
+                                    batch_size,
+                                    frame_length,
+                                    indices=indices_test,
+                                    pick_random=random)
+
+        return [train, val, test]
+
     def load(self, batch_size, checkpoint_dir):
         # Create cache during first use
-        path = checkpoint_dir + '/librispeech.h5'
-        cache = h5py.File(path, 'a')
+        cache_path = checkpoint_dir + '/librispeech.h5'
+        cache = h5py.File(cache_path, 'a')
         if len(cache) == 0:
-            self.create_cache('train', cache, self.train_paths)
-            self.create_cache('val', cache, self.val_paths)
-            self.create_cache('test', cache, self.test_paths)        
+            nb_spk_train = self.create_cache('train', cache, self.train_paths)
+            nb_spk_val = self.create_cache('val', cache, self.val_paths)
+            nb_spk_test = self.create_cache('test', cache, self.test_paths)
+
+            nb_speakers = nb_spk_train + nb_spk_val + nb_spk_test
+            cache.attrs.create('nb_speakers', nb_speakers)
+        
+        nb_speakers = cache.attrs['nb_speakers']
+        nb_train_samples = len(cache['train_y'])
         cache.close()
 
         # Create Keras generators
-        frame_length = self.frames['length']
-        pick_random = (self.frames['pick'] == 'random')
-        train = LibriSpeechGenerator(path, 'train',
-                                     batch_size, frame_length, pick_random)
-        val = LibriSpeechGenerator(path, 'val',
-                                   batch_size, frame_length, pick_random)
-        test = LibriSpeechGenerator(path, 'test',
-                                    batch_size, frame_length, pick_random)
+        if self.val_ratio > 0.0 and self.test_ratio > 0.0:
+            return self.create_gens_with_ratio(cache_path,
+                                               nb_train_samples,
+                                               batch_size), nb_speakers
 
-        return [train, val, test]
+        return self.create_gens(cache_path,batch_size), nb_speakers

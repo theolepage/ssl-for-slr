@@ -7,39 +7,37 @@ from tensorflow.keras import Model
 from tensorflow.keras.layers import Input
 from tensorflow.keras.optimizers import Adam
 
-from models.SpeakerIdClassifier import SpeakerIdClassifier
-from utils.helpers import load_config
+from train_evaluate import create_spkid_model
+from utils.helpers import load_config, load_dataset, load_model
 
 def load(config_path):
-    config, model, gens, checkpoint_dir = load_config(config_path)
-    _, _, test_gen = gens
+    config, checkpoint_dir, eval_checkpoint_dir = load_config(config_path)
 
-    checkpoint_dir_spkid = './checkpoints/' + config['name'] + '_spkid'
-    history = np.load(checkpoint_dir + '/history.npy', allow_pickle=True).item()
-    history_spkid = np.load(checkpoint_dir_spkid + '/history.npy', allow_pickle=True).item()
+    gens, input_shape, nb_speakers = load_dataset(config,
+                                                  eval_checkpoint_dir,
+                                                  key='evaluate')
 
-    # Create model: model + classifier
-    nb_speakers = # FIXME
-    frame_length = config['dataset']['frames']['length']
-    inputs = Input((frame_length, 1))
-    inputs_encoded = model(inputs)
-    outputs = SpeakerIdClassifier(nb_speakers)(inputs_encoded)
+    model = load_model(config, input_shape)
 
-    model_spkid = Model(inputs, outputs)
+    # Create classifier
+    model_evaluate = create_spkid_model(config,
+                                        input_shape,
+                                        nb_speakers,
+                                        model)
 
     # Load pre-trained model
-    checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir_spkid)
-    if Path(checkpoint_dir_spkid).exists():
-        model_spkid.load_weights(checkpoint_path)
+    last_checkpoint_path = tf.train.latest_checkpoint(eval_checkpoint_dir)
+    if last_checkpoint_path:
+        model_evaluate.load_weights(last_checkpoint_path)
     else:
-        raise Exception('Evaluate: model {}-spkid has no checkpoints.'.format(config['name']))
+        raise Exception('Evaluate: no checkpoints found.')
 
-    model_spkid.compile(optimizer=Adam(learning_rate=0.001),
-                        loss='sparse_categorical_crossentropy',
-                        metrics=['accuracy'])
-    model_spkid.summary()
+    # Load trainings history
+    history = np.load(checkpoint_dir + '/history.npy', allow_pickle=True).item()
+    history_evaluate = np.load(eval_checkpoint_dir + '/history.npy', allow_pickle=True).item()
 
-    return model, history, model_spkid, history_spkid, test_gen
+    _, _, test_gen = gens
+    return model, history, model_evaluate, history_evaluate, test_gen
 
 if __name__ == "__main__":
     pass

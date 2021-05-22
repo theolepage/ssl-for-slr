@@ -23,7 +23,7 @@ def summary_for_shape(model, input_shape):
     model_ = Model(inputs=x, outputs=model_copy.call(x))
     return model_.summary()
 
-def load_config(config_path, name_suffix=''):
+def load_config(config_path, evaluate=False):
     # Load config file
     with open(config_path) as config_file:
         config = json.load(config_file)
@@ -33,31 +33,42 @@ def load_config(config_path, name_suffix=''):
     np.random.seed(seed)
     tf.random.set_seed(seed)
 
-    # Create subfolder for saving checkpoints
+    # Create checkpoint dir
     checkpoint_dir = './checkpoints/' + config['name']
+    eval_checkpoint_dir = checkpoint_dir + '___' + config['evaluate']['type']
     Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
+    Path(eval_checkpoint_dir).mkdir(parents=True, exist_ok=True)
 
-    # Load dataset
-    batch_size = config['training']['batch_size']
-    dataset = LibriSpeechLoader(seed, config['dataset'])
-    gens = dataset.load(batch_size, checkpoint_dir)
+    return config, checkpoint_dir, eval_checkpoint_dir
+
+def load_dataset(config, checkpoint_dir, key='training'):
+    dataset_config = config[key]['dataset']
+    batch_size = config[key]['batch_size']
+    seed = config['seed']
+
+    dataset = LibriSpeechLoader(seed, dataset_config)
+    gens, nb_speakers = dataset.load(batch_size, checkpoint_dir)
+
     print("Number of training batches:", len(gens[0]))
     print("Number of val batches:", len(gens[1]))
     print("Number of test batches:", len(gens[2]))
 
     # Determine input shape
     # Usually 20480 (1.28s at 16kHz on LibriSpeech) => nb_timesteps = 128
-    frame_length = config['dataset']['frames']['length']
+    frame_length = config['training']['dataset']['frames']['length']
     input_shape = (frame_length, 1)
 
-    # Create encoder
+    return gens, input_shape, nb_speakers
+
+def create_encoder(config):
     encoder_type = config['encoder']['type']
     encoded_dim = config['encoder']['encoded_dim']
     encoder_weight_regularizer = config['encoder'].get('weight_regularizer', 0.0)
+
     if encoder_type == 'CPC':
         encoder = CPCEncoder(encoded_dim, encoder_weight_regularizer)
     elif encoder_type == 'Sinc':
-        sample_frequency = config['dataset']['sample_frequency']
+        sample_frequency = config['training']['dataset']['sample_frequency']
         skip_connections_enabled = config['encoder'].get('skip_connections_enabled')
         rnn_enabled = config['encoder'].get('rnn_enabled')
         encoder = SincEncoder(encoded_dim,
@@ -68,25 +79,23 @@ def load_config(config_path, name_suffix=''):
     else:
         raise Exception('Config: encoder {} is not supported.'.format(encoder_type))
 
+    return encoder
+
+def load_model(config, input_shape):
+    # Create encoder
+    encoder = create_encoder(config)
+
     # Create model
     model_type = config['model']['type']
     if model_type == 'multitask':
         modules = config['model']['modules']
-        model = MultiTaskModel(encoder,
-                               input_shape,
-                               modules)
-
-        # Add regressor targets to data generator
-        for i in range(len(gens)):
-            gens[i] = model.add_targets_to_gen(gens[i])
+        model = MultiTaskModel(encoder, input_shape, modules)
     else:
         model = create_model(config['model'], encoder, input_shape)
     
-    # Compile model
+    # Compile and print model
     learning_rate = config['training']['learning_rate']
     model.compile(Adam(learning_rate=learning_rate))
-
-    # Print model architecture
     summary_for_shape(model, input_shape)
 
-    return config, model, gens, checkpoint_dir
+    return model

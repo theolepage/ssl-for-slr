@@ -12,26 +12,49 @@
         "bidirectional": false,
         "weight_regularizer": 1e-4
     },
-    "dataset": {
-        "type": "LibriSpeech",
-        "sample_frequency": 16000,
-        "train_paths": ["D:/Datasets/LibriSpeech/train-clean-100/*"],
-        "val_paths": ["D:/Datasets/LibriSpeech/dev-clean/*"],
-        "test_paths": [],
-        "frames": {
-            "pick": "sequence",
-            "length": 20480,
-            "stride": 20480,
-            "count": 1
-        },
-        "limits": {
-            "speakers": 10,
-            "utterances_per_speaker": 10
-        }
-    },
     "training": {
         "epochs": 50,
         "batch_size": 64,
-        "learning_rate": 0.0001
+        "learning_rate": 0.0001,
+        "dataset": {
+            "type": "LibriSpeech",
+            "sample_frequency": 16000,
+            "train_paths": ["D:/Datasets/LibriSpeech/train-clean-100/*"],
+            "val_paths": ["D:/Datasets/LibriSpeech/dev-clean/*"],
+            "frames": {
+                "pick": "sequence",
+                "length": 20480,
+                "stride": 20480,
+                "count": 1
+            },
+            "limits": {
+                "speakers": 10,
+                "utterances_per_speaker": 10
+            }
+        }
+    },
+    "evaluate": {
+        "type": "speaker-id",
+        "train_encoder": true,
+        "epochs": 50,
+        "batch_size": 64,
+        "learning_rate": 0.001,
+        "dataset": {
+            "type": "LibriSpeech",
+            "sample_frequency": 16000,
+            "train_paths": ["D:/Datasets/LibriSpeech/train-clean-100/*"],
+            "val_ratio": 0.2,
+            "test_ratio": 0.1,
+            "frames": {
+                "pick": "sequence",
+                "length": 20480,
+                "stride": 20480,
+                "count": 1
+            },
+            "limits": {
+                "speakers": 10,
+                "utterances_per_speaker": 10
+            }
+        }
     }
 }
