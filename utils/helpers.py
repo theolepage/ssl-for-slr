@@ -12,7 +12,7 @@ from tensorflow.keras.optimizers import Adam
 from models.CPCEncoder import CPCEncoder
 from models.SincEncoder import SincEncoder
 from models.MultiTask import MultiTaskModel
-from .LibriSpeech import LibriSpeechLoader
+from .AudioDatasetLoader import AudioDatasetLoader
 from .create_model import create_model
 
 def summary_for_shape(model, input_shape):
@@ -46,8 +46,8 @@ def load_dataset(config, checkpoint_dir, key='training'):
     batch_size = config[key]['batch_size']
     seed = config['seed']
 
-    dataset = LibriSpeechLoader(seed, dataset_config)
-    gens, nb_speakers = dataset.load(batch_size, checkpoint_dir)
+    dataset = AudioDatasetLoader(seed, dataset_config)
+    gens, nb_categories = dataset.load(batch_size, checkpoint_dir)
 
     print("Number of training batches:", len(gens[0]))
     print("Number of val batches:", len(gens[1]))
@@ -58,7 +58,7 @@ def load_dataset(config, checkpoint_dir, key='training'):
     frame_length = config['training']['dataset']['frames']['length']
     input_shape = (frame_length, 1)
 
-    return gens, input_shape, nb_speakers
+    return gens, input_shape, nb_categories
 
 def create_encoder(config):
     encoder_type = config['encoder']['type']

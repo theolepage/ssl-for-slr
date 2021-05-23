@@ -1,7 +1,7 @@
-tensorflow
 numpy
+h5py
+tensorflow
+tensorflow-addons
 sklearn
 soundfile
-h5py
-tensorflow-addons
 librosa

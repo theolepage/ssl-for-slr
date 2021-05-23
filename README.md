@@ -2,7 +2,21 @@
 
 Framework to train a speech encoder in a **self-supervised** way for **speaker and language recognition** tasks.
 
+The aim is to train a speech encoder by using multiple self-supervised modules as shown on figure below.
+
 ![model_multitask](https://raw.githubusercontent.com/theolepage/ssl-for-slr/master/docs/model_multitask.png)
+
+## Features
+
+- Configurable speech encoders (1D conv layers, GRU, skip connections, [SincNet](https://arxiv.org/abs/1808.00158))
+- Self-supervised models:
+    - [Contrastive Predictive Coding](https://arxiv.org/pdf/1807.03748.pdf) *(unidirectional or bidirectional)*
+    - [Local Info Max (LIM)](https://arxiv.org/pdf/1812.00271.pdf) and Global Info Max (GIM)
+    - [PASE](https://arxiv.org/pdf/1904.03416.pdf) and [PASE+](https://arxiv.org/pdf/2001.09239.pdf) with the following workers: *Waveform*, *LPS*, *MFCC*, *CPC*, *LIM* and *GIM*
+- Evaluation on speaker recognition, speaker verification, language recognition and data-efficiency
+- Handle *LibriSpeech* and *VoxLingua107* datasets
+- Speech augmentation module *(reverberation, noise, frequency and temporal masks, clipping, ...)*
+- Modular configuration files
 
 ## Usage
 
@@ -13,35 +27,30 @@ Framework to train a speech encoder in a **self-supervised** way for **speaker a
 
 *Type `deactivate` to exit the virtual env after use.*
 
-### Start self-supervised training
-
-Multiple config files are located in the `config/` folder.
+### Train model on pretext task
 
 ```
 python train.py configs/cpc-v1.json
 ```
 
-### Train a speaker id classifier
+*Multiple config files are located in the `config/` folder.*
 
-To evaluate the model we train a speaker id classifier on top of the pre-trained encoder with `python train_evaluate.py configs/cpc-v1.json`.
+### Evaluate model on downstream task *(speaker or language recognition)*
 
-### Evaluate model
-
-Use notebook `evaluate.ipnyb` to evaluate model on the previous downstream task (speaker id).
+1. Train a classifier on top of the previsouly trained encoder: `python train_evaluate.py configs/cpc-v1.json`.
+2. Use notebook `evaluate.ipnyb` to evaluate metrics obtained on the downstream task.
 
 ## To-Do
 
-- [ ] Evaluate: data-efficient
-- [ ] Evaluate: language recognition
-- [ ] Data augmentation / preprocessing step
 - [ ] Evaluate: speaker verification on VoxCelebs
+- [ ] Data augmentation module
 
 ---
 
-- [ ] Demo web app
 - [ ] Implement wave2vec 2.0
 - [ ] Create custom model: wave2vec + CPC bi-directional
-- [ ] Benchmark models (tensorboard)
+- [ ] Benchmark: speaker id, language id, data-efficient
+- [ ] Demo web app
 
 ---
 
@@ -52,11 +61,4 @@ Use notebook `evaluate.ipnyb` to evaluate model on the previous downstream task 
 - [ ] Ability to resume training (load/save weights of optimizer) (https://stackoverflow.com/questions/49503748/save-and-load-model-optimizer-state)
 - [ ] Comment code
 - [ ] Properly set seed
-
-## References
-
-- [Speaker Recognition from Raw Waveform with SincNet](https://arxiv.org/abs/1808.00158)
-- [Learning Problem-agnostic Speech Representationsfrom Multiple Self-supervised Tasks](https://arxiv.org/pdf/1904.03416.pdf)
-- [Multi-task self-supervised learning for Robust Speech Recognition](https://arxiv.org/pdf/2001.09239.pdf)
-- [Learning Speaker Representations with Mutual Information](https://arxiv.org/pdf/1812.00271.pdf)
-- [Representation Learning with Contrastive Predictive Coding](https://arxiv.org/pdf/1807.03748.pdf)
+- [ ] Tensorboard

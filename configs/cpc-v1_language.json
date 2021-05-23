@@ -1,5 +1,5 @@
 {
-    "name": "cpc-v1",
+    "name": "cpc-v1_language",
     "seed": 1717,
     "encoder": {
         "type": "CPC",
@@ -17,11 +17,11 @@
         "batch_size": 64,
         "learning_rate": 0.0001,
         "dataset": {
-            "type": "LibriSpeech",
+            "type": "VoxLingua107",
             "sample_frequency": 16000,
-            "train_paths": ["D:/Datasets/LibriSpeech/train-clean-100/*"],
-            "val_paths": ["D:/Datasets/LibriSpeech/dev-clean/*"],
-            "test_paths": [],
+            "train_paths": ["D:/Datasets/VoxLingua107/*"],
+            "val_ratio": 0.2,
+            "test_ratio": 0.0,
             "frames": {
                 "pick": "sequence",
                 "length": 20480,
@@ -29,21 +29,21 @@
                 "count": 1
             },
             "limits": {
-                "speakers": 10,
-                "utterances_per_speaker": 10
+                "languages": 10,
+                "utterances_per_language": 100
             }
         }
     },
     "evaluate": {
-        "type": "speaker-id",
+        "type": "language-id",
         "train_encoder": true,
         "epochs": 50,
         "batch_size": 64,
         "learning_rate": 0.001,
         "dataset": {
-            "type": "LibriSpeech",
+            "type": "VoxLingua107",
             "sample_frequency": 16000,
-            "train_paths": ["D:/Datasets/LibriSpeech/train-clean-100/*"],
+            "train_paths": ["D:/Datasets/VoxLingua107/*"],
             "val_ratio": 0.2,
             "test_ratio": 0.1,
             "frames": {
@@ -53,8 +53,8 @@
                 "count": 1
             },
             "limits": {
-                "speakers": 10,
-                "utterances_per_speaker": 10
+                "languages": 10,
+                "utterances_per_language": 100
             }
         }
     }
