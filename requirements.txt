@@ -5,3 +5,4 @@ tensorflow-addons
 sklearn
 soundfile
 librosa
+audiomentations

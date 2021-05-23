@@ -42,15 +42,14 @@ python train.py configs/cpc-v1.json
 
 ## To-Do
 
-- [ ] Evaluate: speaker verification on VoxCelebs
-- [ ] Data augmentation module
+- [ ] Evaluate: speaker verification
+- [ ] Demo web app
 
 ---
 
 - [ ] Implement wave2vec 2.0
 - [ ] Create custom model: wave2vec + CPC bi-directional
 - [ ] Benchmark: speaker id, language id, data-efficient
-- [ ] Demo web app
 
 ---
 

@@ -13,6 +13,7 @@ from models.CPCEncoder import CPCEncoder
 from models.SincEncoder import SincEncoder
 from models.MultiTask import MultiTaskModel
 from .AudioDatasetLoader import AudioDatasetLoader
+from .AudioAugmentationGenerator import AudioAugmentationGenerator
 from .create_model import create_model
 
 def summary_for_shape(model, input_shape):
@@ -49,13 +50,22 @@ def load_dataset(config, checkpoint_dir, key='training'):
     dataset = AudioDatasetLoader(seed, dataset_config)
     gens, nb_categories = dataset.load(batch_size, checkpoint_dir)
 
+    # Add data augmentation generator on top of generators
+    if config[key]['data_augment']:
+        data_augment_config = config[key]['data_augment']
+        sample_frequency = config[key]['dataset']['sample_frequency']
+        for i in range(len(gens)):
+            gens[i] = AudioAugmentationGenerator(gens[i],
+                                                 data_augment_config,
+                                                 sample_frequency)
+
     print("Number of training batches:", len(gens[0]))
     print("Number of val batches:", len(gens[1]))
     print("Number of test batches:", len(gens[2]))
 
     # Determine input shape
     # Usually 20480 (1.28s at 16kHz on LibriSpeech) => nb_timesteps = 128
-    frame_length = config['training']['dataset']['frames']['length']
+    frame_length = config[key]['dataset']['frames']['length']
     input_shape = (frame_length, 1)
 
     return gens, input_shape, nb_categories

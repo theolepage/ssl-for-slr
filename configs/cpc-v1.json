@@ -32,7 +32,15 @@
                 "speakers": 10,
                 "utterances_per_speaker": 10
             }
-        }
+        },
+        "data_augment": [
+            { "type": "add_ir", "p": 0.5, "path": "D:/Datasets/sim_rir_16k/simulated_rirs_16k/" },
+            { "type": "add_noise", "p": 0.4, "path": "D:/Datasets/LibriSpeech/train-clean-100/" },
+            { "type": "add_noise", "p": 0.1, "path": "D:/Datasets/LibriSpeech/train-clean-100/" },
+            { "type": "frequency_mask", "p": 0.4 },
+            { "type": "time_mask", "p": 0.2 },
+            { "type": "clipping", "p": 0.2 }
+        ]
     },
     "evaluate": {
         "type": "speaker-id",
