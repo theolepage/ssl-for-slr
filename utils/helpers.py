@@ -51,7 +51,7 @@ def load_dataset(config, checkpoint_dir, key='training'):
     gens, nb_categories = dataset.load(batch_size, checkpoint_dir)
 
     # Add data augmentation generator on top of generators
-    if config[key]['data_augment']:
+    if 'data_augment' in config[key]:
         data_augment_config = config[key]['data_augment']
         sample_frequency = config[key]['dataset']['sample_frequency']
         for i in range(len(gens)):

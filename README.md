@@ -42,7 +42,6 @@ python train.py configs/cpc-v1.json
 
 ## To-Do
 
-- [ ] Evaluate: speaker verification
 - [ ] Demo web app
 
 ---
@@ -58,6 +57,6 @@ python train.py configs/cpc-v1.json
 - [ ] Fix warning loading weights not used
 - [ ] CPC/LIM: @tf.function warning
 - [ ] Ability to resume training (load/save weights of optimizer) (https://stackoverflow.com/questions/49503748/save-and-load-model-optimizer-state)
-- [ ] Comment code
+- [ ] Comment code, tqdm, logger
 - [ ] Properly set seed
 - [ ] Tensorboard
