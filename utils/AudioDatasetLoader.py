@@ -163,6 +163,12 @@ class AudioDatasetLoader:
             if self.frames['pick'] == 'sequence':
                 data = data[frame:frame+frame_length]
 
+            # Normalize input signal
+            max_value = np.max(np.abs(data))
+            if max_value == 0:
+                data = np.zeros_like(data)
+            data = data / max_value
+
             X[i] = data
             y[i] = label
             
