@@ -1,9 +1,16 @@
 from models.CPC import CPCModel
 from models.LIM import LIMModel
+from models.wave2vec2.Wave2Vec2 import Wave2Vec2Model
+from models.wave2vec2.Wave2Vec2Config import Wave2Vec2Config
 
 def create_model(model_config, encoder, input_shape):
     model_type = model_config['type']
     weight_regularizer = model_config.get('weight_regularizer', 0.0)
+
+    if model_type == 'wave2vec2':
+        config = Wave2Vec2Config()
+        model = Wave2Vec2Model(config)
+        return model
 
     encoder_output_shape = encoder.compute_output_shape(input_shape)
     nb_timesteps = encoder_output_shape[0]
