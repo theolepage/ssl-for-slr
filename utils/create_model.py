@@ -2,6 +2,8 @@ from models.CPC import CPCModel
 from models.LIM import LIMModel
 from models.wave2vec2.Wave2Vec2 import Wave2Vec2Model
 from models.wave2vec2.Wave2Vec2Config import Wave2Vec2Config
+from models.vqwave2vec.VQWave2Vec import VQWave2VecModel
+from models.vqwave2vec.VQWave2VecConfig import VQWave2VecConfig
 
 def create_model(model_config, encoder, input_shape):
     model_type = model_config['type']
@@ -10,6 +12,10 @@ def create_model(model_config, encoder, input_shape):
     if model_type == 'wave2vec2':
         config = Wave2Vec2Config()
         model = Wave2Vec2Model(config)
+        return model
+    elif model_type == 'vq-wave2vec':
+        config = VQWave2VecConfig()
+        model = VQWave2VecModel(config)
         return model
 
     encoder_output_shape = encoder.compute_output_shape(input_shape)

@@ -160,10 +160,10 @@ class Wave2Vec2Model(Model):
         loss = tf.math.reduce_mean(loss)
 
         # Add additional losses: features penalty, codebook penalty
-        loss += self.config.diversity_loss_weight * diversity_loss
-        loss += self.config.features_loss_weight * features_loss
+        d_loss = self.config.diversity_loss_weight * diversity_loss
+        f_loss = self.config.features_loss_weight * features_loss
 
-        return -loss
+        return -loss + d_loss + f_loss
 
     def train_step(self, data):
         X, _ = data # Discard Y provided by the dataset generator
@@ -243,4 +243,4 @@ class Wave2Vec2Model(Model):
 
         loss = self.compute_loss(C, Q, Q_negs, diversity_loss, features_loss)
 
-        return { 'loss': 0 }
+        return { 'loss': loss }

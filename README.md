@@ -11,6 +11,7 @@ The aim is to train a speech encoder by using multiple self-supervised modules a
 - Configurable speech encoders (1D conv layers, GRU, skip connections, [SincNet](https://arxiv.org/abs/1808.00158))
 - Self-supervised models:
     - [Contrastive Predictive Coding](https://arxiv.org/pdf/1807.03748.pdf) *(unidirectional or bidirectional)*
+    - [vq-wave2vec](https://arxiv.org/pdf/1910.05453.pdf)
     - [Wave2Vec 2.0](https://arxiv.org/pdf/2006.11477.pdf)
     - [Local Info Max (LIM)](https://arxiv.org/pdf/1812.00271.pdf) and Global Info Max (GIM)
     - [PASE](https://arxiv.org/pdf/1904.03416.pdf) and [PASE+](https://arxiv.org/pdf/2001.09239.pdf) with the following workers: *Waveform*, *LPS*, *MFCC*, *CPC*, *LIM* and *GIM*

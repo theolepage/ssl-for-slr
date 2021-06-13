@@ -73,7 +73,7 @@ def load_dataset(config, checkpoint_dir, key='training'):
 def create_encoder(config):
     encoder_type = config['encoder']['type']
 
-    if encoder_type == 'wave2vec2':
+    if encoder_type in ['wave2vec2', 'vq-wave2vec']:
         encoder = None
         return encoder
 
