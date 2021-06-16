@@ -13,10 +13,11 @@ def get_frames(filename, frames_config):
     with sf.SoundFile(filename, 'r') as f:
         signal_length = f.frames
 
-    assert signal_length > length
+    if signal_length < length:
+        return []
 
     if frames_config['pick'] == 'random':
-        return [-1]
+        return []
 
     elif frames_config['pick'] == 'sequence':
         stride = frames_config['stride']
@@ -62,11 +63,13 @@ def scan_librispeech(paths, limits_config, frames_config):
                     if nb_speaker_utterances == limit_utterances:
                         break
 
-                    for frame in get_frames(file, frames_config):
+                    frames = get_frames(file, frames_config)
+                    for frame in frames:
                         filenames.append([file, frame])
                         speakers.append(speaker_id)
 
-                    nb_speaker_utterances += 1
+                    if len(frames) != 0:
+                        nb_speaker_utterances += 1
 
     # Keep only a specific ratio of all samples
     split_idx = int(total_ratio * len(filenames))
@@ -102,11 +105,13 @@ def scan_voxlingua107(paths, limits_config, frames_config):
                 if nb_language_utterances == limit_utterances:
                         break
 
-                for frame in get_frames(file, frames_config):
+                frames = get_frames(file, frames_config)
+                for frame in frames:
                     filenames.append([file, frame])
                     languages.append(language_id)
 
-                nb_language_utterances += 1
+                if len(frames) != 0:
+                    nb_language_utterances += 1
 
 
     # Keep only a specific ratio of all samples
