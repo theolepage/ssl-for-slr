@@ -165,9 +165,7 @@ class AudioDatasetLoader:
 
             # Normalize input signal
             max_value = np.max(np.abs(data))
-            if max_value == 0:
-                data = np.zeros_like(data)
-            data = data / max_value
+            data = data / max_value if max_value != 0 else np.zeros_like(data)
 
             X[i] = data
             y[i] = label
