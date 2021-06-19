@@ -7,6 +7,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.callbacks import TensorBoard
 
 from utils.helpers import load_config, load_dataset, load_model
+from utils.TimeHistoryCallback import TimeHistoryCallback
 
 def train(config_path):
     config, checkpoint_dir, _ = load_config(config_path)
@@ -38,7 +39,8 @@ def train(config_path):
     # Start training
     train_gen, val_gen, test_gen = gens
     nb_epochs = config['training']['epochs']
-    callbacks = [save_callback, early_stopping, tensorboard]
+    time_history = TimeHistoryCallback()
+    callbacks = [save_callback, early_stopping, tensorboard, time_history]
     history = model.fit(train_gen,
                         validation_data=val_gen,
                         epochs=nb_epochs,
@@ -46,6 +48,7 @@ def train(config_path):
 
     # Save training history
     hist_path = checkpoint_dir + '/history.npy'
+    history = time_history.update_history(history)
     np.save(hist_path, history.history)
 
 if __name__ == "__main__":
