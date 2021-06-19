@@ -9,6 +9,7 @@ from tensorflow.keras.layers import Flatten
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import TensorBoard
 
 from utils.helpers import load_config, load_dataset, load_model
 
@@ -76,14 +77,17 @@ def train_evaluate(config_path):
                                     verbose=1)
     early_stopping = EarlyStopping(monitor='val_loss',
                                    patience=5)
+    tensorboard = TensorBoard(log_dir=eval_checkpoint_dir + '/logs/',
+                              histogram_freq=1)
 
     # Start training
     train_gen, val_gen, test_gen = gens
     nb_epochs = config['evaluate']['epochs']
+    callbacks = [save_callback, early_stopping, tensorboard]
     history = classifier.fit(train_gen,
                              validation_data=val_gen,
                              epochs=nb_epochs,
-                             callbacks=[save_callback, early_stopping])
+                             callbacks=callbacks)
 
     # Save training history
     hist_path = eval_checkpoint_dir + '/history.npy'

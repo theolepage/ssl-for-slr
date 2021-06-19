@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import TensorBoard
 
 from utils.helpers import load_config, load_dataset, load_model
 
@@ -31,14 +32,17 @@ def train(config_path):
                                     verbose=1)
     early_stopping = EarlyStopping(monitor='val_loss',
                                    patience=5)
+    tensorboard = TensorBoard(log_dir=checkpoint_dir + '/logs/',
+                              histogram_freq=1)
 
     # Start training
     train_gen, val_gen, test_gen = gens
     nb_epochs = config['training']['epochs']
+    callbacks = [save_callback, early_stopping, tensorboard]
     history = model.fit(train_gen,
                         validation_data=val_gen,
                         epochs=nb_epochs,
-                        callbacks=[save_callback, early_stopping])
+                        callbacks=callbacks)
 
     # Save training history
     hist_path = checkpoint_dir + '/history.npy'
