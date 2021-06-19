@@ -1,6 +1,8 @@
 import json
 import copy
 from pathlib import Path
+import random
+import os
 
 import numpy as np
 import tensorflow as tf
@@ -31,6 +33,8 @@ def load_config(config_path, evaluate=False):
 
     # Set seed
     seed = config['seed']
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    random.seed(seed)
     np.random.seed(seed)
     tf.random.set_seed(seed)
 
