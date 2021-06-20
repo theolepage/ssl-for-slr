@@ -8,7 +8,7 @@ from tensorflow.keras.layers import Input
 from tensorflow.keras.optimizers import Adam
 
 from train_evaluate import create_classifier
-from utils.helpers import load_config, load_dataset, load_model
+from sslforslr.utils import load_config, load_dataset, load_model
 
 def load(config_path):
     config, checkpoint_dir, eval_checkpoint_dir = load_config(config_path)

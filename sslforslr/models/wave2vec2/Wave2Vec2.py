@@ -7,8 +7,7 @@ from tensorflow.keras import regularizers
 from tensorflow.keras import losses
 
 from .Wave2Vec2Config import Wave2Vec2Config
-from .TransformerEncoder import TransformerEncoder
-from .VectorQuantizer import VectorQuantizer
+from sslforslr.layers import TransformerEncoder, VectorQuantizer
 
 class Wave2Vec2Encoder(Model):
 

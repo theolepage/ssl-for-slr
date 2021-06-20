@@ -1,7 +1,3 @@
-# Add higher directory to python modules path
-import sys
-sys.path.append("..")
-
 import librosa
 import numpy as np
 import tensorflow as tf
@@ -14,11 +10,7 @@ from tensorflow.keras.utils import Sequence
 from tensorflow.keras.losses import MeanAbsoluteError, MeanSquaredError
 from tensorflow.keras import regularizers
 
-from .CPC import CPCModel
-from .CPC import cpc_loss
-from .LIM import LIMModel
-from .LIM import lim_loss
-from utils.create_model import create_model
+from sslforslr.models import CPCModel, LIMModel, cpc_loss, lim_loss
 
 class LPSWorker(Model):
 
@@ -303,14 +295,28 @@ class MultiTaskModel(Model):
             loss_scaler = module.get('loss_scaler', 1.0)
             weight_regularizer = module.get('weight_regularizer', 0.0)
 
-            if module_type in ['CPC', 'LIM']:
-                module_model = create_model(module,
-                                            self.encoder,
-                                            self.in_shape)
+            encoder_output_shape = self.encoder.compute_output_shape(self.in_shape)
+            nb_timesteps = encoder_output_shape[0]
+            encoded_dim = encoder_output_shape[1]
 
             if module_type == 'CPC':
+                nb_timesteps_to_predict = module['nb_timesteps_to_predict']
+                bidirectional = module.get('bidirectional', False)
+                module_model = CPCModel(encoder,
+                                        encoded_dim,
+                                        nb_timesteps,
+                                        nb_timesteps_to_predict,
+                                        bidirectional,
+                                        weight_regularizer)
                 modules[module_type] = CPCWorker(module_model, loss_scaler)
             elif module_type == 'LIM':
+                loss_fn = model_config['loss_fn']
+                context_length = model_config.get('context_length', 1)
+                module_model = LIMModel(encoder,
+                                        nb_timesteps,
+                                        loss_fn,
+                                        context_length,
+                                        weight_regularizer)
                 modules[module_type] = LIMWorker(module_model, loss_scaler)
             elif module_type == 'Waveform':
                 modules[module_type] = WaveformWorker(weight_regularizer, loss_scaler)

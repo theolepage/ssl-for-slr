@@ -11,8 +11,8 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.callbacks import TensorBoard
 
-from utils.TimeHistoryCallback import TimeHistoryCallback
-from utils.helpers import load_config, load_dataset, load_model
+from sslforslr.utils.callbacks import TimeHistoryCallback
+from sslforslr.utils import load_config, load_dataset, load_model
 
 class Classifier(Model):
 

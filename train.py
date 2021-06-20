@@ -6,8 +6,8 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.callbacks import TensorBoard
 
-from utils.helpers import load_config, load_dataset, load_model
-from utils.TimeHistoryCallback import TimeHistoryCallback
+from sslforslr.utils import load_config, load_dataset, load_model
+from sslforslr.utils.callbacks import TimeHistoryCallback
 
 def train(config_path):
     config, checkpoint_dir, _ = load_config(config_path)

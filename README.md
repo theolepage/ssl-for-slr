@@ -44,12 +44,14 @@ python train.py configs/cpc-v1.json
 
 ## To-Do
 
-- [ ] Clean python: typing, dataclass, modules, ...
-- [ ] Comment code, tqdm, logger
-- [ ] Fix warning tensorflow: create custom training loop (https://stackoverflow.com/questions/57971007/tensorflow-2-0-display-progress-bar-in-custom-training-loop)
-- [ ] Add training time in history.npy
+- [ ] config in data classes (1h)
+- [ ] comment code: classes, header (15min)
+- [ ] use tqdm (15min)
+
+---
+
+- [ ] Simplify model creation, sub class model, merge encoders
+- [ ] Create custom training loop (https://stackoverflow.com/questions/57971007/tensorflow-2-0-display-progress-bar-in-custom-training-loop)
 - [ ] Fix warning loading weights not used
-- [ ] CPC/LIM: @tf.function warning
-- [ ] Ability to resume training (load/save weights of optimizer) (https://stackoverflow.com/questions/49503748/save-and-load-model-optimizer-state)
-- [ ] Properly set seed
-- [ ] Tensorboard
+- [ ] CPC/LIM: @tf.function warning when doing tensor[1, :]
+- [ ] Allow restore optimizer
