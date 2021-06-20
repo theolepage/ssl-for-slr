@@ -44,9 +44,9 @@ python train.py configs/cpc-v1.json
 
 ## To-Do
 
-- [ ] config in data classes (1h)
-- [ ] comment code: classes, header (15min)
-- [ ] use tqdm (15min)
+- [ ] comment classes
+- [ ] config in data classes
+
 
 ---
 

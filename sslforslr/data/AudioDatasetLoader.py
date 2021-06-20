@@ -1,10 +1,10 @@
 import numpy as np
 import math
-import time
 from sklearn.model_selection import train_test_split
 import soundfile as sf
 import glob
 import h5py
+from tqdm import tqdm
 
 from .AudioDatasetGenerator import AudioDatasetGenerator
 
@@ -136,9 +136,6 @@ class AudioDatasetLoader:
         self.limits = config.get('limits', {})
 
     def create_cache(self, name, cache, paths):
-        start = time.time()
-        print('AudioDatasetLoader: creating dataset...')
-
         if self.type == 'LibriSpeech':
             filenames, labels = scan_librispeech(paths, self.limits, self.frames)
         elif self.type == 'VoxLingua107':
@@ -160,7 +157,7 @@ class AudioDatasetLoader:
         if nb_samples == 0:
             return 0
 
-        for i in range(nb_samples):
+        for i in tqdm(range(nb_samples)):
             filename, frame = filenames[i]
             label = labels[i]
             data, fs = sf.read(filename)
@@ -174,16 +171,6 @@ class AudioDatasetLoader:
 
             X[i] = data
             y[i] = label
-            
-            # Log progress
-            progress = math.ceil(100 * (i + 1) / nb_samples)
-            if progress % 5 == 0:
-                progress_text = '{}% {} files'.format(progress, name)
-                print('AudioDatasetLoader: caching ' + progress_text, end='\r')
-
-        end = time.time()
-        print()
-        print('AudioDatasetLoader: done in {}s'.format(end - start))
 
         return len(np.unique(labels))
 
@@ -255,9 +242,13 @@ class AudioDatasetLoader:
         cache_path = checkpoint_dir + '/AudioDatasetLoader_cache.h5'
         cache = h5py.File(cache_path, 'a')
         if len(cache) == 0:
+            print('==== AudioDatasetLoader')
+            print('Creating dataset cache...')
             nb_categories  = self.create_cache('train', cache, self.train_paths)
             nb_categories += self.create_cache('val', cache, self.val_paths)
             nb_categories += self.create_cache('test', cache, self.test_paths)
+            print('====')
+
             cache.attrs.create('nb_categories', nb_categories)
         
         nb_categories = cache.attrs['nb_categories']

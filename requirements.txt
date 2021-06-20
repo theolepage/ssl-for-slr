@@ -6,3 +6,4 @@ sklearn
 soundfile
 librosa
 audiomentations
+tqdm
