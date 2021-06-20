@@ -21,7 +21,7 @@ from sslforslr.models import (
     MultiTaskModel
 )
 from sslforslr.models.encoders import CPCEncoder, SincEncoder
-from sslforslr.data import AudioDatasetLoader, AudioAugmentationGenerator
+from sslforslr.dataset import AudioDatasetLoader, AudioAugmentationGenerator
 
 def summary_for_shape(model, input_shape):
     x = Input(shape=input_shape)

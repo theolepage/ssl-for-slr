@@ -6,30 +6,11 @@ import numpy as np
 
 class SincConv(Layer):
     '''
-    Sinc-based convolution Keras layer
+    Sinc-based convolutions implemented as a Keras layer.
 
-    Parameters
-    ----------
-    nb_filters : `int`
-        Number of filters (= number of output channels).
-    kernel_size : `int`
-        Convolution filter width/length (will be increased by one if even).
-    sample_freq : `int`
-        Sample rate of input audio.
-    stride : `int`
-        Convolution stride param. Defaults to 1.
-    padding : `string`
-        Convolution padding param. Defaults to "VALID".
-    min_low_hz : `int`
-        Minimum lowest frequency for pass band filter. Defaults to 50.
-    min_band_hz : `int`
-        Minimum frequency for pass band filter. Defaults to 50.
-
-    Reference
-    ---------
-    Mirco Ravanelli, Yoshua Bengio,
-    "Speaker Recognition from raw waveform with SincNet".
-    https://arxiv.org/abs/1808.00158
+    "Speaker Recognition from raw waveform with SincNet"
+    Mirco Ravanelli, Yoshua Bengio
+    https://arxiv.org/pdf/1808.00158.pdf
     '''
 
     @staticmethod
@@ -43,6 +24,25 @@ class SincConv(Layer):
     def __init__(self, nb_filters, kernel_size, sample_freq,
                  stride=1, padding="VALID", min_low_hz=50, min_band_hz=50,
                  **kwargs):
+        '''
+        Parameters
+        ----------
+        nb_filters : `int`
+            Number of filters (= number of output channels).
+        kernel_size : `int`
+            Convolution filter width/length (will be increased by one if even).
+        sample_freq : `int`
+            Sample rate of input audio.
+        stride : `int`
+            Convolution stride param. Defaults to 1.
+        padding : `string`
+            Convolution padding param. Defaults to "VALID".
+        min_low_hz : `int`
+            Minimum lowest frequency for pass band filter. Defaults to 50.
+        min_band_hz : `int`
+            Minimum frequency for pass band filter. Defaults to 50.
+        '''
+
         super(SincConv, self).__init__(**kwargs)
 
         self.nb_filters = nb_filters

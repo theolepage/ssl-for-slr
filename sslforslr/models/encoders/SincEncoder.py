@@ -9,36 +9,14 @@ from tensorflow.keras.layers import GRU
 from tensorflow.keras.layers import Bidirectional
 from tensorflow.keras import regularizers
 
-class SincEncoderBlock(Layer):
-
-    def __init__(self, filters, kernel_size, stride, sample_frequency, reg,
-                 sincconv=False, **kwargs):
-        super(SincEncoderBlock, self).__init__(**kwargs)
-
-        if sincconv:
-            self.conv = SincConv(nb_filters=filters,
-                                 kernel_size=kernel_size,
-                                 sample_freq=sample_frequency,
-                                 stride=stride,
-                                 padding='SAME')
-        else:
-            self.conv = Conv1D(filters=filters,
-                               kernel_size=kernel_size,
-                               strides=stride,
-                               padding='SAME',
-                               kernel_regularizer=self.reg,
-                               bias_regularizer=self.reg)
-            
-        self.normalization = BatchNormalization(center=False, scale=False)
-        self.activation = PReLU(shared_axes=[1])
-
-    def call(self, X):
-        X = self.conv(X)
-        X = self.normalization(X)
-        X = self.activation(X)
-        return X
-
 class SincEncoder(Model):
+    '''
+    Encoder of the original PASE+ implementation based on SincNet (SincConv).
+
+    "Multi-task self-supervised learning for Robust Speech Recognition"
+    Mirco Ravanelli et al.
+    https://arxiv.org/pdf/2001.09239.pdf
+    '''
 
     def __init__(self,
                  encoded_dim,
@@ -111,3 +89,33 @@ class SincEncoder(Model):
     def compute_output_shape(self, input_shape):
         nb_timesteps = input_shape[0] // 160
         return (nb_timesteps, self.encoded_dim)
+
+
+class SincEncoderBlock(Layer):
+
+    def __init__(self, filters, kernel_size, stride, sample_frequency, reg,
+                 sincconv=False, **kwargs):
+        super(SincEncoderBlock, self).__init__(**kwargs)
+
+        if sincconv:
+            self.conv = SincConv(nb_filters=filters,
+                                 kernel_size=kernel_size,
+                                 sample_freq=sample_frequency,
+                                 stride=stride,
+                                 padding='SAME')
+        else:
+            self.conv = Conv1D(filters=filters,
+                               kernel_size=kernel_size,
+                               strides=stride,
+                               padding='SAME',
+                               kernel_regularizer=self.reg,
+                               bias_regularizer=self.reg)
+            
+        self.normalization = BatchNormalization(center=False, scale=False)
+        self.activation = PReLU(shared_axes=[1])
+
+    def call(self, X):
+        X = self.conv(X)
+        X = self.normalization(X)
+        X = self.activation(X)
+        return X

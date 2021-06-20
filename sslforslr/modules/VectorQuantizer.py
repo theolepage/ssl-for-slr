@@ -15,6 +15,17 @@ def st_gumbel_softmax(logits, temperature):
     return tf.stop_gradient(y_hard - y) + y
 
 class VectorQuantizer(Layer):
+    '''
+    Vector quantization module implemented as a Keras layer.
+
+    During backpropagation, using a straight through estimator,
+    the argmax operation is replaced by a Gumbel softmax. 
+    This implementation is based on fairseq GumbelVectorQuantizer module.
+
+    "Categorical Reparameterization with Gumbel-Softmax"
+    Eric Jang, Shixiang Gu, Ben Poole
+    https://arxiv.org/pdf/1611.01144.pdf
+    '''
 
     def __init__(self, input_dim, dim, nb_groups, nb_vars, temp):
         super().__init__()

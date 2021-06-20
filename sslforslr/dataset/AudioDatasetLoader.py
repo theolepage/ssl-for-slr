@@ -122,6 +122,15 @@ def scan_voxlingua107(paths, limits_config, frames_config):
     return filenames, languages
 
 class AudioDatasetLoader:
+    '''
+    Class to create a cache file from LibriSpeech and VoxLingua107 datasets.
+    Features:
+        - sample audio frames randomly during training
+        - sample audio frames sequentially
+        - split train set to create val and test sets
+        - create val and test sets from different directories
+        - load only a specific amount of utterances, speakers, ...
+    '''
 
     def __init__(self, seed, config):
         np.random.seed(seed)

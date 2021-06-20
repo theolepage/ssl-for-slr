@@ -7,43 +7,18 @@ from tensorflow.keras import regularizers
 from tensorflow.keras import losses
 
 from .VQWave2VecConfig import VQWave2VecConfig
-from sslforslr.layers import TransformerEncoder, VectorQuantizer
-
-class VQWave2VecEncoder(Model):
-
-    def __init__(self, config):
-        super().__init__()
-
-        conv_layers = eval(config)
-
-        self.layers_ = []
-        for dim, size, stride in conv_layers:
-            self.layers_.append(Conv1D(dim, size, strides=stride, padding='same'))
-            self.layers_.append(LayerNormalization())
-            self.layers_.append(GELU())
-
-    def call(self, X):
-        for layer in self.layers_:
-            X = layer(X)
-        return X
-
-class Predictor(Model):
-
-    def __init__(self, encoded_dim, nb_timesteps_to_predict):
-        super(Predictor, self).__init__()
-
-        self.layers_ = []
-        for i in range(nb_timesteps_to_predict):
-            self.layers_.append(Dense(units=encoded_dim))
-
-    def call(self, context):
-        predictions = []
-        for layer in self.layers_:
-            predictions.append(layer(context))
-
-        return tf.stack(predictions, axis=1)
+from sslforslr.modules import TransformerEncoder, VectorQuantizer
 
 class VQWave2VecModel(Model):
+    '''
+    vq-wav2vec implemented as a Keras model.
+
+    It combines the principle of CPC and a quantization module.
+
+    "vq-wav2vec: Self-Supervised Learning of Discrete Speech Representations"
+    Alexei Baevski, Steffen Schneider, Michael Auli
+    https://arxiv.org/pdf/1910.05453.pdf
+    '''
 
     def __init__(self, config: VQWave2VecConfig):
         super().__init__()
@@ -253,3 +228,39 @@ class VQWave2VecModel(Model):
                                            features_loss)
 
         return { 'loss': loss, 'accuracy': accuracy }
+
+
+class VQWave2VecEncoder(Model):
+
+    def __init__(self, config):
+        super().__init__()
+
+        conv_layers = eval(config)
+
+        self.layers_ = []
+        for dim, size, stride in conv_layers:
+            self.layers_.append(Conv1D(dim, size, strides=stride, padding='same'))
+            self.layers_.append(LayerNormalization())
+            self.layers_.append(GELU())
+
+    def call(self, X):
+        for layer in self.layers_:
+            X = layer(X)
+        return X
+
+
+class Predictor(Model):
+
+    def __init__(self, encoded_dim, nb_timesteps_to_predict):
+        super(Predictor, self).__init__()
+
+        self.layers_ = []
+        for i in range(nb_timesteps_to_predict):
+            self.layers_.append(Dense(units=encoded_dim))
+
+    def call(self, context):
+        predictions = []
+        for layer in self.layers_:
+            predictions.append(layer(context))
+
+        return tf.stack(predictions, axis=1)

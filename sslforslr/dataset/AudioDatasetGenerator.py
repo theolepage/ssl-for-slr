@@ -4,7 +4,11 @@ import h5py
 from tensorflow.keras.utils import Sequence
 
 class AudioDatasetGenerator(Sequence):
-  
+    '''
+    Keras generator to use with an existing cache file
+    created with AudioDatasetLoader.
+    '''
+
     def __init__(self,
                  cache_path,
                  batch_size,

@@ -7,7 +7,11 @@ from audiomentations import TimeMask
 from audiomentations import ClippingDistortion
 
 class AudioAugmentationGenerator(Sequence):
-  
+    '''
+    Keras generator which adds audio augmentation transformations
+    to an existing generator.
+    '''
+
     def __init__(self, gen, config, sample_frequency):
         self.gen = gen
         self.config = config

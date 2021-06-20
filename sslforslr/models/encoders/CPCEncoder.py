@@ -6,6 +6,13 @@ from tensorflow.keras.layers import ReLU
 from tensorflow.keras import regularizers
 
 class CPCEncoder(Model):
+    '''
+    Encoder of the original CPC implementation.
+
+    "Representation Learning with Contrastive Predictive Coding"
+    Aaron van den Oord, Yazhe Li, Oriol Vinyals
+    https://arxiv.org/pdf/1807.03748.pdf
+    '''
 
     def __init__(self, encoded_dim, weight_regularizer=0.0):
         super(CPCEncoder, self).__init__()

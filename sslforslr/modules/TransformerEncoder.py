@@ -4,6 +4,9 @@ from tensorflow.keras.layers import Conv1D, Dropout, Dense, LayerNormalization, 
 from tensorflow_addons.layers import GELU
 
 class TransformerEncoderLayer(Model):
+    '''
+    Self-attention layer composing TransformerEncoder model.
+    '''
 
     def __init__(self, config):
         super().__init__()
@@ -50,6 +53,15 @@ class TransformerEncoderLayer(Model):
         return X
 
 class TransformerEncoder(Model):
+    '''
+    Self-attention Transformer implemented as a Keras model.
+
+    This implementation is based on fairseq MultiheadAttention module.
+
+    "Attention Is All You Need"
+    Ashish Vaswani et al.
+    https://arxiv.org/pdf/1706.03762.pdf
+    '''
 
     def __init__(self, config):
         super().__init__()

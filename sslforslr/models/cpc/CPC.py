@@ -7,71 +7,15 @@ from tensorflow.keras.layers import Lambda
 from tensorflow.keras.layers import TimeDistributed
 from tensorflow.keras import regularizers
 
-class Autoregressive(Model):
-
-    def __init__(self, reg):
-        super(Autoregressive, self).__init__()
-
-        self.rnn = GRU(units=256,
-                       return_sequences=False,
-                       kernel_regularizer=reg,
-                       recurrent_regularizer=reg,
-                       bias_regularizer=reg)
-
-    def call(self, X):
-        return self.rnn(X)
-
-class Predictor(Model):
-
-    def __init__(self, encoded_dim, nb_timesteps_to_predict, reg):
-        super(Predictor, self).__init__()
-
-        self.layers_ = []
-        for i in range(nb_timesteps_to_predict):
-            self.layers_.append(Dense(units=encoded_dim,
-                                      kernel_regularizer=reg,
-                                      bias_regularizer=reg))
-
-    def call(self, context):
-        predictions = []
-        for layer in self.layers_:
-            predictions.append(layer(context))
-
-        return tf.stack(predictions, axis=1)
-
-@tf.function
-def cpc_loss(nb_timesteps_to_predict, predictions, X_future_encoded):
-    # Shape: (batch_size, nb_timesteps_to_predict, encoded_dim)
-    
-    batch_size = tf.shape(predictions)[0]
-
-    losses = tf.zeros((batch_size))
-
-    for t in range(nb_timesteps_to_predict):
-        dot = tf.linalg.matmul(X_future_encoded[:, t, :],
-                                predictions[:, t, :],
-                                transpose_b=True)
-        
-        # Determine loss
-        log_softmax_dot = tf.nn.log_softmax(dot, axis=0)
-        diag = tf.linalg.tensor_diag_part(log_softmax_dot)
-        losses += diag
-
-    losses /= tf.cast(nb_timesteps_to_predict, dtype=tf.float32)
-
-    # Determine accuracy
-    softmax_dot = tf.nn.softmax(dot, axis=0)
-    pred_indices = tf.math.argmax(softmax_dot, axis=0, output_type=tf.int32)
-    preds_acc = tf.math.equal(pred_indices, tf.range(0, batch_size))
-    accuracies = tf.math.count_nonzero(preds_acc, dtype=tf.int32) / batch_size
-
-    # Compute the average loss and accuracy across all batches
-    loss = tf.math.reduce_mean(losses)
-    accuracy = tf.math.reduce_mean(accuracies)
-
-    return -1.0 * loss, accuracy
-
 class CPCModel(Model):
+    '''
+    Contrastive Predictive Coding (CPC) for audio signals,
+    implemented as a Keras model.
+
+    "Representation Learning with Contrastive Predictive Coding"
+    Aaron van den Oord, Yazhe Li, Oriol Vinyals
+    https://arxiv.org/pdf/1807.03748.pdf
+    '''
 
     def __init__(self,
                  encoder,
@@ -201,3 +145,70 @@ class CPCModel(Model):
             accuracy = (accuracy + accuracy2) / 2.0
 
         return { 'loss': loss, 'accuracy': accuracy }
+
+
+class Autoregressive(Model):
+
+    def __init__(self, reg):
+        super(Autoregressive, self).__init__()
+
+        self.rnn = GRU(units=256,
+                       return_sequences=False,
+                       kernel_regularizer=reg,
+                       recurrent_regularizer=reg,
+                       bias_regularizer=reg)
+
+    def call(self, X):
+        return self.rnn(X)
+
+
+class Predictor(Model):
+
+    def __init__(self, encoded_dim, nb_timesteps_to_predict, reg):
+        super(Predictor, self).__init__()
+
+        self.layers_ = []
+        for i in range(nb_timesteps_to_predict):
+            self.layers_.append(Dense(units=encoded_dim,
+                                      kernel_regularizer=reg,
+                                      bias_regularizer=reg))
+
+    def call(self, context):
+        predictions = []
+        for layer in self.layers_:
+            predictions.append(layer(context))
+
+        return tf.stack(predictions, axis=1)
+
+
+@tf.function
+def cpc_loss(nb_timesteps_to_predict, predictions, X_future_encoded):
+    # Shape: (batch_size, nb_timesteps_to_predict, encoded_dim)
+    
+    batch_size = tf.shape(predictions)[0]
+
+    losses = tf.zeros((batch_size))
+
+    for t in range(nb_timesteps_to_predict):
+        dot = tf.linalg.matmul(X_future_encoded[:, t, :],
+                                predictions[:, t, :],
+                                transpose_b=True)
+        
+        # Determine loss
+        log_softmax_dot = tf.nn.log_softmax(dot, axis=0)
+        diag = tf.linalg.tensor_diag_part(log_softmax_dot)
+        losses += diag
+
+    losses /= tf.cast(nb_timesteps_to_predict, dtype=tf.float32)
+
+    # Determine accuracy
+    softmax_dot = tf.nn.softmax(dot, axis=0)
+    pred_indices = tf.math.argmax(softmax_dot, axis=0, output_type=tf.int32)
+    preds_acc = tf.math.equal(pred_indices, tf.range(0, batch_size))
+    accuracies = tf.math.count_nonzero(preds_acc, dtype=tf.int32) / batch_size
+
+    # Compute the average loss and accuracy across all batches
+    loss = tf.math.reduce_mean(losses)
+    accuracy = tf.math.reduce_mean(accuracies)
+
+    return -1.0 * loss, accuracy

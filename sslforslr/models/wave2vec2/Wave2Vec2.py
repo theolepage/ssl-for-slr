@@ -7,27 +7,17 @@ from tensorflow.keras import regularizers
 from tensorflow.keras import losses
 
 from .Wave2Vec2Config import Wave2Vec2Config
-from sslforslr.layers import TransformerEncoder, VectorQuantizer
-
-class Wave2Vec2Encoder(Model):
-
-    def __init__(self, config):
-        super().__init__()
-
-        conv_layers = eval(config)
-
-        self.layers_ = []
-        for dim, size, stride in conv_layers:
-            self.layers_.append(Conv1D(dim, size, strides=stride, padding='same'))
-            self.layers_.append(LayerNormalization())
-            self.layers_.append(GELU())
-
-    def call(self, X):
-        for layer in self.layers_:
-            X = layer(X)
-        return X
+from sslforslr.modules import TransformerEncoder, VectorQuantizer
 
 class Wave2Vec2Model(Model):
+    '''
+    wav2vec 2.0 implemented as a Keras model.
+
+    "wav2vec 2.0: A Framework for Self-Supervised Learning
+    of Speech Representations"
+    Alexei Baevski et al.
+    https://arxiv.org/pdf/2006.11477.pdf
+    '''
 
     def __init__(self, config: Wave2Vec2Config):
         super().__init__()
@@ -243,3 +233,22 @@ class Wave2Vec2Model(Model):
         loss = self.compute_loss(C, Q, Q_negs, diversity_loss, features_loss)
 
         return { 'loss': loss }
+
+
+class Wave2Vec2Encoder(Model):
+
+    def __init__(self, config):
+        super().__init__()
+
+        conv_layers = eval(config)
+
+        self.layers_ = []
+        for dim, size, stride in conv_layers:
+            self.layers_.append(Conv1D(dim, size, strides=stride, padding='same'))
+            self.layers_.append(LayerNormalization())
+            self.layers_.append(GELU())
+
+    def call(self, X):
+        for layer in self.layers_:
+            X = layer(X)
+        return X
