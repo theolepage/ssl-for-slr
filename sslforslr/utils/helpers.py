@@ -148,8 +148,11 @@ def create_model(model_config, encoder, input_shape):
     return model
 
 def load_model(config, input_shape):
-    encoder = create_encoder(config)
-    model = create_model(config['model'], encoder, input_shape)
+    mirrored_strategy = tf.distribute.MirroredStrategy()
+
+    with mirrored_strategy.scope():
+        encoder = create_encoder(config)
+        model = create_model(config['model'], encoder, input_shape)
     
     # Compile and print model
     learning_rate = config['training']['learning_rate']
