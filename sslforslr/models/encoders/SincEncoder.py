@@ -1,9 +1,9 @@
-import tensorflow_addons as tfa
+from tensorflow_addons.layers import AdaptiveAveragePooling1D
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Layer
 from tensorflow.keras.layers import Add
 from tensorflow.keras.layers import Conv1D
-from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import PReLU
 from tensorflow.keras.layers import GRU
 from tensorflow.keras.layers import Bidirectional
@@ -21,6 +21,7 @@ class SincEncoder(Model):
 
     def __init__(self,
                  encoded_dim,
+                 frame_length,
                  sample_frequency,
                  skip_connections_enabled,
                  rnn_enabled,
@@ -60,15 +61,18 @@ class SincEncoder(Model):
                                          recurrent_regularizer=self.reg,
                                          bias_regularizer=self.reg))
 
+        if self.skip_connections_enabled:
+            self.pooling1D = AdaptiveAveragePooling1D(frame_length  // 160)
+
         self.conv = Conv1D(filters=self.encoded_dim,
                            kernel_size=1,
                            kernel_regularizer=self.reg,
                            bias_regularizer=self.reg)
-        self.bn = BatchNormalization() # FIXME: reproduce pytorch affine=False
+        self.bn = LayerNormalization()
 
     def call(self, X):
         skip_values = []
-        
+
         for i, block in enumerate(self.blocks):
             X = block(X)
 
@@ -82,7 +86,7 @@ class SincEncoder(Model):
 
         if self.skip_connections_enabled:
             for skip in skip_values:
-                skip = tfa.layers.AdaptiveAveragePooling1D(X.shape[1])(skip)
+                skip = self.pooling1D(skip)
                 X = Add()([X, skip])
 
         X = self.bn(X) 
@@ -112,8 +116,8 @@ class SincEncoderBlock(Layer):
                                padding='SAME',
                                kernel_regularizer=reg,
                                bias_regularizer=reg)
-            
-        self.normalization = BatchNormalization(center=False, scale=False)
+
+        self.normalization = LayerNormalization()
         self.activation = PReLU(shared_axes=[1])
 
     def call(self, X):

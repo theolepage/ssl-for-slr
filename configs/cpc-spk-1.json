@@ -1,5 +1,5 @@
 {
-    "name": "cpc-v1_language",
+    "name": "cpc-spk-1",
     "seed": 1717,
     "encoder": {
         "type": "CPC",
@@ -17,33 +17,38 @@
         "batch_size": 64,
         "learning_rate": 0.0001,
         "dataset": {
-            "type": "VoxLingua107",
+            "type": "LibriSpeech",
             "sample_frequency": 16000,
-            "train_paths": ["D:/Datasets/VoxLingua107/*"],
-            "val_ratio": 0.2,
-            "test_ratio": 0.0,
+            "train_paths": [
+                "/work2/home/ing2/datasets/LibriSpeech/train-clean-100/*",
+                "/work2/home/ing2/datasets/LibriSpeech/train-clean-360/*",
+                "/work2/home/ing2/datasets/LibriSpeech/train-other-500/*"
+            ],
+            "val_paths": [
+                "/work2/home/ing2/datasets/LibriSpeech/dev-clean/*",
+                "/work2/home/ing2/datasets/LibriSpeech/dev-other/*"
+            ],
+            "test_paths": [],
             "frames": {
                 "pick": "sequence",
                 "length": 20480,
                 "stride": 20480,
                 "count": 1
-            },
-            "limits": {
-                "languages": 10,
-                "utterances_per_language": 100
             }
         }
     },
     "evaluate": {
-        "type": "language-id",
-        "train_encoder": true,
+        "type": "speaker-id",
+        "train_encoder": false,
         "epochs": 50,
         "batch_size": 64,
         "learning_rate": 0.001,
         "dataset": {
-            "type": "VoxLingua107",
+            "type": "LibriSpeech",
             "sample_frequency": 16000,
-            "train_paths": ["D:/Datasets/VoxLingua107/*"],
+            "train_paths": [
+                "/work2/home/ing2/datasets/LibriSpeech/train-clean-100/*"
+            ],
             "val_ratio": 0.2,
             "test_ratio": 0.1,
             "frames": {
@@ -51,10 +56,6 @@
                 "length": 20480,
                 "stride": 20480,
                 "count": 1
-            },
-            "limits": {
-                "languages": 10,
-                "utterances_per_language": 100
             }
         }
     }

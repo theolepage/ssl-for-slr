@@ -95,7 +95,9 @@ def create_encoder(config):
         sample_frequency = config['training']['dataset']['sample_frequency']
         skip_connections_enabled = config['encoder'].get('skip_connections_enabled')
         rnn_enabled = config['encoder'].get('rnn_enabled')
+        frame_length = config['training']['dataset']['frames']['length']
         encoder = SincEncoder(encoded_dim,
+                              frame_length,
                               sample_frequency,
                               skip_connections_enabled,
                               rnn_enabled,

@@ -1,5 +1,5 @@
 {
-    "name": "cpc-v1",
+    "name": "cpc-spk-2",
     "seed": 1717,
     "encoder": {
         "type": "CPC",
@@ -9,7 +9,7 @@
     "model": {
         "type": "CPC",
         "nb_timesteps_to_predict": 12,
-        "bidirectional": false,
+        "bidirectional": true,
         "weight_regularizer": 1e-4
     },
     "training": {
@@ -19,39 +19,36 @@
         "dataset": {
             "type": "LibriSpeech",
             "sample_frequency": 16000,
-            "train_paths": ["D:/Datasets/LibriSpeech/train-clean-100/*"],
-            "val_paths": ["D:/Datasets/LibriSpeech/dev-clean/*"],
+            "train_paths": [
+                "/work2/home/ing2/datasets/LibriSpeech/train-clean-100/*",
+                "/work2/home/ing2/datasets/LibriSpeech/train-clean-360/*",
+                "/work2/home/ing2/datasets/LibriSpeech/train-other-500/*"
+            ],
+            "val_paths": [
+                "/work2/home/ing2/datasets/LibriSpeech/dev-clean/*",
+                "/work2/home/ing2/datasets/LibriSpeech/dev-other/*"
+            ],
             "test_paths": [],
             "frames": {
                 "pick": "sequence",
                 "length": 20480,
                 "stride": 20480,
                 "count": 1
-            },
-            "limits": {
-                "speakers": 10,
-                "utterances_per_speaker": 10
             }
-        },
-        "data_augment": [
-            { "type": "add_ir", "p": 0.5, "path": "D:/Datasets/sim_rir_16k/simulated_rirs_16k/" },
-            { "type": "add_noise", "p": 0.4, "path": "D:/Datasets/LibriSpeech/train-clean-100/" },
-            { "type": "add_noise", "p": 0.1, "path": "D:/Datasets/LibriSpeech/train-clean-100/" },
-            { "type": "frequency_mask", "p": 0.4 },
-            { "type": "time_mask", "p": 0.2 },
-            { "type": "clipping", "p": 0.2 }
-        ]
+        }
     },
     "evaluate": {
         "type": "speaker-id",
-        "train_encoder": true,
+        "train_encoder": false,
         "epochs": 50,
         "batch_size": 64,
         "learning_rate": 0.001,
         "dataset": {
             "type": "LibriSpeech",
             "sample_frequency": 16000,
-            "train_paths": ["D:/Datasets/LibriSpeech/train-clean-100/*"],
+            "train_paths": [
+                "/work2/home/ing2/datasets/LibriSpeech/train-clean-100/*"
+            ],
             "val_ratio": 0.2,
             "test_ratio": 0.1,
             "frames": {
@@ -59,10 +56,6 @@
                 "length": 20480,
                 "stride": 20480,
                 "count": 1
-            },
-            "limits": {
-                "speakers": 10,
-                "utterances_per_speaker": 10
             }
         }
     }

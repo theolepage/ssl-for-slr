@@ -1,24 +1,34 @@
 {
-    "name": "wave2vec2-v1",
+    "name": "cpc-spk-3",
     "seed": 1717,
     "encoder": {
-        "type": "wave2vec2"
+        "type": "Sinc",
+        "encoded_dim": 512,
+        "rnn_enabled": true,
+        "skip_connections_enabled": true,
+        "weight_regularizer": 1e-4
     },
     "model": {
-        "type": "wave2vec2"
+        "type": "CPC",
+        "nb_timesteps_to_predict": 12,
+        "bidirectional": true,
+        "weight_regularizer": 1e-4
     },
     "training": {
         "epochs": 50,
-        "batch_size": 1,
+        "batch_size": 64,
         "learning_rate": 0.0001,
         "dataset": {
             "type": "LibriSpeech",
             "sample_frequency": 16000,
             "train_paths": [
-                "D:/Datasets/LibriSpeech/train-clean-100/*"
+                "/work2/home/ing2/datasets/LibriSpeech/train-clean-100/*",
+                "/work2/home/ing2/datasets/LibriSpeech/train-clean-360/*",
+                "/work2/home/ing2/datasets/LibriSpeech/train-other-500/*"
             ],
             "val_paths": [
-                "D:/Datasets/LibriSpeech/dev-clean/*"
+                "/work2/home/ing2/datasets/LibriSpeech/dev-clean/*",
+                "/work2/home/ing2/datasets/LibriSpeech/dev-other/*"
             ],
             "test_paths": [],
             "frames": {
@@ -26,16 +36,12 @@
                 "length": 20480,
                 "stride": 20480,
                 "count": 1
-            },
-            "limits": {
-                "speakers": 10,
-                "utterances_per_speaker": 10
             }
         }
     },
     "evaluate": {
         "type": "speaker-id",
-        "train_encoder": true,
+        "train_encoder": false,
         "epochs": 50,
         "batch_size": 64,
         "learning_rate": 0.001,
@@ -43,7 +49,7 @@
             "type": "LibriSpeech",
             "sample_frequency": 16000,
             "train_paths": [
-                "D:/Datasets/LibriSpeech/train-clean-100/*"
+                "/work2/home/ing2/datasets/LibriSpeech/train-clean-100/*"
             ],
             "val_ratio": 0.2,
             "test_ratio": 0.1,
@@ -52,10 +58,6 @@
                 "length": 20480,
                 "stride": 20480,
                 "count": 1
-            },
-            "limits": {
-                "speakers": 10,
-                "utterances_per_speaker": 10
             }
         }
     }
