@@ -80,11 +80,11 @@ def train_evaluate(config_path):
                                    patience=5)
     tensorboard = TensorBoard(log_dir=eval_checkpoint_dir + '/logs/',
                               histogram_freq=1)
+    time_history = TimeHistoryCallback()
 
     # Start training
     train_gen, val_gen, test_gen = gens
     nb_epochs = config['evaluate']['epochs']
-    time_history = TimeHistoryCallback()
     callbacks = [save_callback, early_stopping, tensorboard, time_history]
     history = classifier.fit(train_gen,
                              validation_data=val_gen,

@@ -44,7 +44,9 @@ python train.py configs/cpc-v1.json
 
 ## To-Do
 
+- [ ] Option to enable multi GPU training, tensorboard
 - [ ] Use dataclass and YAML for all configs
+- [ ] Ensure all functions are tf.functions
 
 ---
 
