@@ -22,12 +22,12 @@ class Classifier(Model):
         self.nb_categories = nb_categories
 
         self.flatten = Flatten()
-        self.dense1 = Dense(units=256)
+        # self.dense1 = Dense(units=256)
         self.dense2 = Dense(units=nb_categories, activation='softmax')
 
     def call(self, X):
         X = self.flatten(X)
-        X = self.dense1(X)
+        # X = self.dense1(X)
         X = self.dense2(X)
         return X
 
