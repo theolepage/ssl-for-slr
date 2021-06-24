@@ -44,9 +44,7 @@ python train.py configs/cpc-v1.json
 
 ## To-Do
 
-- [ ] comment classes
-- [ ] config in data classes
-
+- [ ] Use dataclass and YAML for all configs
 
 ---
 

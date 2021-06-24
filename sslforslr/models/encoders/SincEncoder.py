@@ -8,6 +8,7 @@ from tensorflow.keras.layers import PReLU
 from tensorflow.keras.layers import GRU
 from tensorflow.keras.layers import Bidirectional
 from tensorflow.keras import regularizers
+from sslforslr.modules import SincConv
 
 class SincEncoder(Model):
     '''
@@ -26,6 +27,7 @@ class SincEncoder(Model):
                  weight_regularizer=0.0):
         super(SincEncoder, self).__init__()
 
+        self.encoded_dim = encoded_dim
         self.skip_connections_enabled = skip_connections_enabled
         self.rnn_enabled = rnn_enabled
         self.reg = regularizers.l2(weight_regularizer)
@@ -108,8 +110,8 @@ class SincEncoderBlock(Layer):
                                kernel_size=kernel_size,
                                strides=stride,
                                padding='SAME',
-                               kernel_regularizer=self.reg,
-                               bias_regularizer=self.reg)
+                               kernel_regularizer=reg,
+                               bias_regularizer=reg)
             
         self.normalization = BatchNormalization(center=False, scale=False)
         self.activation = PReLU(shared_axes=[1])

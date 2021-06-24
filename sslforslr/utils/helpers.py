@@ -110,7 +110,7 @@ def create_model(model_config, encoder, input_shape):
     weight_regularizer = model_config.get('weight_regularizer', 0.0)
 
     if model_type == 'multitask':
-        modules = config['model']['modules']
+        modules = model_config['modules']
         return MultiTaskModel(encoder, input_shape, modules)
     elif model_type == 'wave2vec2':
         config = Wave2Vec2Config()

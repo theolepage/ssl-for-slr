@@ -44,7 +44,7 @@ class MultiTaskModel(Model):
             if module_type == 'CPC':
                 nb_timesteps_to_predict = module['nb_timesteps_to_predict']
                 bidirectional = module.get('bidirectional', False)
-                module_model = CPCModel(encoder,
+                module_model = CPCModel(self.encoder,
                                         encoded_dim,
                                         nb_timesteps,
                                         nb_timesteps_to_predict,
@@ -52,9 +52,9 @@ class MultiTaskModel(Model):
                                         weight_regularizer)
                 modules[module_type] = CPCWorker(module_model, loss_scaler)
             elif module_type == 'LIM':
-                loss_fn = model_config['loss_fn']
-                context_length = model_config.get('context_length', 1)
-                module_model = LIMModel(encoder,
+                loss_fn = module['loss_fn']
+                context_length = module.get('context_length', 1)
+                module_model = LIMModel(self.encoder,
                                         nb_timesteps,
                                         loss_fn,
                                         context_length,

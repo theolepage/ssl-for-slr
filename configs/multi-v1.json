@@ -42,8 +42,12 @@
         "dataset": {
             "type": "LibriSpeech",
             "sample_frequency": 16000,
-            "train_paths": ["D:/Datasets/LibriSpeech/train-clean-100/*"],
-            "val_paths": ["D:/Datasets/LibriSpeech/dev-clean/*"],
+            "train_paths": [
+                "D:/Datasets/LibriSpeech/train-clean-100/*"
+            ],
+            "val_paths": [
+                "D:/Datasets/LibriSpeech/dev-clean/*"
+            ],
             "test_paths": [],
             "frames": {
                 "pick": "sequence",
