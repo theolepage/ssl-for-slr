@@ -39,7 +39,6 @@ def scan_librispeech(paths, limits_config, frames_config):
 
     limit_speakers = limits_config.get('speakers', -1)
     limit_utterances = limits_config.get('utterances_per_speaker', -1)
-    total_ratio = limits_config.get('total_ratio', 1.0)
 
     # Scan datasets
     for dataset_id in range(len(paths)):
@@ -66,17 +65,10 @@ def scan_librispeech(paths, limits_config, frames_config):
                     frames = get_frames(file, frames_config)
                     for frame in frames:
                         filenames.append([file, frame])
-                        speakers.append(speaker_id)
+                        speakers.append(speaker_id) # FIXME: nb_speakers
 
                     if len(frames) != 0:
                         nb_speaker_utterances += 1
-
-    # Keep only a specific ratio of all samples
-    idx = np.random.choice(len(filenames),
-                           int(total_ratio * len(filenames)),
-                           replace=False)
-    filenames = np.array(filenames)[idx]
-    speakers = np.array(speakers)[idx]
 
     return filenames, speakers
 
@@ -87,7 +79,6 @@ def scan_voxlingua107(paths, limits_config, frames_config):
 
     limit_languages = limits_config.get('languages', -1)
     limit_utterances = limits_config.get('utterances_per_language', -1)
-    total_ratio = limits_config.get('total_ratio', 1.0)
 
     for dataset_id in range(len(paths)):
         language_dirs = glob.glob(paths[dataset_id])
@@ -110,18 +101,10 @@ def scan_voxlingua107(paths, limits_config, frames_config):
                 frames = get_frames(file, frames_config)
                 for frame in frames:
                     filenames.append([file, frame])
-                    languages.append(language_id)
+                    languages.append(language_id) # FIXME: nb_languages
 
                 if len(frames) != 0:
                     nb_language_utterances += 1
-
-
-    # Keep only a specific ratio of all samples
-    idx = np.random.choice(len(filenames),
-                           int(total_ratio * len(filenames)),
-                           replace=False)
-    filenames = np.array(filenames)[idx]
-    languages = np.array(languages)[idx]
 
     return filenames, languages
 
@@ -172,7 +155,6 @@ class AudioDatasetLoader:
 
         for i in tqdm(range(nb_samples)):
             filename, frame = filenames[i]
-            frame = int(frame)
             label = labels[i]
             data, fs = sf.read(filename)
 
@@ -227,6 +209,13 @@ class AudioDatasetLoader:
             indices_train, indices_val = train_test_split(indices, test_size=self.val_ratio)
         else: # self.test_ratio > 0.0
             indices_train, indices_test = train_test_split(indices, test_size=self.test_ratio)
+
+        # Handle train ratio
+        train_ratio = self.limits.get('train_ratio', 1.0)
+        idx = np.random.choice(len(indices_train),
+                               int(train_ratio * len(indices_train)),
+                               replace=False)
+        indices_train = indices_train[idx]
 
         random = (self.frames['pick'] == 'random')
         frame_length = self.frames['length']
