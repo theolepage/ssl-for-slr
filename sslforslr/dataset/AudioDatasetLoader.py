@@ -72,9 +72,11 @@ def scan_librispeech(paths, limits_config, frames_config):
                         nb_speaker_utterances += 1
 
     # Keep only a specific ratio of all samples
-    split_idx = int(total_ratio * len(filenames))
-    filenames = filenames[0:split_idx]
-    speakers = speakers[0:split_idx]
+    idx = np.random.choice(len(filenames),
+                           int(total_ratio * len(filenames)),
+                           replace=False)
+    filenames = np.array(filenames)[idx]
+    speakers = np.array(speakers)[idx]
 
     return filenames, speakers
 
@@ -115,9 +117,11 @@ def scan_voxlingua107(paths, limits_config, frames_config):
 
 
     # Keep only a specific ratio of all samples
-    split_idx = int(total_ratio * len(filenames))
-    filenames = filenames[0:split_idx]
-    languages = languages[0:split_idx]
+    idx = np.random.choice(len(filenames),
+                           int(total_ratio * len(filenames)),
+                           replace=False)
+    filenames = np.array(filenames)[idx]
+    languages = np.array(languages)[idx]
 
     return filenames, languages
 
@@ -168,6 +172,7 @@ class AudioDatasetLoader:
 
         for i in tqdm(range(nb_samples)):
             filename, frame = filenames[i]
+            frame = int(frame)
             label = labels[i]
             data, fs = sf.read(filename)
 
