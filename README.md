@@ -44,7 +44,9 @@ python train.py configs/cpc-v1.json
 
 ## To-Do
 
-- [ ] Option to enable multi GPU training, tensorboard
+- [ ] Option to enable multi GPU training, tensorboard, publish on tensorboard.dev
+- [ ] Do not store audio cache in checkpoints/model/
+- [ ] No ___speaker_id but _eval
 - [ ] Use dataclass and YAML for all configs
 - [ ] Ensure all functions are tf.functions
 

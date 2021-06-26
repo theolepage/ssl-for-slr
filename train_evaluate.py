@@ -22,13 +22,15 @@ class Classifier(Model):
         self.nb_categories = nb_categories
 
         self.flatten = Flatten()
-        # self.dense1 = Dense(units=256)
-        self.dense2 = Dense(units=nb_categories, activation='softmax')
+        self.dense1 = Dense(units=256)
+        self.dense2 = Dense(units=256)
+        self.dense3 = Dense(units=nb_categories, activation='softmax')
 
     def call(self, X):
         X = self.flatten(X)
-        # X = self.dense1(X)
+        X = self.dense1(X)
         X = self.dense2(X)
+        X = self.dense3(X)
         return X
 
 def create_classifier(config, input_shape, nb_categories, model):
@@ -62,7 +64,9 @@ def train_evaluate(config_path):
     # Load pre-trained weights
     last_checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
     if last_checkpoint_path:
-        model.load_weights(last_checkpoint_path)
+        mirrored_strategy = tf.distribute.MirroredStrategy()
+        with mirrored_strategy.scope():
+            model.load_weights(last_checkpoint_path)
     print('Loading pretrained model: ', last_checkpoint_path is not None)
     
     model.trainable = config['evaluate'].get('train_encoder', True)

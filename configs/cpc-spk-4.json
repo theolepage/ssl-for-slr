@@ -78,7 +78,9 @@
             "type": "LibriSpeech",
             "sample_frequency": 16000,
             "train_paths": [
-                "/work2/home/ing2/datasets/LibriSpeech/train-clean-100/*"
+                "/work2/home/ing2/datasets/LibriSpeech/train-clean-100/*",
+                "/work2/home/ing2/datasets/LibriSpeech/train-clean-360/*",
+                "/work2/home/ing2/datasets/LibriSpeech/train-other-500/*"
             ],
             "val_ratio": 0.2,
             "test_ratio": 0.1,
