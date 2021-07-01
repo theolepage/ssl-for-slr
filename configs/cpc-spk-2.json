@@ -2,14 +2,16 @@
     "name": "cpc-spk-2",
     "seed": 1717,
     "encoder": {
-        "type": "CPC",
+        "type": "Sinc",
         "encoded_dim": 512,
+        "rnn_enabled": false,
+        "skip_connections_enabled": false,
         "weight_regularizer": 1e-4
     },
     "model": {
         "type": "CPC",
         "nb_timesteps_to_predict": 12,
-        "bidirectional": true,
+        "bidirectional": false,
         "weight_regularizer": 1e-4
     },
     "training": {

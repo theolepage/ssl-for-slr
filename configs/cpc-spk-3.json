@@ -2,10 +2,8 @@
     "name": "cpc-spk-3",
     "seed": 1717,
     "encoder": {
-        "type": "Sinc",
+        "type": "CPC",
         "encoded_dim": 512,
-        "rnn_enabled": true,
-        "skip_connections_enabled": true,
         "weight_regularizer": 1e-4
     },
     "model": {
@@ -35,7 +33,7 @@
                 "pick": "sequence",
                 "length": 20480,
                 "stride": 20480,
-                "count": 1
+                "count": 2
             }
         }
     },

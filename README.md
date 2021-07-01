@@ -44,7 +44,9 @@ python train.py configs/cpc-v1.json
 
 ## To-Do
 
-- [ ] Option to enable multi GPU training, tensorboard, publish on tensorboard.dev
+- [ ] Config choose GRU dim CPC
+- [ ] Fixme nb_categories data loader
+- [ ] Option to enable multi GPU training, disable tensorboard, publish on tensorboard.dev
 - [ ] Do not store audio cache in checkpoints/model/
 - [ ] No ___speaker_id but _eval
 - [ ] Use dataclass and YAML for all configs
