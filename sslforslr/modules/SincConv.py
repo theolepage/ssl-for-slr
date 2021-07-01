@@ -116,6 +116,6 @@ class SincConv(Layer):
             input_shape[1],
             self.kernel_size,
             padding="valid",
-            stride=1,
+            stride=self.stride,
             dilation=1)
         return (input_shape[0], out_width_size, self.nb_filters)

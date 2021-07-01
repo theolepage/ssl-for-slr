@@ -4,7 +4,7 @@ from tensorflow.keras.layers import Layer
 from tensorflow.keras.layers import Add
 from tensorflow.keras.layers import Conv1D
 from tensorflow.keras.layers import LayerNormalization
-from tensorflow.keras.layers import PReLU
+from tensorflow.keras.layers import ReLU
 from tensorflow.keras.layers import GRU
 from tensorflow.keras.layers import Bidirectional
 from tensorflow.keras import regularizers
@@ -33,13 +33,16 @@ class SincEncoder(Model):
         self.rnn_enabled = rnn_enabled
         self.reg = regularizers.l2(weight_regularizer)
 
-        conv_nb_filters = [64, 64, 128, 128, 256, 256, 512, 512]
-        conv_kernel_sizes = [251, 20, 11, 11, 11, 11, 11, 11]
-        conv_strides = [1, 10, 2, 1, 2, 1, 2, 2]
+        # conv_nb_filters = [64, 64, 128, 128, 256, 256, 512, 512]
+        # conv_kernel_sizes = [251, 20, 11, 11, 11, 11, 11, 11]
+        # conv_strides = [1, 10, 2, 1, 2, 1, 2, 2]
+        conv_nb_filters = [512, 512, 512, 512, 512]
+        conv_kernel_sizes = [10, 8, 4, 4, 4]
+        conv_strides = [5, 4, 2, 2, 2]
         nb_blocks = len(conv_nb_filters)
 
         self.blocks = []
-        self.skips = []
+        # self.skips = []
         for i, (f, w, s) in enumerate(zip(conv_nb_filters,
                                           conv_kernel_sizes,
                                           conv_strides)):
@@ -48,48 +51,48 @@ class SincEncoder(Model):
                                                 self.reg,
                                                 i == 0))
 
-            if self.skip_connections_enabled and i < nb_blocks - 1:
-                self.skips.append(Conv1D(filters=self.encoded_dim,
-                                         kernel_size=1,
-                                         use_bias=False,
-                                         kernel_regularizer=self.reg))
+        #     if self.skip_connections_enabled and i < nb_blocks - 1:
+        #         self.skips.append(Conv1D(filters=self.encoded_dim,
+        #                                  kernel_size=1,
+        #                                  use_bias=False,
+        #                                  kernel_regularizer=self.reg))
 
-        if self.rnn_enabled:
-            self.rnn = Bidirectional(GRU(units=self.encoded_dim,
-                                         return_sequences=True,
-                                         kernel_regularizer=self.reg,
-                                         recurrent_regularizer=self.reg,
-                                         bias_regularizer=self.reg))
+        # if self.rnn_enabled:
+        #     self.rnn = Bidirectional(GRU(units=self.encoded_dim,
+        #                                  return_sequences=True,
+        #                                  kernel_regularizer=self.reg,
+        #                                  recurrent_regularizer=self.reg,
+        #                                  bias_regularizer=self.reg))
 
-        if self.skip_connections_enabled:
-            self.pooling1D = AdaptiveAveragePooling1D(frame_length  // 160)
+        # if self.skip_connections_enabled:
+        #     self.pooling1D = AdaptiveAveragePooling1D(frame_length  // 160)
 
-        self.conv = Conv1D(filters=self.encoded_dim,
-                           kernel_size=1,
-                           kernel_regularizer=self.reg,
-                           bias_regularizer=self.reg)
-        self.bn = LayerNormalization()
+        # self.conv = Conv1D(filters=self.encoded_dim,
+        #                    kernel_size=1,
+        #                    kernel_regularizer=self.reg,
+        #                    bias_regularizer=self.reg)
+        # self.bn = LayerNormalization()
 
     def call(self, X):
-        skip_values = []
+        # skip_values = []
 
         for i, block in enumerate(self.blocks):
             X = block(X)
 
-            if self.skip_connections_enabled and i < len(self.skips):
-                skip_values.append(self.skips[i](X))
+            # if self.skip_connections_enabled and i < len(self.skips):
+            #     skip_values.append(self.skips[i](X))
 
-        if self.rnn_enabled:
-            X = self.rnn(X)
+        # if self.rnn_enabled:
+            # X = self.rnn(X)
 
-        X = self.conv(X)
+        # X = self.conv(X)
 
-        if self.skip_connections_enabled:
-            for skip in skip_values:
-                skip = self.pooling1D(skip)
-                X = Add()([X, skip])
+        # if self.skip_connections_enabled:
+        #     for skip in skip_values:
+        #         skip = self.pooling1D(skip)
+        #         X = Add()([X, skip])
 
-        X = self.bn(X) 
+        # X = self.bn(X)
         return X
 
     def compute_output_shape(self, input_shape):
@@ -118,7 +121,7 @@ class SincEncoderBlock(Layer):
                                bias_regularizer=reg)
 
         self.normalization = LayerNormalization()
-        self.activation = PReLU(shared_axes=[1])
+        self.activation = ReLU()
 
     def call(self, X):
         X = self.conv(X)
