@@ -4,14 +4,14 @@
     "encoder": {
         "type": "Sinc",
         "encoded_dim": 512,
-        "rnn_enabled": true,
-        "skip_connections_enabled": true,
+        "rnn_enabled": false,
+        "skip_connections_enabled": false,
         "weight_regularizer": 1e-4
     },
     "model": {
         "type": "CPC",
         "nb_timesteps_to_predict": 12,
-        "bidirectional": true,
+        "bidirectional": false,
         "weight_regularizer": 1e-4
     },
     "training": {
@@ -42,17 +42,17 @@
             {
                 "type": "add_ir",
                 "p": 0.5,
-                "path": "D:/Datasets/sim_rir_16k/simulated_rirs_16k/"
+                "path": "/work2/home/ing2/datasets/simulated_rirs_16k/"
             },
             {
                 "type": "add_noise",
                 "p": 0.4,
-                "path": "D:/Datasets/LibriSpeech/train-clean-100/"
+                "path": "/work2/home/ing2/datasets/noise_non_stationary/"
             },
             {
                 "type": "add_noise",
                 "p": 0.1,
-                "path": "D:/Datasets/LibriSpeech/train-clean-100/"
+                "path": "/work2/home/ing2/datasets/LibriSpeech/train-other-500/"
             },
             {
                 "type": "frequency_mask",
