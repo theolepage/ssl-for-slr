@@ -65,7 +65,7 @@ def scan_librispeech(paths, limits_config, frames_config):
                     frames = get_frames(file, frames_config)
                     for frame in frames:
                         filenames.append([file, frame])
-                        speakers.append(speaker_id) # FIXME: nb_speakers
+                        speakers.append(nb_speakers)
 
                     if len(frames) != 0:
                         nb_speaker_utterances += 1
@@ -101,7 +101,7 @@ def scan_voxlingua107(paths, limits_config, frames_config):
                 frames = get_frames(file, frames_config)
                 for frame in frames:
                     filenames.append([file, frame])
-                    languages.append(language_id) # FIXME: nb_languages
+                    languages.append(nb_languages)
 
                 if len(frames) != 0:
                     nb_language_utterances += 1
