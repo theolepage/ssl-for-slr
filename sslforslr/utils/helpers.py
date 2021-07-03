@@ -11,15 +11,11 @@ from tensorflow.keras.layers import Input
 from tensorflow.keras import Model
 from tensorflow.keras.optimizers import Adam
 
-from sslforslr.models import (
-    CPCModel,
-    LIMModel,
-    Wave2Vec2Model,
-    Wave2Vec2Config,
-    VQWave2VecModel,
-    VQWave2VecConfig,
-    MultiTaskModel
-)
+from sslforslr.models.cpc import CPCModel
+from sslforslr.models.lim import LIMModel
+from sslforslr.models.wave2vec2 import Wave2Vec2Model, Wave2Vec2Config
+from sslforslr.models.vqwave2vec import VQWave2VecModel, VQWave2VecConfig
+from sslforslr.models.multitask import MultiTaskModel
 from sslforslr.models.encoders import CPCEncoder, SincEncoder
 from sslforslr.dataset import AudioDatasetLoader, AudioAugmentationGenerator
 
