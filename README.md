@@ -44,6 +44,8 @@ python train.py configs/cpc-v1.json
 
 ## To-Do
 
+- [ ] choose in train_evaluate type of classifier and random, surpervised baseline
+- [ ] Fix error end training saving history.npy
 - [ ] Config choose GRU dim CPC
 - [ ] Option to enable multi GPU training, disable tensorboard, publish on tensorboard.dev
 - [ ] Do not store audio cache in checkpoints/model/

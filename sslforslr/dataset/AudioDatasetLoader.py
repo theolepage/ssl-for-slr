@@ -51,7 +51,6 @@ def scan_librispeech(paths, limits_config, frames_config):
             if nb_speakers == limit_speakers:
                 break
 
-            nb_speakers += 1
             nb_speaker_utterances = 0
             chapter_dirs = glob.glob(speaker_dirs[speaker_id] + '/*')
             
@@ -69,6 +68,8 @@ def scan_librispeech(paths, limits_config, frames_config):
 
                     if len(frames) != 0:
                         nb_speaker_utterances += 1
+            
+            nb_speakers += 1
 
     return filenames, speakers
 
@@ -91,7 +92,6 @@ def scan_voxlingua107(paths, limits_config, frames_config):
                 break
 
             nb_language_utterances = 0
-            nb_languages += 1
             files = glob.glob(language_dirs[language_id] + '/*.wav')
 
             for file in files:
@@ -105,6 +105,8 @@ def scan_voxlingua107(paths, limits_config, frames_config):
 
                 if len(frames) != 0:
                     nb_language_utterances += 1
+            
+            nb_languages += 1
 
     return filenames, languages
 
