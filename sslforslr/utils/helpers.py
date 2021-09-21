@@ -14,10 +14,10 @@ from tensorflow.keras.optimizers import Adam
 from sslforslr.models import (
     CPCModel,
     LIMModel,
-    Wave2Vec2Model,
-    Wave2Vec2Config,
-    VQWave2VecModel,
-    VQWave2VecConfig,
+    Wav2Vec2Model,
+    Wav2Vec2Config,
+    VQWav2VecModel,
+    VQWav2VecConfig,
     MultiTaskModel
 )
 from sslforslr.models.encoders import CPCEncoder, SincEncoder
@@ -82,7 +82,7 @@ def load_dataset(config, checkpoint_dir, key='training'):
 def create_encoder(config):
     encoder_type = config['encoder']['type']
 
-    if encoder_type in ['wave2vec2', 'vq-wave2vec']:
+    if encoder_type in ['wav2vec2', 'vq-wav2vec']:
         encoder = None
         return encoder
 
@@ -114,12 +114,12 @@ def create_model(model_config, encoder, input_shape):
     if model_type == 'multitask':
         modules = model_config['modules']
         return MultiTaskModel(encoder, input_shape, modules)
-    elif model_type == 'wave2vec2':
-        config = Wave2Vec2Config()
-        return Wave2Vec2Model(config)
-    elif model_type == 'vq-wave2vec':
-        config = VQWave2VecConfig()
-        return VQWave2VecModel(config)
+    elif model_type == 'wav2vec2':
+        config = Wav2Vec2Config()
+        return Wav2Vec2Model(config)
+    elif model_type == 'vq-wav2vec':
+        config = VQWav2VecConfig()
+        return VQWav2VecModel(config)
 
     encoder_output_shape = encoder.compute_output_shape(input_shape)
     nb_timesteps = encoder_output_shape[0]

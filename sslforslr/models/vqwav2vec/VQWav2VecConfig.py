@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import List, Tuple
 
 @dataclass
-class VQWave2VecConfig:
+class VQWav2VecConfig:
     nb_timesteps_to_predict: int = field(
         default=12,
         metadata={

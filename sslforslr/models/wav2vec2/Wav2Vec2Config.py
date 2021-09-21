@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import List, Tuple
 
 @dataclass
-class Wave2Vec2Config:
+class Wav2Vec2Config:
     encoder_conv_layers: str = field(
         default="[(512, 10, 5)] + [(512, 3, 2)] * 4 + [(512, 2, 2)] + [(512, 2, 2)]",
         metadata={

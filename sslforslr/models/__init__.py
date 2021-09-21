@@ -1,8 +1,8 @@
 from .cpc.CPC import CPCModel, cpc_loss
 from .lim.LIM import LIMModel, lim_loss
-from .wave2vec2.Wave2Vec2 import Wave2Vec2Model
-from .vqwave2vec.VQWave2Vec import VQWave2VecModel
+from .wav2vec2.Wav2Vec2 import Wav2Vec2Model
+from .vqwav2vec.VQWav2Vec import VQWav2VecModel
 from .multitask.MultiTask import MultiTaskModel
 
-from .wave2vec2.Wave2Vec2Config import Wave2Vec2Config
-from .vqwave2vec.VQWave2VecConfig import VQWave2VecConfig
+from .wav2vec2.Wav2Vec2Config import Wav2Vec2Config
+from .vqwav2vec.VQWav2VecConfig import VQWav2VecConfig

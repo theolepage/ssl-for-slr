@@ -23,14 +23,12 @@ class Classifier(Model):
 
         self.flatten = Flatten()
         self.dense1 = Dense(units=256)
-        self.dense2 = Dense(units=256)
-        self.dense3 = Dense(units=nb_categories, activation='softmax')
+        self.dense2 = Dense(units=nb_categories, activation='softmax')
 
     def call(self, X):
         X = self.flatten(X)
         X = self.dense1(X)
         X = self.dense2(X)
-        X = self.dense3(X)
         return X
 
 def create_classifier(config, input_shape, nb_categories, model):

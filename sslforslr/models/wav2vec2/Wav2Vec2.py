@@ -6,10 +6,10 @@ from tensorflow_addons.layers import GELU
 from tensorflow.keras import regularizers
 from tensorflow.keras import losses
 
-from .Wave2Vec2Config import Wave2Vec2Config
+from .Wav2Vec2Config import Wav2Vec2Config
 from sslforslr.modules import TransformerEncoder, VectorQuantizer
 
-class Wave2Vec2Model(Model):
+class Wav2Vec2Model(Model):
     '''
     wav2vec 2.0 implemented as a Keras model.
 
@@ -19,12 +19,12 @@ class Wave2Vec2Model(Model):
     https://arxiv.org/pdf/2006.11477.pdf
     '''
 
-    def __init__(self, config: Wave2Vec2Config):
+    def __init__(self, config: Wav2Vec2Config):
         super().__init__()
 
         self.config = config
 
-        self.encoder = Wave2Vec2Encoder(config.encoder_conv_layers)
+        self.encoder = Wav2Vec2Encoder(config.encoder_conv_layers)
         self.quantizer = VectorQuantizer(input_dim=config.encoder_dim,
                                          dim=config.quantizer_dim,
                                          nb_groups=config.quantizer_nb_groups,
@@ -235,7 +235,7 @@ class Wave2Vec2Model(Model):
         return { 'loss': loss }
 
 
-class Wave2Vec2Encoder(Model):
+class Wav2Vec2Encoder(Model):
 
     def __init__(self, config):
         super().__init__()

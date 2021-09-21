@@ -11,8 +11,8 @@ The aim is to train a speech encoder by using multiple self-supervised modules a
 - Configurable speech encoders (1D conv layers, GRU, skip connections, [SincNet](https://arxiv.org/abs/1808.00158))
 - Self-supervised models:
     - [Contrastive Predictive Coding](https://arxiv.org/pdf/1807.03748.pdf) *(unidirectional or bidirectional)*
-    - [vq-wave2vec](https://arxiv.org/pdf/1910.05453.pdf)
-    - [Wave2Vec 2.0](https://arxiv.org/pdf/2006.11477.pdf)
+    - [vq-wav2vec](https://arxiv.org/pdf/1910.05453.pdf)
+    - [Wav2Vec 2.0](https://arxiv.org/pdf/2006.11477.pdf)
     - [Local Info Max (LIM)](https://arxiv.org/pdf/1812.00271.pdf) and Global Info Max (GIM)
     - [PASE](https://arxiv.org/pdf/1904.03416.pdf) and [PASE+](https://arxiv.org/pdf/2001.09239.pdf) with the following workers: *Waveform*, *LPS*, *MFCC*, *CPC*, *LIM* and *GIM*
 - Evaluation on speaker recognition, speaker verification, language recognition and data-efficiency
@@ -44,16 +44,16 @@ python train.py configs/cpc-v1.json
 
 ## To-Do
 
-- [ ] Config choose GRU dim CPC
-- [ ] Option to enable multi GPU training, disable tensorboard, publish on tensorboard.dev
-- [ ] Do not store audio cache in checkpoints/model/
-- [ ] No ___speaker_id but _eval
-- [ ] Use dataclass and YAML for all configs
-- [ ] Ensure all functions are tf.functions
+- [ ] Merge with branch tmp-package
+- [ ] Config GRU dim CPC, multi GPU training, tensorboard
+- [ ] Link with Kaldi
+- [ ] Change name?
+- [ ] Improve dataset: do not store audio cache in checkpoints/model/
+- [ ] Delete speaker id evaluation?
 
 ---
 
-- [ ] Simplify model creation, sub class model, merge encoders
+- [ ] Use dataclass and YAML for all configs
 - [ ] Create custom training loop (https://stackoverflow.com/questions/57971007/tensorflow-2-0-display-progress-bar-in-custom-training-loop)
 - [ ] Fix warning loading weights not used
 - [ ] CPC/LIM: @tf.function warning when doing tensor[1, :]
