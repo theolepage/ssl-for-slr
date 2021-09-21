@@ -11,17 +11,14 @@ from tensorflow.keras.layers import Input
 from tensorflow.keras import Model
 from tensorflow.keras.optimizers import Adam
 
-from sslforslr.models import (
-    CPCModel,
-    LIMModel,
-    Wav2Vec2Model,
-    Wav2Vec2Config,
-    VQWav2VecModel,
-    VQWav2VecConfig,
-    MultiTaskModel
-)
+from sslforslr.models.cpc import CPCModel
+from sslforslr.models.lim import LIMModel
+from sslforslr.models.wav2vec2 import Wav2Vec2Model, Wav2Vec2Config
+from sslforslr.models.vqwav2vec import VQWav2VecModel, VQWav2VecConfig
+from sslforslr.models.multitask import MultiTaskModel
 from sslforslr.models.encoders import CPCEncoder, SincEncoder
-from sslforslr.dataset import AudioDatasetLoader, AudioAugmentationGenerator
+from sslforslr.dataset.AudioDatasetLoader import AudioDatasetLoader
+from sslforslr.dataset.AudioAugmentationGenerator import AudioAugmentationGenerator
 
 def summary_for_shape(model, input_shape):
     x = Input(shape=input_shape)

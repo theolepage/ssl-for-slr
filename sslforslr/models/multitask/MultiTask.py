@@ -10,7 +10,8 @@ from tensorflow.keras.utils import Sequence
 from tensorflow.keras.losses import MeanAbsoluteError, MeanSquaredError
 from tensorflow.keras import regularizers
 
-from sslforslr.models import CPCModel, LIMModel, cpc_loss, lim_loss
+from sslforslr.models.cpc import CPCModel, cpc_loss
+from sslforslr.models.lim import LIMModel, lim_loss
 
 class MultiTaskModel(Model):
     '''

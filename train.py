@@ -6,7 +6,7 @@ from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.callbacks import TensorBoard
 
-from sslforslr.utils import load_config, load_dataset, load_model
+from sslforslr.utils.helpers import load_config, load_dataset, load_model
 from sslforslr.utils.callbacks import TimeHistoryCallback
 
 def train(config_path):

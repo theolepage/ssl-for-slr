@@ -1,4 +1,7 @@
 checkpoints/
+datasets/
 __pycache__
 .ipynb_checkpoints/
-datasets/
+build
+dist
+*.egg-info

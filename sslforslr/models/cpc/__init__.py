@@ -1,0 +1,1 @@
+from .CPC import CPCModel, cpc_loss

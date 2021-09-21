@@ -49,7 +49,8 @@ python train.py configs/cpc-v1.json
 - [ ] Link with Kaldi
 - [ ] Change name?
 - [ ] Improve dataset: do not store audio cache in checkpoints/model/
-- [ ] Delete speaker id evaluation?
+- [ ] Delete speaker id evaluation? choose in train_evaluate type of classifier and random, surpervised baseline
+- [ ] Fix error end training saving history.npy
 
 ---
 
