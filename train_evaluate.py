@@ -87,7 +87,9 @@ def train_evaluate(config_path):
     # Start training
     train_gen, val_gen, test_gen = gens
     nb_epochs = config['evaluate']['epochs']
-    callbacks = [save_callback, early_stopping, tensorboard, time_history]
+    callbacks = [save_callback, early_stopping, time_history]
+    if config['evaluate'].get('tensorboard', False):
+        callbacks.append(tensorboard)
     history = classifier.fit(train_gen,
                              validation_data=val_gen,
                              epochs=nb_epochs,

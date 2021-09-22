@@ -9,6 +9,7 @@
     "model": {
         "type": "CPC",
         "nb_timesteps_to_predict": 12,
+        "context_dim": 256,
         "bidirectional": true,
         "weight_regularizer": 1e-4
     },

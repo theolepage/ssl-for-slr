@@ -20,6 +20,7 @@ class CPCModel(Model):
     def __init__(self,
                  encoder,
                  encoded_dim,
+                 context_dim,
                  nb_timesteps,
                  nb_timesteps_to_predict,
                  bidirectional=False,
@@ -27,6 +28,7 @@ class CPCModel(Model):
         super(CPCModel, self).__init__()
 
         self.encoded_dim = encoded_dim
+        self.context_dim = context_dim
         self.nb_timesteps = nb_timesteps
         self.nb_timesteps_to_predict = nb_timesteps_to_predict
         self.nb_timesteps_for_context = nb_timesteps - nb_timesteps_to_predict
@@ -36,13 +38,13 @@ class CPCModel(Model):
 
         # Instantiate sub models
         self.encoder = encoder
-        self.ar1 = Autoregressive(self.reg)
+        self.ar1 = Autoregressive(self.context_dim, self.reg)
         self.predictor1 = Predictor(self.encoded_dim,
                                     self.nb_timesteps_to_predict,
                                     self.reg)
 
         if self.bidirectional:
-            self.ar2 = Autoregressive(self.reg)
+            self.ar2 = Autoregressive(self.context_dim, self.reg)
             self.predictor2 = Predictor(self.encoded_dim,
                                         self.nb_timesteps_to_predict,
                                         self.reg)
@@ -149,10 +151,10 @@ class CPCModel(Model):
 
 class Autoregressive(Model):
 
-    def __init__(self, reg):
+    def __init__(self, context_dim, reg):
         super(Autoregressive, self).__init__()
 
-        self.rnn = GRU(units=256,
+        self.rnn = GRU(units=context_dim,
                        return_sequences=False,
                        kernel_regularizer=reg,
                        recurrent_regularizer=reg,

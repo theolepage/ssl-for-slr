@@ -1,10 +1,8 @@
-# SSL-for-SLR
+# ssl-for-slr
 
 Framework to train a speech encoder in a **self-supervised** way for **speaker and language recognition** tasks.
 
 The aim is to train a speech encoder by using multiple self-supervised modules as shown on figure below.
-
-![model_multitask](https://raw.githubusercontent.com/theolepage/ssl-for-slr/master/docs/model_multitask.png)
 
 ## Features
 
@@ -44,16 +42,24 @@ python train.py configs/cpc-v1.json
 
 ## To-Do
 
-- [ ] Merge with branch tmp-package
-- [ ] Config GRU dim CPC, multi GPU training, tensorboard
-- [ ] Link with Kaldi
-- [ ] Change name?
-- [ ] Improve dataset: do not store audio cache in checkpoints/model/
-- [ ] Delete speaker id evaluation? choose in train_evaluate type of classifier and random, surpervised baseline
-- [ ] Fix error end training saving history.npy
+- [ ] Integrate with Kaldi
+    - [ ] Delete dataset (or do not store audio cache in checkpoints/model/)
+    - [ ] Delete evaluation (or choose in train_evaluate type of classifier and random, surpervised baseline)
 
 ---
 
+- [ ] Implémenter MoCo
+    - [ ] Basic structure
+    - [ ] Queue of negatives, update second encoder with EMA
+    - [ ] ProtoNCE: clustering to have pseudo labels
+    - [ ] WavAug
+- [ ] Implémenter SimCLR
+    - [ ] Channel invariant loss (MSE)
+    - [ ] SpecAug
+
+---
+
+- [ ] Fix error end training saving history.npy
 - [ ] Use dataclass and YAML for all configs
 - [ ] Create custom training loop (https://stackoverflow.com/questions/57971007/tensorflow-2-0-display-progress-bar-in-custom-training-loop)
 - [ ] Fix warning loading weights not used

@@ -40,7 +40,9 @@ def train(config_path):
     # Start training
     train_gen, val_gen, test_gen = gens
     nb_epochs = config['training']['epochs']
-    callbacks = [save_callback, early_stopping, tensorboard, time_history]
+    callbacks = [save_callback, early_stopping, time_history]
+    if config['training'].get('tensorboard', False):
+        callbacks.append(tensorboard)
     history = model.fit(train_gen,
                         validation_data=val_gen,
                         epochs=nb_epochs,
