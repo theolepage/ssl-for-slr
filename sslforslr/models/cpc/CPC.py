@@ -63,42 +63,41 @@ class CPCModel(Model):
         return self.ar1(self.encoder(X))
 
     def train_step(self, data):
-        X, _ = data # Discard Y provided by the dataset generator
+        X, _ = data # Discard labels provided by the dataset generator
         # X shape: (batch_size, frame_length, 1)
 
         with tf.GradientTape() as tape:
-            X_encoded = self.encoder(X, training=True)
+            Z = self.encoder(X, training=True)
             # Out shape: (batch_size, frame_length / 160, encoded_dim)
 
-            X_past_encoded = X_encoded[:, 0:self.nb_timesteps_for_context, ...]
-            X_future_encoded = X_encoded[:, self.nb_timesteps_for_context:, ...]
+            Z_past = Z[:, 0:self.nb_timesteps_for_context, ...]
+            Z_future = Z[:, self.nb_timesteps_for_context:, ...]
 
-            X_past_context = self.ar1(X_past_encoded, training=True)
-            # Out shape: (batch_size, 256)
+            C = self.ar1(Z_past, training=True)
+            # Out shape: (batch_size, context_dim)
 
-            predictions = self.predictor1(X_past_context, training=True)
+            predictions = self.predictor1(C, training=True)
             # Out shape: (batch_size, nb_timesteps_to_predict, encoded_dim)
 
             loss, accuracy = cpc_loss(self.nb_timesteps_to_predict,
-                                    predictions,
-                                    X_future_encoded)
-            # Out shape: (batch_size)
+                                      predictions,
+                                      Z_future)
 
             if self.bidirectional:
                 X_r = tf.reverse(X, axis=[1])
 
-                X_encoded = self.encoder(X_r, training=True)
+                Z = self.encoder(X_r, training=True)
 
-                X_past_encoded = X_encoded[:, 0:self.nb_timesteps_for_context, ...]
-                X_future_encoded = X_encoded[:, self.nb_timesteps_for_context:, ...]
+                Z_past = Z[:, 0:self.nb_timesteps_for_context, ...]
+                Z_future = Z[:, self.nb_timesteps_for_context:, ...]
 
-                X_past_context = self.ar2(X_past_encoded, training=True)
+                C = self.ar2(Z_past, training=True)
 
-                predictions = self.predictor2(X_past_context, training=True)
+                predictions = self.predictor2(C, training=True)
 
                 loss2, accuracy2 = cpc_loss(self.nb_timesteps_to_predict,
                                             predictions,
-                                            X_future_encoded)
+                                            Z_future)
 
                 loss = (loss + loss2) / 2.0
                 accuracy = (accuracy + accuracy2) / 2.0
@@ -116,32 +115,32 @@ class CPCModel(Model):
         return { 'loss': loss, 'accuracy': accuracy }
 
     def test_step(self, data):
-        X, _ = data # Discard Y provided by the dataset generator
+        X, _ = data # Discard labels provided by the dataset generator
         
-        X_encoded = self.encoder(X, training=False)
-        X_past_encoded = X_encoded[:, 0:self.nb_timesteps_for_context, ...]
-        X_future_encoded = X_encoded[:, self.nb_timesteps_for_context:, ...]
+        Z = self.encoder(X, training=False)
+        Z_past = Z[:, 0:self.nb_timesteps_for_context, ...]
+        Z_future = Z[:, self.nb_timesteps_for_context:, ...]
 
-        X_past_context = self.ar1(X_past_encoded, training=False)
-        predictions = self.predictor1(X_past_context, training=False)
+        C = self.ar1(Z_past, training=False)
+        predictions = self.predictor1(C, training=False)
 
         loss, accuracy = cpc_loss(self.nb_timesteps_to_predict,
                                   predictions,
-                                  X_future_encoded)
+                                  Z_future)
 
         if self.bidirectional:
             X_r = tf.reverse(X, axis=[1])
            
-            X_encoded = self.encoder(X, training=False)
-            X_past_encoded = X_encoded[:, 0:self.nb_timesteps_for_context, ...]
-            X_future_encoded = X_encoded[:, self.nb_timesteps_for_context:, ...]
+            Z = self.encoder(X, training=False)
+            Z_past = Z[:, 0:self.nb_timesteps_for_context, ...]
+            Z_future = Z[:, self.nb_timesteps_for_context:, ...]
 
-            X_past_context = self.ar2(X_past_encoded, training=False)
-            predictions = self.predictor2(X_past_context, training=False)
+            C = self.ar2(Z_past, training=False)
+            predictions = self.predictor2(C, training=False)
 
             loss2, accuracy2 = cpc_loss(self.nb_timesteps_to_predict,
                                         predictions,
-                                        X_future_encoded)
+                                        Z_future)
 
             loss = (loss + loss2) / 2.0
             accuracy = (accuracy + accuracy2) / 2.0
@@ -184,33 +183,35 @@ class Predictor(Model):
 
 
 @tf.function
-def cpc_loss(nb_timesteps_to_predict, predictions, X_future_encoded):
+def cpc_loss(nb_timesteps_to_predict, predictions, Z_future):
     # Shape: (batch_size, nb_timesteps_to_predict, encoded_dim)
     
     batch_size = tf.shape(predictions)[0]
 
     losses = tf.zeros((batch_size))
 
+    # Vectorized implementation of InfoNCE loss
+    # Note: "distractors" (anchor-negative pairs) are sampled in the
+    # current batch as we make the assumption that each utterance
+    # belong to a different speaker.
     for t in range(nb_timesteps_to_predict):
-        dot = tf.linalg.matmul(X_future_encoded[:, t, :],
-                                predictions[:, t, :],
-                                transpose_b=True)
+        dot = tf.linalg.matmul(Z_future[:, t, :],
+                               predictions[:, t, :],
+                               transpose_b=True)
         
         # Determine loss
-        log_softmax_dot = tf.nn.log_softmax(dot, axis=0)
+        log_softmax_dot = tf.nn.log_softmax(dot, axis=-1)
         diag = tf.linalg.tensor_diag_part(log_softmax_dot)
         losses += diag
 
     losses /= tf.cast(nb_timesteps_to_predict, dtype=tf.float32)
+    loss = -tf.math.reduce_mean(losses)
 
     # Determine accuracy
-    softmax_dot = tf.nn.softmax(dot, axis=0)
+    # (i.e. the percentage of correct predictions for the last timestep)
+    softmax_dot = tf.nn.softmax(dot, axis=-1)
     pred_indices = tf.math.argmax(softmax_dot, axis=0, output_type=tf.int32)
     preds_acc = tf.math.equal(pred_indices, tf.range(0, batch_size))
-    accuracies = tf.math.count_nonzero(preds_acc, dtype=tf.int32) / batch_size
+    accuracy = tf.math.count_nonzero(preds_acc, dtype=tf.int32) / batch_size
 
-    # Compute the average loss and accuracy across all batches
-    loss = tf.math.reduce_mean(losses)
-    accuracy = tf.math.reduce_mean(accuracies)
-
-    return -1.0 * loss, accuracy
+    return loss, accuracy
