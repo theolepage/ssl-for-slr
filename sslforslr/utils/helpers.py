@@ -18,6 +18,7 @@ from sslforslr.models.vqwav2vec import VQWav2VecModel, VQWav2VecConfig
 from sslforslr.models.multitask import MultiTaskModel
 from sslforslr.models.encoders import CPCEncoder, SincEncoder
 from sslforslr.dataset.AudioDatasetLoader import AudioDatasetLoader
+from sslforslr.dataset.KaldiDatasetLoader import KaldiDatasetLoader
 from sslforslr.dataset.AudioAugmentationGenerator import AudioAugmentationGenerator
 
 def summary_for_shape(model, input_shape):
@@ -42,9 +43,12 @@ def load_config(config_path, evaluate=False):
 
     # Create checkpoint dir
     checkpoint_dir = './checkpoints/' + config['name']
-    eval_checkpoint_dir = checkpoint_dir + '___' + config['evaluate']['type']
     Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
-    Path(eval_checkpoint_dir).mkdir(parents=True, exist_ok=True)
+    
+    eval_checkpoint_dir = None
+    if evaluate:
+        eval_checkpoint_dir = checkpoint_dir + '___eval'
+        Path(eval_checkpoint_dir).mkdir(parents=True, exist_ok=True)
 
     return config, checkpoint_dir, eval_checkpoint_dir
 
@@ -53,7 +57,10 @@ def load_dataset(config, checkpoint_dir, key='training'):
     batch_size = config[key]['batch_size']
     seed = config['seed']
 
-    dataset = AudioDatasetLoader(seed, dataset_config)
+    if dataset_config['type'] == 'Kaldi':
+        dataset = KaldiDatasetLoader(seed, dataset_config)
+    else:
+        dataset = AudioDatasetLoader(seed, dataset_config)
     gens, nb_categories = dataset.load(batch_size, checkpoint_dir)
 
     # Add data augmentation generator on top of generators
@@ -67,7 +74,8 @@ def load_dataset(config, checkpoint_dir, key='training'):
 
     print("Number of training batches:", len(gens[0]))
     print("Number of val batches:", len(gens[1]))
-    print("Number of test batches:", len(gens[2]))
+    if len(gens) >= 3:
+        print("Number of test batches:", len(gens[2]))
 
     # Determine input shape
     # Usually 20480 (1.28s at 16kHz on LibriSpeech) => nb_timesteps = 128

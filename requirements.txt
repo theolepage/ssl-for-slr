@@ -7,3 +7,4 @@ soundfile
 librosa
 audiomentations
 tqdm
+kaldi_io

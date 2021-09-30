@@ -16,7 +16,11 @@ def train(config_path):
     if tf.train.latest_checkpoint(checkpoint_dir):
         raise Exception('%s already contains checkpoints.' % checkpoint_dir)
 
-    gens, input_shape, _ = load_dataset(config, checkpoint_dir, key='training')
+    gens, input_shape, _ = load_dataset(config,
+                                        checkpoint_dir,
+                                        key='training')
+    train_gen = gens[0]
+    val_gen = gens[1]
 
     model = load_model(config, input_shape)
 
@@ -38,7 +42,6 @@ def train(config_path):
     time_history = TimeHistoryCallback()
 
     # Start training
-    train_gen, val_gen, test_gen = gens
     nb_epochs = config['training']['epochs']
     callbacks = [save_callback, early_stopping, time_history]
     if config['training'].get('tensorboard', False):

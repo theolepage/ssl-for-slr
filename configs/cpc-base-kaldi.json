@@ -1,0 +1,31 @@
+{
+    "name": "cpc-base-kaldi",
+    "seed": 1717,
+    "encoder": {
+        "type": "CPC",
+        "encoded_dim": 512,
+        "weight_regularizer": 1e-4
+    },
+    "model": {
+        "type": "CPC",
+        "nb_timesteps_to_predict": 12,
+        "context_dim": 256,
+        "bidirectional": false,
+        "weight_regularizer": 1e-4
+    },
+    "training": {
+        "epochs": 50,
+        "batch_size": 64,
+        "learning_rate": 0.0001,
+        "dataset": {
+            "type": "Kaldi",
+            "sample_frequency": 16000,
+            "train_scp": "./exp/processed/feats_front_train.scp",
+            "val_scp": "./exp/processed/feats_front_val.scp",
+            "utt2spkid": "./exp/processed/utt2spkid",
+            "frames": {
+                "length": 20480 
+            }
+        }
+    }
+}
