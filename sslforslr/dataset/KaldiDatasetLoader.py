@@ -3,41 +3,27 @@ from tensorflow.keras.utils import Sequence
 import kaldi_io
 
 class KaldiDatasetGenerator(Sequence):
-    def __init__(self, batch_size, frame_length, scp_path, utt2spkid_path):
+    def __init__(self, batch_size, frame_length, scp_path, utt2spkid, max_samples = 0):
         self.batch_size = batch_size
         self.frame_length = frame_length
         self.scp_path = scp_path
 
-        self.rxfiles, self.labels, self.utt2spkid = [], [], {}
-        
-        # Determine number of utterances per speaker 
-        id_count = {}
-        for line in open(utt2spkid_path):
-            utt, label = line.rstrip().split()
-            self.utt2spkid[utt] = int(label)
-
-            if not int(label) in id_count:
-                id_count[int(label)] = 0
-            id_count[int(label)] += 1
-        
-        max_id_count = int((max(id_count.values()) + 1) / 2)
-        self.nb_categories = len(id_count)
-
-        # Duplicate samples for speaker with less utterances
+        self.rxfiles, self.labels = [], []
+        index = 0
         for line in open(scp_path):
-            utt, rxfile = line.rstrip().split()
-            label = self.utt2spkid[utt]
-            repetition = max(1, max_id_count // id_count[label])
-            self.rxfiles.extend([rxfile] * repetition)
-            self.labels.extend([label] * repetition)
+            if max_samples and index >= max_samples:
+                break
 
-    def get_nb_categories(self):
-        return self.nb_categories
+            utt, rxfile = line.rstrip().split()
+            label = utt2spkid[utt]
+            self.rxfiles.append(rxfile)
+            self.labels.append(label)
+
+            index += 1
 
     def __len__(self):
-        return 5
-        # FIXME
-        #return len(self.labels) // self.batch_size
+        # FIXME: Handle last batch having < self.batch_size elements
+        return len(self.labels) // self.batch_size
 
     def __getitem__(self, i):
         X, y = [], []
@@ -47,38 +33,51 @@ class KaldiDatasetGenerator(Sequence):
             sample = kaldi_io.read_mat(self.rxfiles[index])
             label = self.labels[index]
 
-            #assert len(sample) >= self.frame_length
-            offset = 0 #np.random.randint(0, len(sample) - self.frame_length + 1)
+            assert len(sample) >= self.frame_length
+            offset = np.random.randint(0, len(sample) - self.frame_length + 1)
             sample = sample[offset:offset+self.frame_length, :]
-           
-            # FIXME: use correct data and set correct input shape
-            X.append(np.arange(20480).reshape((20480, 1)).astype(np.float64))
-            y.append(0)
-            #X.append(sample)
-            #y.append(label)
+
+            X.append(sample)
+            y.append(label)
         
         return np.array(X), np.array(y)
 
     def on_epoch_end(self):
-        # Shuffle elements in batch?
+        # FIXME: Shuffle elements in batch?
         pass
 
 class KaldiDatasetLoader:
     def __init__(self, seed, config):
         self.config = config
 
+        # Determine number of utterances per speaker 
+        self.utt2spkid = {}
+        self.spk2num = {}
+        for line in open(self.config['utt2spkid']):
+            utt, label = line.rstrip().split()
+            label = int(label)
+            self.utt2spkid[utt] = label
+
+            if not label in self.spk2num:
+                self.spk2num[label] = 0
+            self.spk2num[label] += 1
+
     def load(self, batch_size, checkpoint_dir):
         frame_length = self.config['frames']['length']
+        max_samples = self.config.get('max_samples', None)
+        
+        nb_categories = len(self.spk2num)
 
         train = KaldiDatasetGenerator(batch_size,
                                       frame_length,
                                       self.config['train_scp'],
-                                      self.config['utt2spkid'])
+                                      self.utt2spkid,
+                                      max_samples)
+
         val = KaldiDatasetGenerator(batch_size,
                                     frame_length,
                                     self.config['val_scp'],
-                                    self.config['utt2spkid'])
+                                    self.utt2spkid,
+                                    max_samples)
         
-        nb_categories = train.get_nb_categories()
-
         return [train, val], nb_categories

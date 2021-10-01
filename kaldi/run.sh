@@ -4,10 +4,11 @@
 . ./path.sh
 set -e
 
-voxceleb1_trials=data/voxceleb1_test/trials # downloaded by make_voxceleb1.pl
+voxceleb1_trials=data/voxceleb1_test/trials # created by make_voxceleb1.pl
 voxceleb1_root=/work2/home/ing2/datasets/VoxCeleb1
 voxceleb2_root=/work2/home/ing2/datasets/VoxCeleb2
 musan_root=/work2/home/ing2/datasets/musan
+rirs_root=/work2/home/ing2/datasets/RIRS_NOISES
 
 model_config_path=$1
 expname=test_training
@@ -21,7 +22,7 @@ if [ $stage -le 0 ]; then
     
     log=exp/make_voxceleb
     
-    #$train_cmd $log/make_voxceleb2_dev.log local/make_voxceleb2.pl $voxceleb2_root dev data/train
+    $train_cmd $log/make_voxceleb2_dev.log local/make_voxceleb2.pl $voxceleb2_root dev data/train
     $train_cmd $log/make_voxceleb1.log local/make_voxceleb1.pl $voxceleb1_root data
 
     echo -e "\n"
@@ -52,16 +53,10 @@ if [ $stage -le 2 ]; then
     frame_shift=0.01
     awk -v frame_shift=$frame_shift '{print $1, $2*frame_shift;}' data/train/utt2num_frames > data/train/reco2dur
 
-    if [ ! -d "RIRS_NOISES" ]; then
-        # Download the package that includes the real RIRs, simulated RIRs, isotropic noises and point-source noises
-        wget --no-check-certificate http://www.openslr.org/resources/28/rirs_noises.zip
-        unzip rirs_noises.zip
-    fi
-
     # Make a version with reverberated speech
     rvb_opts=()
-    rvb_opts+=(--rir-set-parameters "0.5, RIRS_NOISES/simulated_rirs/smallroom/rir_list")
-    rvb_opts+=(--rir-set-parameters "0.5, RIRS_NOISES/simulated_rirs/mediumroom/rir_list")
+    rvb_opts+=(--rir-set-parameters "0.5, $rirs_root/simulated_rirs/smallroom/rir_list")
+    rvb_opts+=(--rir-set-parameters "0.5, $rirs_root/simulated_rirs/mediumroom/rir_list")
 
     # Make a reverberated version of the VoxCeleb2 list.  Note that we don't add any
     # additive noise here.
@@ -153,7 +148,7 @@ if [ $stage -le 5 ]; then
     mkdir -p $log
     
     # Remove utterances with less than 400 frames
-    awk 'NR==FNR{a[$1]=$2;next}{if(a[$1]>=400)print}' data/train_combined_no_sil/utt2num_frames data/train_combined_no_sil/utt2spk > $log/utt2spk 
+    awk 'NR==FNR{a[$1]=$2;next}{if(a[$1]>=400)print}' data/train_combined_no_sil/utt2num_frames data/train_combined_no_sil/utt2spk > $log/utt2spk
   
     # Create spk2num_frames (useful for balancing training)
     awk '{if(!($2 in a))a[$2]=0;a[$2]+=1;}END{for(i in a)print i,a[i]}' $log/utt2spk > $log/spk2num 
@@ -162,12 +157,18 @@ if [ $stage -le 5 ]; then
     awk -v seed=$RANDOM 'BEGIN{srand(seed);}NR==FNR{a[$1]=$2;next}{if(a[$2]<10)print $1>>"exp/processed/train.list";else{if(rand()<=0.1)print $1>>"exp/processed/cv.list";else print $1>>"exp/processed/train.list"}}' $log/spk2num $log/utt2spk 
 
     # Split frontend feats into feats_front_train.scp and feats_front_val.scp
-    awk 'NR==FNR{a[$1]=1;next}{if($1 in a)print}' $log/train.list data/train_combined_no_sil/feats.scp | shuf > $log/feats_front_train.scp
-    awk 'NR==FNR{a[$1]=1;next}{if($1 in a)print}' $log/cv.list data/train_combined_no_sil/feats.scp | shuf > $log/feats_front_val.scp
+    awk 'NR==FNR{a[$1]=1;next}{if($1 in a)print}' $log/train.list data/train_combined_no_sil/wav.scp | shuf > $log/wav_front_train.scp
+    awk 'NR==FNR{a[$1]=1;next}{if($1 in a)print}' $log/cv.list data/train_combined_no_sil/wav.scp | shuf > $log/wav_front_val.scp
+    # FIXME: or feats_back.scp
+    # awk 'NR==FNR{a[$1]=1;next}{if($1 in a)print}' $log/train.list data/train_combined_no_sil/feats.scp | shuf > $log/feats_front_train.scp
+    # awk 'NR==FNR{a[$1]=1;next}{if($1 in a)print}' $log/cv.list data/train_combined_no_sil/feats.scp | shuf > $log/feats_front_val.scp
 
     # Merge feats for backend
-    cat data/train_no_sil/feats.scp > $log/feats_back.scp
-    cat data/voxceleb1_test_no_sil/feats.scp >> $log/feats_back.scp
+    cat data/train_no_sil/wav.scp > $log/wav_back.scp
+    cat data/voxceleb1_test_no_sil/wav.scp >> $log/wav_back.scp
+    # FIXME: or feats_back.scp
+    # cat data/train_no_sil/feats.scp > $log/feats_back.scp
+    # cat data/voxceleb1_test_no_sil/feats.scp >> $log/feats_back.scp
 
     # Map speakers to labels (utt2spkid)
     awk 'BEGIN{s=0;}{if(!($2 in a)){a[$2]=s;s+=1;}print $1,a[$2]}' $log/utt2spk > $log/utt2spkid
@@ -204,7 +205,7 @@ if [ $stage -le 9 ]; then
     
     #$train_cmd $expdir/decode.log
     python ../extract_embeddings.py \
-        exp/processed/feats_back.scp \
+        exp/processed/wav_back.scp \    # FIXME: or feats_back.scp
         $expdir/embeddings.ark \
 	$model_config_path
     

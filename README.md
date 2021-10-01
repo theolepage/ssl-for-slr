@@ -42,20 +42,24 @@ python train.py configs/cpc-v1.json
 
 ## To-Do
 
-- [ ] Integrate with Kaldi
-    - [ ] Delete dataset (or do not store audio cache in checkpoints/model/)
-    - [ ] Delete evaluation (or choose in train_evaluate type of classifier and random, surpervised baseline)
+- [ ] Contrastive Self-Supervised Learning for Text-Independent Speaker Verification (file:///home/theo/Documents/fiches/zhang2021.pdf)
+    - [ ] SimCLR (structure, loss)
+    - [ ] Encoder: thin-ResNet 34 (https://github.com/clovaai/voxceleb_trainer/blob/master/models/ResNetSE34V2.py)
+    - [ ] Channel-invariant loss (MSE)
+    - [ ] SpecAugment (https://github.com/irebai/SpecAugment_KALDI)
+
+- [ ] Self-supervised Text-independent Speaker Verification using Prototypical Momentum Contrastive Learning (https://arxiv.org/pdf/2012.07178.pdf)
+    - [ ] MoCo (structure, loss)
+    - [ ] Encoder: TDNN (https://github.com/KrishnaDN/x-vector-pytorch/blob/master/models/x_vector.py)
+    - [ ] Queue of negatives (https://github.com/nlml/MoCo/blob/master/src/moco.py, https://github.com/PaperCodeReview/MoCo-TF/blob/master/model.py)
+    - [ ] Update second encoder with EMA
+    - [ ] ProtoNCE: clustering to assign pseudo labels (FAISS k-means)
+    - [ ] WavAugment
 
 ---
 
-- [ ] Implémenter MoCo
-    - [ ] Basic structure
-    - [ ] Queue of negatives, update second encoder with EMA
-    - [ ] ProtoNCE: clustering to have pseudo labels
-    - [ ] WavAug
-- [ ] Implémenter SimCLR
-    - [ ] Channel invariant loss (MSE)
-    - [ ] SpecAug
+- [ ] Dataset: cache useful? do not store audio cache in checkpoints/model/
+- [ ] Refactor evaluation (choose type of classifier: random, surpervised)
 
 ---
 
