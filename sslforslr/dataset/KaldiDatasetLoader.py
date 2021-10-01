@@ -1,6 +1,6 @@
 import numpy as np
 from tensorflow.keras.utils import Sequence
-import kaldi_io
+import kaldiio
 
 class KaldiDatasetGenerator(Sequence):
     def __init__(self, batch_size, frame_length, scp_path, utt2spkid, max_samples = 0):
@@ -14,8 +14,10 @@ class KaldiDatasetGenerator(Sequence):
             if max_samples and index >= max_samples:
                 break
 
-            utt, rxfile = line.rstrip().split()
+            utt = line_parts[0]
+            rxfile = ' '.join(line_parts[1:])
             label = utt2spkid[utt]
+
             self.rxfiles.append(rxfile)
             self.labels.append(label)
 
@@ -30,7 +32,7 @@ class KaldiDatasetGenerator(Sequence):
 
         for j in range(self.batch_size):
             index = i * self.batch_size + j
-            sample = kaldi_io.read_mat(self.rxfiles[index])
+            sample = kaldiio.load_mat(self.rxfiles[index])
             label = self.labels[index]
 
             assert len(sample) >= self.frame_length

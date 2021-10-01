@@ -1,13 +1,12 @@
 import argparse
 import numpy as np
-from kaldi_io import read_mat_scp
+import kaldiio
 import tensorflow as tf
 from tqdm import tqdm
 
 from sslforslr.utils.helpers import load_config, load_dataset, load_model
 
 BATCH_SIZE = 4096
-FRAME_LENGTH = 100 # FIXME
 
 def extract_batch(file, model, batch, utterance_ids):
     # Prepare TensorFlow batch data
@@ -21,6 +20,7 @@ def extract_batch(file, model, batch, utterance_ids):
     embeddings = model.predict(x_tf)
     
     # Write embeddings to output file
+    # FIXME: try kaldiio.save_ark('b.ark', {'key': numpy_array})
     for i in range(len(batch)):
         file.write(utterance_ids[i] + ' [ ' + ' '.join(map(str, embeddings[i].flatten().tolist())) + ' ]\n')
 
@@ -32,14 +32,20 @@ def extract_embeddings(input_path, output_path, config_path):
 
     model = load_model(config, input_shape)
 
+    frame_length = config['training']['dataset']['frames']['length']
     num_feats = sum(1 for line in open(input_path))
     pbar = tqdm(total=num_feats)
 
     f = open(output_path, 'w')
     batch, utterance_ids = [], []
     
-    for utterance_id, data in read_mat_scp(input_path):
-        x = np.array([data], dtype=np.float32)[0, 0:FRAME_LENGTH, ...]
+    scp = kaldiio.load_scp(input_path)
+    for utterance_id in scp:
+        data = scp[utterance_id]
+
+        # FIXME: how to pick frame?
+        x = np.array([data], dtype=np.float32)[0, 0:frame_length, ...]
+
         batch.append(x)
         utterance_ids.append(utterance_id)
         if len(batch) == BATCH_SIZE:
