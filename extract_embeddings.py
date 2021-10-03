@@ -9,10 +9,12 @@ from sslforslr.utils.helpers import load_config, load_dataset, load_model
 BATCH_SIZE = 4096
 
 def extract_batch(file, model, batch, utterance_ids):
+    batch = np.array(batch).reshape((len(batch), -1, 1))
+    
     # Prepare TensorFlow batch data
     options = tf.data.Options()
     options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
-    x_tf = tf.data.Dataset.from_tensor_slices((np.array(batch)))
+    x_tf = tf.data.Dataset.from_tensor_slices((batch))
     x_tf = x_tf.batch(len(batch))
     x_tf = x_tf.with_options(options)
 
@@ -41,7 +43,7 @@ def extract_embeddings(input_path, output_path, config_path):
     
     scp = kaldiio.load_scp(input_path)
     for utterance_id in scp:
-        data = scp[utterance_id]
+        sr, data = scp[utterance_id]
 
         # FIXME: how to pick frame?
         x = np.array([data], dtype=np.float32)[0, 0:frame_length, ...]

@@ -20,13 +20,12 @@
         "dataset": {
             "type": "Kaldi",
             "sample_frequency": 16000,
-            "train_scp": "./exp/processed/wav_front_train.scp",
-            "val_scp": "./exp/processed/wav_front_val.scp",
-            "utt2spkid": "./exp/processed/utt2spkid",
+            "scp": "./data/train/feats.scp",
+            "utt2spk": "./data/train/utt2spk",
             "frames": {
                 "length": 20480
             },
-            "max_samples": 1000
+	    "max_samples": 1000
         }
     }
 }

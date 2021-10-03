@@ -45,12 +45,12 @@ foreach (@spkr_dirs) {
     my $rec_id = $_;
 
     opendir my $dh, "$data_base/$dataset/aac/$spkr_id/$rec_id/" or die "Cannot open directory: $!";
-    my @files = map{s/\.[^.]+$//;$_}grep {/\.m4a$/} readdir($dh);
+    my @files = map{s/\.[^.]+$//;$_}grep {/\.wav$/} readdir($dh);
     closedir $dh;
 
     foreach (@files) {
       my $name = $_;
-      my $wav = "ffmpeg -v 8 -i $data_base/$dataset/aac/$spkr_id/$rec_id/$name.m4a -f wav -acodec pcm_s16le -|";
+      my $wav = "$data_base/$dataset/aac/$spkr_id/$rec_id/$name.wav";
       my $utt_id = "$spkr_id-$rec_id-$name";
       print WAV "$utt_id", " $wav", "\n";
       print SPKR "$utt_id", " $spkr_id", "\n";
