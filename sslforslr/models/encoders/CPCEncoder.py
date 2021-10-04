@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Conv1D
-from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import ReLU
 from tensorflow.keras import regularizers
 
@@ -32,7 +32,7 @@ class CPCEncoder(Model):
                                       padding='same',
                                       kernel_regularizer=self.reg,
                                       bias_regularizer=self.reg))
-            self.blocks.append(BatchNormalization())
+            self.blocks.append(LayerNormalization())
             self.blocks.append(ReLU())
 
     def call(self, X):

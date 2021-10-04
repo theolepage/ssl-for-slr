@@ -9,7 +9,11 @@
     "model": {
         "type": "CPC",
         "nb_timesteps_to_predict": 12,
-        "context_dim": 256,
+        "context_network": {
+            "type": "GRU",
+            "dim": 256,
+            "nb_layers": 1
+        },
         "bidirectional": false,
         "weight_regularizer": 1e-4
     },
@@ -25,7 +29,7 @@
             "frames": {
                 "length": 20480
             },
-	    "max_samples": 1000
+            "max_samples": 1000
         }
     }
 }

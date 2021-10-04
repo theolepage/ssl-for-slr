@@ -2,15 +2,19 @@
     "name": "debug",
     "seed": 1717,
     "encoder": {
-        "type": "Wav2Spk",
+        "type": "CPC",
         "encoded_dim": 512,
         "weight_regularizer": 1e-4
     },
     "model": {
         "type": "CPC",
         "nb_timesteps_to_predict": 12,
-        "context_dim": 256,
         "bidirectional": false,
+        "context_network": {
+            "type": "GRU",
+            "dim": 256,
+            "nb_layers": 1
+        },
         "weight_regularizer": 1e-4
     },
     "training": {

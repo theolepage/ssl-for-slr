@@ -138,14 +138,14 @@ def create_model(model_config, encoder, input_shape):
     if model_type == 'CPC':
         nb_timesteps = encoder_output_shape[0]
         nb_timesteps_to_predict = model_config['nb_timesteps_to_predict']
-        context_dim = model_config['context_dim']
         bidirectional = model_config.get('bidirectional', False)
+        context_network = model_config.get('context_network', {})
         model = CPCModel(encoder,
                          encoded_dim,
-                         context_dim,
                          nb_timesteps,
                          nb_timesteps_to_predict,
                          bidirectional,
+                         context_network,
                          weight_regularizer)
     elif model_type == 'LIM':
         nb_timesteps = encoder_output_shape[0]

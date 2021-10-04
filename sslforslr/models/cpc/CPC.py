@@ -3,6 +3,7 @@ from tensorflow.keras import Model
 from tensorflow.keras.layers import Layer
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import GRU
+from tensorflow.keras.layers import LSTM
 from tensorflow.keras.layers import Lambda
 from tensorflow.keras.layers import TimeDistributed
 from tensorflow.keras import regularizers
@@ -20,15 +21,14 @@ class CPCModel(Model):
     def __init__(self,
                  encoder,
                  encoded_dim,
-                 context_dim,
                  nb_timesteps,
                  nb_timesteps_to_predict,
-                 bidirectional=False,
+                 bidirectional,
+                 context_network,
                  weight_regularizer=0.0):
         super(CPCModel, self).__init__()
 
         self.encoded_dim = encoded_dim
-        self.context_dim = context_dim
         self.nb_timesteps = nb_timesteps
         self.nb_timesteps_to_predict = nb_timesteps_to_predict
         self.nb_timesteps_for_context = nb_timesteps - nb_timesteps_to_predict
@@ -38,13 +38,13 @@ class CPCModel(Model):
 
         # Instantiate sub models
         self.encoder = encoder
-        self.ar1 = Autoregressive(self.context_dim, self.reg)
+        self.ar1 = Autoregressive(context_network, self.reg)
         self.predictor1 = Predictor(self.encoded_dim,
                                     self.nb_timesteps_to_predict,
                                     self.reg)
 
         if self.bidirectional:
-            self.ar2 = Autoregressive(self.context_dim, self.reg)
+            self.ar2 = Autoregressive(context_network, self.reg)
             self.predictor2 = Predictor(self.encoded_dim,
                                         self.nb_timesteps_to_predict,
                                         self.reg)
@@ -150,17 +150,33 @@ class CPCModel(Model):
 
 class Autoregressive(Model):
 
-    def __init__(self, context_dim, reg):
+    def __init__(self, context_network, reg):
         super(Autoregressive, self).__init__()
 
-        self.rnn = GRU(units=context_dim,
-                       return_sequences=False,
-                       kernel_regularizer=reg,
-                       recurrent_regularizer=reg,
-                       bias_regularizer=reg)
+        rnn_type = context_network.get('type', 'GRU')
+        nb_layers = context_network.get('nb_layers', 1)
+        context_dim = context_network.get('dim', 256)
+
+        self.layers_ = []
+        for i in range(nb_layers):
+            return_sequence = i != (nb_layers - 1)
+            if rnn_type == 'GRU':
+                self.layers_.append(GRU(units=context_dim,
+                                        return_sequences=return_sequence,
+                                        kernel_regularizer=reg,
+                                        recurrent_regularizer=reg,
+                                        bias_regularizer=reg))
+            elif rnn_type == 'LSTM':
+                self.layers_.append(LSTM(units=context_dim,
+                                         return_sequences=return_sequence,
+                                         kernel_regularizer=reg,
+                                         recurrent_regularizer=reg,
+                                         bias_regularizer=reg))
 
     def call(self, X):
-        return self.rnn(X)
+        for layer in self.layers_:
+            X = layer(X)
+        return X
 
 
 class Predictor(Model):
