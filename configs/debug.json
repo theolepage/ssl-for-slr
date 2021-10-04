@@ -2,7 +2,7 @@
     "name": "debug",
     "seed": 1717,
     "encoder": {
-        "type": "CPC",
+        "type": "Wav2Spk",
         "encoded_dim": 512,
         "weight_regularizer": 1e-4
     },
@@ -17,28 +17,6 @@
         "epochs": 50,
         "batch_size": 64,
         "learning_rate": 0.0001,
-        "dataset": {
-            "type": "LibriSpeech",
-            "sample_frequency": 16000,
-            "train_paths": [
-                "./datasets/LibriSpeech/dev-clean/*"
-            ],
-            "val_ratio": 0.2,
-            "test_ratio": 0.1,
-            "frames": {
-                "pick": "sequence",
-                "length": 20480,
-                "stride": 20480,
-                "count": 1
-            }
-        }
-    },
-    "evaluate": {
-        "type": "speaker-id",
-        "train_encoder": false,
-        "epochs": 50,
-        "batch_size": 64,
-        "learning_rate": 0.001,
         "dataset": {
             "type": "LibriSpeech",
             "sample_frequency": 16000,

@@ -16,7 +16,7 @@ from sslforslr.models.lim import LIMModel
 from sslforslr.models.wav2vec2 import Wav2Vec2Model, Wav2Vec2Config
 from sslforslr.models.vqwav2vec import VQWav2VecModel, VQWav2VecConfig
 from sslforslr.models.multitask import MultiTaskModel
-from sslforslr.models.encoders import CPCEncoder, SincEncoder
+from sslforslr.models.encoders import CPCEncoder, SincEncoder, Wav2SpkEncoder
 from sslforslr.dataset.AudioDatasetLoader import AudioDatasetLoader
 from sslforslr.dataset.KaldiDatasetLoader import KaldiDatasetLoader
 from sslforslr.dataset.AudioAugmentationGenerator import AudioAugmentationGenerator
@@ -107,6 +107,8 @@ def create_encoder(config):
                               skip_connections_enabled,
                               rnn_enabled,
                               encoder_weight_regularizer)
+    elif encoder_type == 'Wav2Spk':
+        encoder = Wav2SpkEncoder(encoded_dim, encoder_weight_regularizer)
     else:
         raise Exception('Config: encoder {} is not supported.'.format(encoder_type))
 
