@@ -16,7 +16,7 @@ from sslforslr.models.lim import LIMModel
 from sslforslr.models.wav2vec2 import Wav2Vec2Model, Wav2Vec2Config
 from sslforslr.models.vqwav2vec import VQWav2VecModel, VQWav2VecConfig
 from sslforslr.models.multitask import MultiTaskModel
-from sslforslr.models.encoders import CPCEncoder, SincEncoder, Wav2SpkEncoder, XVectorEncoder
+from sslforslr.models.encoders import CPCEncoder, SincEncoder, Wav2SpkEncoder, XVectorEncoder, ThinResNet34Encoder
 from sslforslr.dataset.AudioDatasetLoader import AudioDatasetLoader
 from sslforslr.dataset.KaldiDatasetLoader import KaldiDatasetLoader
 from sslforslr.dataset.AudioAugmentationGenerator import AudioAugmentationGenerator
@@ -111,6 +111,8 @@ def create_encoder(config):
         encoder = Wav2SpkEncoder(encoded_dim, encoder_weight_regularizer)
     elif encoder_type == 'XVector':
         encoder = XVectorEncoder(encoded_dim, encoder_weight_regularizer)
+    elif encoder_type == 'ThinResNet34':
+        encoder = ThinResNet34Encoder(encoded_dim, encoder_weight_regularizer)
     else:
         raise Exception('Config: encoder {} is not supported.'.format(encoder_type))
 
