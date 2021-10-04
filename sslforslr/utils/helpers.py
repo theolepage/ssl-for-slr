@@ -16,7 +16,7 @@ from sslforslr.models.lim import LIMModel
 from sslforslr.models.wav2vec2 import Wav2Vec2Model, Wav2Vec2Config
 from sslforslr.models.vqwav2vec import VQWav2VecModel, VQWav2VecConfig
 from sslforslr.models.multitask import MultiTaskModel
-from sslforslr.models.encoders import CPCEncoder, SincEncoder, Wav2SpkEncoder
+from sslforslr.models.encoders import CPCEncoder, SincEncoder, Wav2SpkEncoder, XVectorEncoder
 from sslforslr.dataset.AudioDatasetLoader import AudioDatasetLoader
 from sslforslr.dataset.KaldiDatasetLoader import KaldiDatasetLoader
 from sslforslr.dataset.AudioAugmentationGenerator import AudioAugmentationGenerator
@@ -109,6 +109,8 @@ def create_encoder(config):
                               encoder_weight_regularizer)
     elif encoder_type == 'Wav2Spk':
         encoder = Wav2SpkEncoder(encoded_dim, encoder_weight_regularizer)
+    elif encoder_type == 'XVector':
+        encoder = XVectorEncoder(encoded_dim, encoder_weight_regularizer)
     else:
         raise Exception('Config: encoder {} is not supported.'.format(encoder_type))
 
@@ -129,10 +131,10 @@ def create_model(model_config, encoder, input_shape):
         return VQWav2VecModel(config)
 
     encoder_output_shape = encoder.compute_output_shape(input_shape)
-    nb_timesteps = encoder_output_shape[0]
     encoded_dim = encoder_output_shape[1]
 
     if model_type == 'CPC':
+        nb_timesteps = encoder_output_shape[0]
         nb_timesteps_to_predict = model_config['nb_timesteps_to_predict']
         context_dim = model_config['context_dim']
         bidirectional = model_config.get('bidirectional', False)
@@ -144,6 +146,7 @@ def create_model(model_config, encoder, input_shape):
                          bidirectional,
                          weight_regularizer)
     elif model_type == 'LIM':
+        nb_timesteps = encoder_output_shape[0]
         loss_fn = model_config['loss_fn']
         context_length = model_config.get('context_length', 1)
         model = LIMModel(encoder,
