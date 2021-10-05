@@ -13,6 +13,7 @@ from tensorflow.keras.optimizers import Adam
 
 from sslforslr.models.cpc import CPCModel
 from sslforslr.models.lim import LIMModel
+from sslforslr.models.simclr import SimCLRModel
 from sslforslr.models.wav2vec2 import Wav2Vec2Model, Wav2Vec2Config
 from sslforslr.models.vqwav2vec import VQWav2VecModel, VQWav2VecConfig
 from sslforslr.models.multitask import MultiTaskModel
@@ -133,10 +134,10 @@ def create_model(model_config, encoder, input_shape):
         return VQWav2VecModel(config)
 
     encoder_output_shape = encoder.compute_output_shape(input_shape)
-    encoded_dim = encoder_output_shape[1]
 
     if model_type == 'CPC':
         nb_timesteps = encoder_output_shape[0]
+        encoded_dim = encoder_output_shape[1]
         nb_timesteps_to_predict = model_config['nb_timesteps_to_predict']
         bidirectional = model_config.get('bidirectional', False)
         context_network = model_config.get('context_network', {})
@@ -156,6 +157,9 @@ def create_model(model_config, encoder, input_shape):
                          loss_fn,
                          context_length,
                          weight_regularizer)
+    elif model_type == 'SimCLR':
+        channel_loss_factor = model_config.get('channel_loss_factor', 0.1)
+        model = SimCLRModel(encoder, channel_loss_factor, weight_regularizer)
     else:
         raise Exception('Config: model {} is not supported.'.format(model_type))
 
