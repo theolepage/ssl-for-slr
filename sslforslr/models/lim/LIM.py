@@ -28,8 +28,8 @@ class LIMModel(Model):
         self.encoder = encoder
         self.discriminator = Discriminator(self.reg)
 
-    def compile(self, optimizer):
-        super(LIMModel, self).compile()
+    def compile(self, optimizer, **kwargs):
+        super(LIMModel, self).compile(**kwargs)
         self.optimizer = optimizer
 
     def call(self, X):

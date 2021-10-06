@@ -73,8 +73,8 @@ class MultiTaskModel(Model):
     def add_targets_to_gen(self, gen):
         return WorkerTargetsGenerator(gen, self.modules)
 
-    def compile(self, optimizer):
-        super(MultiTaskModel, self).compile()
+    def compile(self, optimizer, **kwargs):
+        super(MultiTaskModel, self).compile(**kwargs)
         self.optimizer = optimizer
 
     def call(self, X):

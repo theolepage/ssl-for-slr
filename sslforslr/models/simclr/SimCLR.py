@@ -81,8 +81,8 @@ class SimCLRModel(Model):
         self.encoder = encoder
         self.simclr_loss = AngularPrototypicalLoss(self.reg)
 
-    def compile(self, optimizer):
-        super().compile()
+    def compile(self, optimizer, **kwargs):
+        super().compile(**kwargs)
         self.optimizer = optimizer
 
     def call(self, X):

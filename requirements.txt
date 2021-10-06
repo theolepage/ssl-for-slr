@@ -8,3 +8,5 @@ librosa
 audiomentations
 tqdm
 kaldiio
+torch
+torchaudio

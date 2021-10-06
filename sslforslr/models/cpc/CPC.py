@@ -49,8 +49,8 @@ class CPCModel(Model):
                                         self.nb_timesteps_to_predict,
                                         self.reg)
 
-    def compile(self, optimizer):
-        super(CPCModel, self).compile()
+    def compile(self, optimizer, **kwargs):
+        super(CPCModel, self).compile(**kwargs)
         self.optimizer = optimizer
 
     def call(self, X):
