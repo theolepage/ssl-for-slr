@@ -28,8 +28,7 @@
             "utt2spk": "./data/train/utt2spk",
             "frames": {
                 "length": 20480
-            },
-            "max_samples": 1000
+            }
         }
     }
 }

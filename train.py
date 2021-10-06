@@ -9,6 +9,8 @@ from tensorflow.keras.callbacks import TensorBoard
 from sslforslr.utils.helpers import load_config, load_dataset, load_model
 from sslforslr.utils.callbacks import TimeHistoryCallback
 
+from sslforslr.models.moco import MoCoUpdateCallback
+
 def train(config_path):
     config, checkpoint_dir, _ = load_config(config_path)
 
@@ -46,6 +48,8 @@ def train(config_path):
     callbacks = [save_callback, early_stopping, time_history]
     if config['training'].get('tensorboard', False):
         callbacks.append(tensorboard)
+    if config['model']['type'] == 'MoCo':
+        callbacks.append(MoCoUpdateCallback(train_gen))
     history = model.fit(train_gen,
                         validation_data=val_gen,
                         epochs=nb_epochs,

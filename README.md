@@ -42,30 +42,17 @@ python train.py configs/cpc-v1.json
 
 ## To-Do
 
-- [ ] Contrastive Self-Supervised Learning for Text-Independent Speaker Verification (file:///home/theo/Documents/fiches/zhang2021.pdf)
-    - [ ] SimCLR (structure, loss)
-    - [ ] Encoder: thin-ResNet 34 (https://github.com/clovaai/voxceleb_trainer/blob/master/models/ResNetSE34V2.py)
-    - [ ] Channel-invariant loss (MSE)
-    - [ ] SpecAugment (https://github.com/irebai/SpecAugment_KALDI)
-
-- [ ] Self-supervised Text-independent Speaker Verification using Prototypical Momentum Contrastive Learning (https://arxiv.org/pdf/2012.07178.pdf)
-    - [ ] MoCo (structure, loss)
-    - [ ] Encoder: TDNN (https://github.com/KrishnaDN/x-vector-pytorch/blob/master/models/x_vector.py)
-    - [ ] Queue of negatives (https://github.com/nlml/MoCo/blob/master/src/moco.py, https://github.com/PaperCodeReview/MoCo-TF/blob/master/model.py)
-    - [ ] Update second encoder with EMA
-    - [ ] ProtoNCE: clustering to assign pseudo labels (FAISS k-means)
-    - [ ] WavAugment
+- [ ] Create config for different models (5) -> train -> evaluate -> experiment
+- [ ] Data augmentation / MFCC pipeline (cache features with create_features.py?)
 
 ---
 
 - [ ] Dataset: cache useful? do not store audio cache in checkpoints/model/
 - [ ] Refactor evaluation (choose type of classifier: random, surpervised)
-
----
-
-- [ ] Fix error end training saving history.npy
 - [ ] Use dataclass and YAML for all configs
-- [ ] Create custom training loop (https://stackoverflow.com/questions/57971007/tensorflow-2-0-display-progress-bar-in-custom-training-loop)
-- [ ] Fix warning loading weights not used
+
 - [ ] CPC/LIM: @tf.function warning when doing tensor[1, :]
+- [ ] Fix error end training saving history.npy
+- [ ] Fix warning loading weights not used
+- [ ] Create custom training loop (https://stackoverflow.com/questions/57971007/tensorflow-2-0-display-progress-bar-in-custom-training-loop)
 - [ ] Allow restore optimizer

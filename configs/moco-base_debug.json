@@ -1,0 +1,49 @@
+{
+    "name": "moco-base_debug",
+    "seed": 1717,
+    "encoder": {
+        "type": "XVector",
+        "encoded_dim": 3000,
+        "weight_regularizer": 1e-4
+    },
+    "model": {
+        "type": "MoCo",
+        "queue_size": 10000,
+        "info_nce_temp": 0.07,
+        "embedding_dim": 512,
+        "proto_nce_loss_factor": 0.25,
+        "nb_clusters": 5000,
+        "clustering_negs_count": 10000,
+        "epochs_before_proto_nce": 60,
+        "weight_regularizer": 1e-4
+    },
+    "training": {
+        "run_eagerly": true,
+        "epochs": 150,
+        "optimizer": {
+            "type": "SGD",
+            "momentum": 0.9
+        },
+        "batch_size": 64,
+        "learning_rate": {
+            "scheduler": "cosine",
+            "start": 0.1,
+            "end": 0.0001
+        },
+        "dataset": {
+            "type": "LibriSpeech",
+            "sample_frequency": 16000,
+            "train_paths": [
+                "./datasets/LibriSpeech/dev-clean/*"
+            ],
+            "val_ratio": 0.2,
+            "test_ratio": 0.1,
+            "frames": {
+                "pick": "sequence",
+                "length": 20480,
+                "stride": 20480,
+                "count": 1
+            }
+        }
+    }
+}

@@ -9,11 +9,13 @@ import tensorflow as tf
 
 from tensorflow.keras.layers import Input
 from tensorflow.keras import Model
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers import Adam, SGD
+from tensorflow.keras.optimizers.schedules import CosineDecay
 
 from sslforslr.models.cpc import CPCModel
 from sslforslr.models.lim import LIMModel
 from sslforslr.models.simclr import SimCLRModel
+from sslforslr.models.moco import MoCoModel
 from sslforslr.models.wav2vec2 import Wav2Vec2Model, Wav2Vec2Config
 from sslforslr.models.vqwav2vec import VQWav2VecModel, VQWav2VecConfig
 from sslforslr.models.multitask import MultiTaskModel
@@ -119,7 +121,8 @@ def create_encoder(config):
 
     return encoder
 
-def create_model(model_config, encoder, input_shape):
+def create_model(config, input_shape):
+    model_config = config['model']
     model_type = model_config['type']
     weight_regularizer = model_config.get('weight_regularizer', 0.0)
 
@@ -133,6 +136,7 @@ def create_model(model_config, encoder, input_shape):
         config = VQWav2VecConfig()
         return VQWav2VecModel(config)
 
+    encoder = create_encoder(config)
     encoder_output_shape = encoder.compute_output_shape(input_shape)
 
     if model_type == 'CPC':
@@ -160,6 +164,9 @@ def create_model(model_config, encoder, input_shape):
     elif model_type == 'SimCLR':
         channel_loss_factor = model_config.get('channel_loss_factor', 0.1)
         model = SimCLRModel(encoder, channel_loss_factor, weight_regularizer)
+    elif model_type == 'MoCo':
+        encoder_k = create_encoder(config)
+        model = MoCoModel(encoder, encoder_k, model_config, weight_regularizer)
     else:
         raise Exception('Config: model {} is not supported.'.format(model_type))
 
@@ -169,12 +176,32 @@ def load_model(config, input_shape):
     mirrored_strategy = tf.distribute.MirroredStrategy()
 
     with mirrored_strategy.scope():
-        encoder = create_encoder(config)
-        model = create_model(config['model'], encoder, input_shape)
+        model = create_model(config, input_shape)
+    
+    # Create learning rate scheduler
+    learning_rate = config['training']['learning_rate']
+    if isinstance(learning_rate, dict):
+        lr_type = learning_rate['scheduler']
+        lr_start = learning_rate['start']
+        lr_end = learning_rate['end']
+        learning_rate = CosineDecay(initial_learning_rate=lr_start,
+                                    decay_steps=config['training']['epochs'],
+                                    alpha=lr_end/lr_start)
+
+    # Create optimizer
+    optimizer_config = config['training'].get('optimizer', {})
+    opt_type = optimizer_config.get('type', 'Adam')
+    if opt_type == 'Adam':
+        optimizer = Adam(learning_rate)
+    elif opt_type == 'SGD':
+        momentum = optimizer_config.get('momentum', 0.0)
+        optimizer = SGD(learning_rate, momentum)
+    else:
+        raise Exception('Config: optimizer {} is not supported.'.format(opt_type))
     
     # Compile and print model
-    learning_rate = config['training']['learning_rate']
-    model.compile(Adam(learning_rate=learning_rate))
+    run_eagerly = config['training'].get('run_eagerly', False)
+    model.compile(optimizer, run_eagerly=run_eagerly)
     summary_for_shape(model, input_shape)
 
     return model

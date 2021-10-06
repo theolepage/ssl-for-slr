@@ -100,7 +100,7 @@ class ThinResNet34Encoder(Model):
         self.block3 = self.__make_block(6, 64, 2)
         self.block4 = self.__make_block(3, 128, 2)
 
-        self.conv2 = Conv2D(self.encoded_dim, (1, 1))
+        self.conv2 = Conv2D(self.encoded_dim, (2, 2))
         self.gp = GlobalAveragePooling2D()
 
         self.sap = SAP(self.reg)

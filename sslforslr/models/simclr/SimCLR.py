@@ -32,8 +32,8 @@ def spec_augment(spec):
 
 def extract_mfcc(audio):
     mfcc = torchaudio.compliance.kaldi.mfcc(torch.from_numpy(audio.T),
-                                            num_ceps=30,
-                                            num_mel_bins=30)
+                                            num_ceps=40,
+                                            num_mel_bins=40)
     mfcc = torchaudio.transforms.SlidingWindowCmn(norm_vars=False)(mfcc)
     return mfcc.numpy()
 
@@ -66,7 +66,7 @@ class SimCLRModel(Model):
     implemented as a Keras model.
 
     "Contrastive Self-Supervised Learning for Text-Independent Speaker Verification"
-    Haoran Zhang, Yuexian Zou, Helin Wang1
+    Haoran Zhang, Yuexian Zou, Helin Wang
     '''
 
     def __init__(self,
@@ -95,7 +95,6 @@ class SimCLRModel(Model):
         # FIXME: replace by dataset generator
         audio = np.arange(64*64000*1).reshape((64, 64000, 1)).astype(np.float32)
         X_1_clean, X_2_clean, X_1_aug, X_2_aug = training_data_pipeline(audio)
-
 
         with tf.GradientTape() as tape:
             Z_1_clean = self.encoder(X_1_clean, training=True)

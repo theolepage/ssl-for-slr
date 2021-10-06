@@ -30,25 +30,27 @@ class TDNN(Layer):
         self.activation = ReLU()
         self.bn = BatchNormalization()
         self.dropout = Dropout(dropout)
-    
+
     def build(self, input_shape):
         input_dim = input_shape[-1] # Assuming BTC format
-        kernel_shape = (self.kernel_size, input_dim, self.filters)
+        self.kernel_shape = (self.kernel_size, input_dim, self.filters)
         self.kernel = self.add_weight(name='kernel',
-                                      shape=kernel_shape,
+                                      shape=self.kernel_shape,
                                       initializer="random_normal",
                                       trainable=True,
                                       regularizer=self.reg)
         
-        self.mask = np.zeros(kernel_shape)
-        self.mask[0][0][0] = 1
-        self.mask[self.kernel_size - 1][0][0] = 1
+        if self.sub_sampling:
+            self.mask = np.zeros(self.kernel_shape).astype(np.float32)
+            self.mask[0][0] = 1
+            self.mask[self.kernel_size - 1][0] = 1
 
     def call(self, X):
+        kernel = self.kernel
         if self.sub_sampling:
-            self.kernel = self.kernel * self.mask
+            kernel *= self.mask
 
-        X = K.conv1d(X, self.kernel, strides=1, padding="same")
+        X = tf.nn.conv1d(X, kernel, stride=1, padding="SAME")
         
         X = self.activation(X)
         X = self.bn(X)
