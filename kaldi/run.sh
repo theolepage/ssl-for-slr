@@ -5,8 +5,8 @@
 set -e
 
 voxceleb1_trials=data/voxceleb1_test/trials # created by make_voxceleb1.pl
-voxceleb1_root=/work2/home/ing2/datasets/VoxCeleb1
-voxceleb2_root=/work2/home/ing2/datasets/VoxCeleb2
+voxceleb1_root=/diskssd1/ing2/datasets/VoxCeleb1
+voxceleb2_root=/diskssd1/ing2/datasets/VoxCeleb2
 
 model_config_path=$1
 expname=test_training
@@ -47,15 +47,13 @@ if [ $stage -le 2 ]; then
     #expdir=exp/training/$expname/
     #mkdir -p $expdir
 
+    export CUDA_VISIBLE_DEVICES=0,1
+
     #$train_cmd $expdir/train.log
     python ../train.py $model_config_path
 
     echo -e "\n"
 fi
-
-train_utt2spk=data/train/utt2spk
-train_spk2utt=data/train/spk2utt
-test_utt2spk=data/voxceleb1_test/utt2spk
 
 backend_log=exp/backend/$expname/
 mkdir -p $backend_log
@@ -67,70 +65,38 @@ if [ $stage -le 3 ]; then
     #expdir=exp/decode/$expname/
     #mkdir -p $expdir
     
-    #$train_cmd $expdir/decode.log
-    python ../extract_embeddings.py \
-        data/train/feats.scp \
-        $backend_log/train.iv \
-	$model_config_path
+    export CUDA_VISIBLE_DEVICES=0
     
     #$train_cmd $expdir/decode.log
     python ../extract_embeddings.py \
         data/voxceleb1_test/feats.scp \
-        $backend_log/test.iv \
+        $backend_log/test.ark \
 	$model_config_path
 
     echo -e "\n"
 fi
 
-# Stage 4: Train backend PLDA model
+# Stage 4: Score model on test set
 if [ $stage -le 4 ]; then
-    echo "=== Stage 4: Train backend PLDA model ==="
+    echo "=== Stage 4: Score model on test set ==="
     
-    # Compute the mean vector for centering the evaluation ivectors.
-    $train_cmd $backend_log/compute_mean.log \
-		ivector-mean ark:$backend_log/train.iv \
-		$backend_log/mean.vec || exit 1;
+    python ../kaldi_evaluate.py \
+        $voxceleb1_trials \
+	$backend_log/test.scp \
+	$backend_log/scores_voxceleb1_test
 
-    # This script uses LDA to decrease the dimensionality prior to PLDA.
-    lda_dim=200
-    $train_cmd $backend_log/lda.log \
-        ivector-compute-lda --total-covariance-factor=0.0 --dim=$lda_dim \
-        "ark:ivector-subtract-global-mean ark:$backend_log/train.iv ark:- |" \
-        ark:$train_utt2spk $backend_log/transform.mat || exit 1;
-
-    # Train the PLDA model.
-    $train_cmd $backend_log/plda.log \
-        ivector-compute-plda ark:$train_spk2utt \
-        "ark:ivector-subtract-global-mean ark:$backend_log/train.iv ark:- | transform-vec $backend_log/transform.mat ark:- ark:- | ivector-normalize-length ark:-  ark:- |" \
-        $backend_log/plda || exit 1;
-  
     echo -e "\n"
 fi
 
-# Stage 5: Score model on test set
+# Stage 5: Show evaluation metrics (EER, minDCF)
 if [ $stage -le 5 ]; then
-    echo "=== Stage 5: Score model on test set ==="
-    
-    $train_cmd $backend_log/voxceleb1_test_scoring.log \
-        ivector-plda-scoring --normalize-length=true \
-        "ivector-copy-plda --smoothing=0.0 $backend_log/plda - |" \
-        "ark:ivector-subtract-global-mean $backend_log/mean.vec ark:$backend_log/test.iv ark:- | transform-vec $backend_log/transform.mat ark:- ark:- | ivector-normalize-length ark:- ark:- |" \
-        "ark:ivector-subtract-global-mean $backend_log/mean.vec ark:$backend_log/test.iv ark:- | transform-vec $backend_log/transform.mat ark:- ark:- | ivector-normalize-length ark:- ark:- |" \
-        "cat '$voxceleb1_trials' | cut -d\  --fields=1,2 |" $backend_log/scores_voxceleb1_test || exit 1;
-
-    echo -e "\n"
-fi
-
-# Stage 6: Show evaluation metrics (EER, minDCF)
-if [ $stage -le 6 ]; then
-    echo "=== Stage 6: Show evaluation metrics ==="
+    echo "=== Stage 5: Show evaluation metrics ==="
     
     eer=`compute-eer <(python local/prepare_for_eer.py $voxceleb1_trials $backend_log/scores_voxceleb1_test) 2> /dev/null`
     mindcf1=`python local/compute_min_dcf.py --p-target 0.01 $backend_log/scores_voxceleb1_test $voxceleb1_trials 2> /dev/null`
     mindcf2=`python local/compute_min_dcf.py --p-target 0.001 $backend_log/scores_voxceleb1_test $voxceleb1_trials 2> /dev/null`
-    mindcf2=`python local/compute_min_dcf.py --p-target 0.001 $backend_log/scores_voxceleb1_test $voxceleb1_trials 2> /dev/null`
+
     echo "EER: $eer%"
     echo "minDCF(p-target=0.01): $mindcf1"
     echo "minDCF(p-target=0.001): $mindcf2"
 fi
-

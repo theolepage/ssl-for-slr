@@ -47,7 +47,7 @@ def create_classifier(config, input_shape, nb_categories, model):
     return classifier
 
 def train_evaluate(config_path):
-    config, checkpoint_dir, eval_checkpoint_dir = load_config(config_path)
+    config, checkpoint_dir, eval_checkpoint_dir = load_config(config_path, evaluate=True)
 
     # Prevent re-training model
     if tf.train.latest_checkpoint(eval_checkpoint_dir):
@@ -85,13 +85,12 @@ def train_evaluate(config_path):
     time_history = TimeHistoryCallback()
 
     # Start training
-    train_gen, val_gen, test_gen = gens
     nb_epochs = config['evaluate']['epochs']
     callbacks = [save_callback, early_stopping, time_history]
     if config['evaluate'].get('tensorboard', False):
         callbacks.append(tensorboard)
-    history = classifier.fit(train_gen,
-                             validation_data=val_gen,
+    history = classifier.fit(gens[0],
+                             validation_data=gens[1],
                              epochs=nb_epochs,
                              callbacks=callbacks)
 

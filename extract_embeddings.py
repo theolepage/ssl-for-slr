@@ -1,65 +1,51 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+
 import argparse
 import numpy as np
 import kaldiio
+import soundfile as sf
 import tensorflow as tf
 from tqdm import tqdm
 
+from train_evaluate import create_classifier
+
 from sslforslr.utils.helpers import load_config, load_dataset, load_model
 
-BATCH_SIZE = 4096
+def get_frames(signal):
+        signal_length = len(signal)
+        frame_length = 20480
+        frame_step = 20480
 
-def extract_batch(file, model, batch, utterance_ids):
-    batch = np.array(batch).reshape((len(batch), -1, 1))
-    
-    # Prepare TensorFlow batch data
-    options = tf.data.Options()
-    options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
-    x_tf = tf.data.Dataset.from_tensor_slices((batch))
-    x_tf = x_tf.batch(len(batch))
-    x_tf = x_tf.with_options(options)
+        num_frames = int(1 + np.ceil((signal_length - frame_length) / frame_step))
 
-    # Use model to get features
-    embeddings = model.predict(x_tf)
-    
-    # Write embeddings to output file
-    # FIXME: try kaldiio.save_ark('b.ark', {'key': numpy_array})
-    for i in range(len(batch)):
-        file.write(utterance_ids[i] + ' [ ' + ' '.join(map(str, embeddings[i].flatten().tolist())) + ' ]\n')
+        zeros = np.zeros((num_frames * frame_length - signal_length))
+        signal_padded = np.append(signal, zeros)
+
+        indices_a = np.tile(np.arange(0, frame_length), (num_frames, 1))
+        indices_b = np.tile(np.arange(0, num_frames * frame_step, frame_step), (frame_length, 1))
+        indices = indices_a + indices_b.T
+
+        frames = signal_padded[indices.astype(np.int32)]
+        return frames
 
 def extract_embeddings(input_path, output_path, config_path):
     config, checkpoint_dir, eval_checkpoint_dir = load_config(config_path)
-
-    gens, input_shape, nb_categories = load_dataset(config,
-                                                    eval_checkpoint_dir)
-
+    gens, input_shape, nb_categories = load_dataset(config, eval_checkpoint_dir)
     model = load_model(config, input_shape)
 
-    frame_length = config['training']['dataset']['frames']['length']
-    num_feats = sum(1 for line in open(input_path))
-    pbar = tqdm(total=num_feats)
+    #scp = kaldiio.load_scp(input_path)
+    for line in tqdm(open(input_path)):
+        utterance_id, audio_path = line.rstrip().split()
 
-    f = open(output_path, 'w')
-    batch, utterance_ids = [], []
-    
-    scp = kaldiio.load_scp(input_path)
-    for utterance_id in scp:
-        sr, data = scp[utterance_id]
+        data, sr = sf.read(audio_path)
+        frames = np.expand_dims(get_frames(data), axis=-1)
+        embeddings = np.mean(model.predict(frames), axis=0)
 
-        # FIXME: how to pick frame?
-        x = np.array([data], dtype=np.float32)[0, 0:frame_length, ...]
-
-        batch.append(x)
-        utterance_ids.append(utterance_id)
-        if len(batch) == BATCH_SIZE:
-            extract_batch(f, model, batch, utterance_ids)
-            batch, utterance_ids = [], []
-        pbar.update(1)
-    
-    if len(batch) != 0:
-        extract_batch(f, model, batch, utterance_ids)
-
-    f.close()
-    pbar.close()
+        kaldiio.save_ark(output_path,
+                         {utterance_id: embeddings},
+                         scp=output_path[:-3] + 'scp',
+                         append=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

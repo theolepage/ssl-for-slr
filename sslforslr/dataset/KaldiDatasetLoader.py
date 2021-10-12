@@ -1,6 +1,7 @@
 import numpy as np
 from tensorflow.keras.utils import Sequence
 import kaldiio
+import soundfile as sf
 from sklearn.model_selection import train_test_split
 
 class KaldiDatasetGenerator(Sequence):
@@ -21,22 +22,19 @@ class KaldiDatasetGenerator(Sequence):
         for j in range(self.batch_size):
             index = self.indices[i * self.batch_size + j]
 
-            sr, sample = kaldiio.load_mat(self.rxfiles[index])
+            sample, sr = sf.read(self.rxfiles[index])
+            # sr, sample = kaldiio.load_mat(self.rxfiles[index])
             label = self.labels[index]
 
             assert len(sample) >= self.frame_length
             offset = np.random.randint(0, len(sample) - self.frame_length + 1)
             sample = sample[offset:offset+self.frame_length]
             sample = sample.reshape((self.frame_length, 1))
-            sample = sample.astype(np.float32)
 
             X.append(sample)
             y.append(label)
         
         return np.array(X), np.array(y)
-
-    def on_epoch_end(self):
-        np.random.shuffle(self.indices)
 
 class KaldiDatasetLoader:
     def __init__(self, seed, config):
