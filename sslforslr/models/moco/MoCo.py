@@ -6,9 +6,6 @@ from tensorflow.keras.layers import Layer, Dense, BatchNormalization, ReLU
 from tensorflow.keras.losses import sparse_categorical_crossentropy
 from tensorflow.keras.callbacks import Callback
 
-import torch
-import torchaudio
-
 MOCO_DEFAULT_QUEUE_SIZE = 10000
 MOCO_DEFAULT_INFO_NCE_TEMP = 0.07
 MOCO_DEFAULT_EMBEDDING_DIM = 512
@@ -16,34 +13,6 @@ MOCO_DEFAULT_PROTO_NCE_LOSS_FACTOR = 0.25
 MOCO_DEFAULT_N_CLUSTERS = 5000
 MOCO_DEFAULT_CLUSTER_NEG_COUNT = 10000
 MOCO_DEFAULT_EPOCHS_BEFORE_PROTO_NCE = 60
-
-def wav_augment(wav):
-    return wav
-
-
-def spec_augment(spec):
-    return spec
-
-
-def extract_mfcc(audio):
-    mfcc = torchaudio.compliance.kaldi.mfcc(torch.from_numpy(audio.T),
-                                            num_ceps=30,
-                                            num_mel_bins=30)
-    mfcc = torchaudio.transforms.SlidingWindowCmn(norm_vars=False)(mfcc)
-    return mfcc.numpy()
-
-
-def training_data_pipeline(audio):
-    X_1_aug, X_2_aug = [], []
-    for i in range(len(audio)):      
-        x_1_aug, x_2_aug = wav_augment(audio[i]), wav_augment(audio[i])
-        x_1_aug, x_2_aug = extract_mfcc(x_1_aug), extract_mfcc(x_2_aug)
-        x_1_aug, x_2_aug = spec_augment(x_1_aug), spec_augment(x_2_aug)
-        X_1_aug.append(x_1_aug)
-        X_2_aug.append(x_2_aug)
-
-    return np.array(X_1_aug), np.array(X_2_aug)
-
 
 class MoCoModel(Model):
     '''
@@ -87,15 +56,13 @@ class MoCoModel(Model):
         self.optimizer = optimizer
 
     def call(self, X):
-        return X # FIXME: self.encoder_q(self.mlp(X))
+        return self.encoder_q(self.mlp(X))
 
     def train_step(self, data):
         X, _ = data # Discard labels provided by the dataset generator
         # X shape: (batch_size, frame_length, 40, 1)
 
-        # FIXME: replace by dataset generator
-        audio = np.arange(64*64000*1).reshape((64, 64000, 1)).astype(np.float32)
-        X_1_aug, X_2_aug = training_data_pipeline(audio)
+        X_1_aug, X_2_aug = X
 
         with tf.GradientTape() as tape:
             Z_q = self.encoder_q(X_1_aug, training=True)
@@ -126,9 +93,7 @@ class MoCoModel(Model):
     def test_step(self, data):
         X, _ = data # Discard labels provided by the dataset generator
         
-        # FIXME: replace by dataset generator
-        audio = np.arange(64*64000*1).reshape((64, 64000, 1)).astype(np.float32)
-        X_1_aug, X_2_aug = training_data_pipeline(audio)
+        X_1_aug, X_2_aug = X
 
         Z_q = self.encoder_q(X_1_aug, training=False)
         Z_k = self.encoder_k(X_2_aug, training=False)
@@ -151,10 +116,6 @@ def info_nce_loss(anchor, pos, neg, temp):
     # anchor: (B, C), pos: (B, C), neg: (K, C)
 
     batch_size = tf.shape(anchor)[0]
-
-    # Normalize embeddings for cosine distance
-    anchor = tf.math.l2_normalize(anchor, axis=-1)
-    pos = tf.math.l2_normalize(pos, axis=-1)
 
     # Determine loss
     l_pos = tf.einsum('nc,nc->n', anchor, pos) # Shape: (B)
@@ -235,7 +196,7 @@ def proto_nce_loss(Z_q, kmeans, kmeans_temp, config):
 
 @tf.function
 def moco_loss(Z_q, Z_k, queue, kmeans, kmeans_temp, config, enable_proto_nce=False):
-    loss, accuracy = info_nce_loss(Z_q, Z_k, queue, config['info_nce_temp'])
+    loss, accuracy = info_nce_loss(Z_q, tf.stop_gradient(Z_k), queue, config['info_nce_temp'])
 
     if enable_proto_nce:
         loss += config['proto_nce_loss_factor'] \

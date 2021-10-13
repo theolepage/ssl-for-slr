@@ -1,5 +1,5 @@
 {
-    "name": "moco-base_debug",
+    "name": "moco-base-kaldi",
     "seed": 1717,
     "encoder": {
         "type": "XVector",
@@ -14,7 +14,7 @@
         "proto_nce_loss_factor": 0.25,
         "nb_clusters": 5000,
         "clustering_negs_count": 10000,
-        "epochs_before_proto_nce": 60,
+        "epochs_before_proto_nce": 1111111111111,
         "weight_regularizer": 1e-4
     },
     "training": {
@@ -24,25 +24,21 @@
             "type": "SGD",
             "momentum": 0.9
         },
-        "batch_size": 64,
+        "batch_size": 1,
         "learning_rate": {
             "scheduler": "cosine",
             "start": 0.1,
             "end": 0.0001
         },
         "dataset": {
-            "type": "LibriSpeech",
+            "type": "Kaldi",
             "sample_frequency": 16000,
-            "train_paths": [
-                "./datasets/LibriSpeech/dev-clean/*"
-            ],
-            "val_ratio": 0.2,
-            "test_ratio": 0.1,
+            "scp": "./data/train/feats.scp",
+            "utt2spk": "./data/train/utt2spk",
             "frames": {
-                "pick": "sequence",
-                "length": 20480,
-                "stride": 20480,
-                "count": 1
+                "length": 64000,
+                "pairs": true,
+                "extract_mfcc": true
             }
         }
     }

@@ -48,7 +48,7 @@ class TDNN(Layer):
     def call(self, X):
         kernel = self.kernel
         if self.sub_sampling:
-            kernel *= self.mask
+            kernel = kernel * self.mask
 
         X = tf.nn.conv1d(X, kernel, stride=1, padding="SAME")
         

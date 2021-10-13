@@ -1,5 +1,5 @@
 {
-    "name": "cpc-base-kaldi",
+    "name": "cpc-base-kaldi_boosted",
     "seed": 1717,
     "encoder": {
         "type": "CPC",
@@ -10,17 +10,18 @@
         "type": "CPC",
         "nb_timesteps_to_predict": 12,
         "context_network": {
-            "type": "GRU",
+            "type": "LSTM",
             "dim": 256,
-            "nb_layers": 1
+            "nb_layers": 2
         },
-        "bidirectional": false,
+        "bidirectional": true,
         "weight_regularizer": 1e-4
     },
     "training": {
         "epochs": 50,
-        "batch_size": 64,
+        "batch_size": 128,
         "learning_rate": 0.0001,
+        "tensorboard": true,
         "dataset": {
             "type": "Kaldi",
             "sample_frequency": 16000,

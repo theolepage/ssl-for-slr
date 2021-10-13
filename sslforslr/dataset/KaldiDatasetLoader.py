@@ -4,10 +4,22 @@ import kaldiio
 import soundfile as sf
 from sklearn.model_selection import train_test_split
 
+import torch
+import torchaudio
+
+def extract_mfcc(audio):
+    mfcc = torchaudio.compliance.kaldi.mfcc(torch.from_numpy(audio.T),
+                                            num_ceps=30,
+                                            num_mel_bins=30)
+    mfcc = torchaudio.transforms.SlidingWindowCmn(norm_vars=False)(mfcc)
+    return mfcc.numpy()
+
 class KaldiDatasetGenerator(Sequence):
-    def __init__(self, batch_size, frame_length, rxfiles, labels, indices):
+    def __init__(self, batch_size, frames_config, rxfiles, labels, indices):
         self.batch_size = batch_size
-        self.frame_length = frame_length
+        self.frame_length = frames_config['length']
+        self.pairs = frames_config.get('pairs', False)
+        self.extract_mfcc = frames_config.get('extract_mfcc', False)
         self.rxfiles = rxfiles
         self.labels = labels
         self.indices = indices
@@ -17,24 +29,29 @@ class KaldiDatasetGenerator(Sequence):
         return len(self.indices) // self.batch_size
 
     def __getitem__(self, i):
-        X, y = [], []
+        X, y = [], [], []
 
         for j in range(self.batch_size):
             index = self.indices[i * self.batch_size + j]
 
             sample, sr = sf.read(self.rxfiles[index])
-            # sr, sample = kaldiio.load_mat(self.rxfiles[index])
             label = self.labels[index]
 
             assert len(sample) >= self.frame_length
-            offset = np.random.randint(0, len(sample) - self.frame_length + 1)
-            sample = sample[offset:offset+self.frame_length]
             sample = sample.reshape((self.frame_length, 1))
 
-            X.append(sample)
+            if self.extract_mfcc:
+                data = extract_mfcc(sample)
+            else:
+                offset = np.random.randint(0, len(sample) - self.frame_length + 1)
+                data = sample[offset:offset+self.frame_length]
+
+            X.append(data)
             y.append(label)
         
-        return np.array(X), np.array(y)
+        if self.pairs:
+            return (np.array(X), np.array(X)) np.array(Y)
+        return np.array(X), np.array(Y)
 
 class KaldiDatasetLoader:
     def __init__(self, seed, config):
@@ -71,7 +88,7 @@ class KaldiDatasetLoader:
         self.nb_categories = current_speaker_id
 
     def load(self, batch_size, checkpoint_dir):
-        frame_length = self.config['frames']['length']
+        frames_config = self.config['frames']
         val_ratio = self.config.get('val_ratio', 0.1)
 
         # Create list of indices to shuffle easily during training
@@ -81,13 +98,13 @@ class KaldiDatasetLoader:
         indices_train, indices_val = train_test_split(indices, test_size=val_ratio)
 
         train = KaldiDatasetGenerator(batch_size,
-                                      frame_length,
+                                      frames_config,
                                       self.rxfiles,
                                       self.labels,
                                       indices_train)
 
         val = KaldiDatasetGenerator(batch_size,
-                                    frame_length,
+                                    frames_config,
                                     self.rxfiles,
                                     self.labels,
                                     indices_val)
