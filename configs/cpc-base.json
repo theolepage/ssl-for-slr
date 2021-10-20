@@ -1,0 +1,33 @@
+{
+    "name": "cpc-base",
+    "seed": 1717,
+    "encoder": {
+        "type": "CPC",
+        "encoded_dim": 512,
+        "weight_regularizer": 1e-4
+    },
+    "model": {
+        "type": "CPC",
+        "nb_timesteps_to_predict": 12,
+        "context_network": {
+            "type": "GRU",
+            "dim": 256,
+            "nb_layers": 1
+        },
+        "bidirectional": false,
+        "weight_regularizer": 1e-4
+    },
+    "training": {
+        "epochs": 50,
+        "batch_size": 64,
+        "learning_rate": 0.0001
+    },
+    "dataset": {
+        "sample_frequency": 16000,
+        "frame_length": 20480,
+        "max_samples": 1000,
+        "train": "./data/debug.scp",
+        "test": "./data/debug.scp",
+        "trials": "./data/voxceleb1_test/trials"
+    }
+}

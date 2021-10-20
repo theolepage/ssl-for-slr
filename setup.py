@@ -11,7 +11,6 @@ setup(
               'sslforslr.models.encoders',
               'sslforslr.models.cpc',
               'sslforslr.models.lim',
-              'sslforslr.models.multitask',
-              'sslforslr.models.wav2vec2',
-              'sslforslr.models.vqwav2vec'],
+              'sslforslr.models.simclr',
+              'sslforslr.models.moco'],
 )

@@ -1,3 +1,6 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+
 import argparse
 import numpy as np
 
@@ -7,31 +10,26 @@ from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.callbacks import TensorBoard
 
 from sslforslr.utils.helpers import load_config, load_dataset, load_model
-from sslforslr.utils.callbacks import TimeHistoryCallback
+from sslforslr.utils.callbacks import SVMetricsCallback
 
 from sslforslr.models.moco import MoCoUpdateCallback
 
 def train(config_path):
-    config, checkpoint_dir, _ = load_config(config_path)
+    # Load config, model and dataset
+    config, checkpoint_dir = load_config(config_path)
+    model = load_model(config)
+
+    gens = load_dataset(config)
+    train_gen, val_gen = gens
+    print("Number of training batches:", len(train_gen))
+    print("Number of val batches:", len(val_gen))
 
     # Prevent re-training model
     if tf.train.latest_checkpoint(checkpoint_dir):
-        raise Exception('%s already contains checkpoints.' % checkpoint_dir)
-
-    gens, input_shape, _ = load_dataset(config,
-                                        checkpoint_dir,
-                                        key='training')
-    train_gen = gens[0]
-    val_gen = gens[1]
-
-    model = load_model(config, input_shape)
-
-    # For multitask model: add targets to data generator
-    if config['model']['type'] == 'multitask':
-        for i in range(len(gens)):
-            gens[i] = model.add_targets_to_gen(gens[i])
+        raise Exception('%s has already been trained.' % config['name'])
 
     # Setup callbacks
+    sv_metrics = SVMetricsCallback(config)
     save_callback = ModelCheckpoint(filepath=checkpoint_dir + '/training',
                                     monitor='val_loss',
                                     save_best_only=True,
@@ -41,13 +39,10 @@ def train(config_path):
                                    patience=5)
     tensorboard = TensorBoard(log_dir=checkpoint_dir + '/logs/',
                               histogram_freq=1)
-    time_history = TimeHistoryCallback()
 
     # Start training
     nb_epochs = config['training']['epochs']
-    callbacks = [save_callback, early_stopping, time_history]
-    if config['training'].get('tensorboard', False):
-        callbacks.append(tensorboard)
+    callbacks = [sv_metrics, save_callback, early_stopping, tensorboard]
     if config['model']['type'] == 'MoCo':
         callbacks.append(MoCoUpdateCallback(train_gen))
     history = model.fit(train_gen,
@@ -57,10 +52,7 @@ def train(config_path):
                         use_multiprocessing=True,
                         workers=8)
 
-    # Save training history
-    hist_path = checkpoint_dir + '/history.npy'
-    history = time_history.update_history(history)
-    np.save(hist_path, history.history)
+    np.save(checkpoint_dir + '/history.npy', history.history)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

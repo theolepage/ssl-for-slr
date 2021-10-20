@@ -1,0 +1,29 @@
+{
+    "name": "simclr-base",
+    "seed": 1717,
+    "encoder": {
+        "type": "ThinResNet34",
+        "encoded_dim": 512,
+        "weight_regularizer": 1e-4
+    },
+    "model": {
+        "type": "SimCLR",
+        "channel_loss_factor": 0.1,
+        "weight_regularizer": 1e-4
+    },
+    "training": {
+        "epochs": 100,
+        "optimizer": {
+            "type": "Adam"
+        },
+        "batch_size": 256,
+        "learning_rate": 0.001
+    },
+    "dataset": {
+        "sample_frequency": 16000,
+        "frame_length": 20480,
+        "train": "./data/debug.scp",
+        "test": "./data/debug.scp",
+        "trials": "./data/voxceleb1_test/trials"
+    }
+}

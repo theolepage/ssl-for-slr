@@ -16,13 +16,8 @@ from sslforslr.models.cpc import CPCModel
 from sslforslr.models.lim import LIMModel
 from sslforslr.models.simclr import SimCLRModel
 from sslforslr.models.moco import MoCoModel
-from sslforslr.models.wav2vec2 import Wav2Vec2Model, Wav2Vec2Config
-from sslforslr.models.vqwav2vec import VQWav2VecModel, VQWav2VecConfig
-from sslforslr.models.multitask import MultiTaskModel
 from sslforslr.models.encoders import CPCEncoder, SincEncoder, Wav2SpkEncoder, XVectorEncoder, ThinResNet34Encoder
-from sslforslr.dataset.AudioDatasetLoader import AudioDatasetLoader
 from sslforslr.dataset.KaldiDatasetLoader import KaldiDatasetLoader
-from sslforslr.dataset.AudioAugmentationGenerator import AudioAugmentationGenerator
 
 def summary_for_shape(model, input_shape):
     x = Input(shape=input_shape)
@@ -32,7 +27,7 @@ def summary_for_shape(model, input_shape):
     model_ = Model(inputs=x, outputs=model_copy.call(x))
     return model_.summary()
 
-def load_config(config_path, evaluate=False):
+def load_config(config_path):
     # Load config file
     with open(config_path) as config_file:
         config = json.load(config_file)
@@ -48,52 +43,20 @@ def load_config(config_path, evaluate=False):
     checkpoint_dir = './checkpoints/' + config['name']
     Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
     
-    eval_checkpoint_dir = None
-    if evaluate:
-        eval_checkpoint_dir = checkpoint_dir + '___eval'
-        Path(eval_checkpoint_dir).mkdir(parents=True, exist_ok=True)
+    return config, checkpoint_dir
 
-    return config, checkpoint_dir, eval_checkpoint_dir
-
-def load_dataset(config, checkpoint_dir, key='training'):
-    dataset_config = config[key]['dataset']
-    batch_size = config[key]['batch_size']
+def load_dataset(config):
+    dataset_config = config['dataset']
+    batch_size = config['training']['batch_size']
     seed = config['seed']
 
-    if dataset_config['type'] == 'Kaldi':
-        dataset = KaldiDatasetLoader(seed, dataset_config)
-    else:
-        dataset = AudioDatasetLoader(seed, dataset_config)
-    gens, nb_categories = dataset.load(batch_size, checkpoint_dir)
+    dataset = KaldiDatasetLoader(seed, dataset_config)
+    gens = dataset.load(batch_size)
 
-    # Add data augmentation generator on top of generators
-    if 'data_augment' in config[key]:
-        data_augment_config = config[key]['data_augment']
-        sample_frequency = config[key]['dataset']['sample_frequency']
-        for i in range(len(gens)):
-            gens[i] = AudioAugmentationGenerator(gens[i],
-                                                 data_augment_config,
-                                                 sample_frequency)
-
-    print("Number of training batches:", len(gens[0]))
-    print("Number of val batches:", len(gens[1]))
-    if len(gens) >= 3:
-        print("Number of test batches:", len(gens[2]))
-
-    # Determine input shape
-    # Usually 20480 (1.28s at 16kHz on LibriSpeech) => nb_timesteps = 128
-    frame_length = config[key]['dataset']['frames']['length']
-    input_shape = (frame_length, 1)
-
-    return gens, input_shape, nb_categories
+    return gens
 
 def create_encoder(config):
     encoder_type = config['encoder']['type']
-
-    if encoder_type in ['wav2vec2', 'vq-wav2vec']:
-        encoder = None
-        return encoder
-
     encoded_dim = config['encoder']['encoded_dim']
     encoder_weight_regularizer = config['encoder'].get('weight_regularizer', 0.0)
 
@@ -117,7 +80,7 @@ def create_encoder(config):
     elif encoder_type == 'ThinResNet34':
         encoder = ThinResNet34Encoder(encoded_dim, encoder_weight_regularizer)
     else:
-        raise Exception('Config: encoder {} is not supported.'.format(encoder_type))
+        raise Exception('Encoder {} is not supported.'.format(encoder_type))
 
     return encoder
 
@@ -125,16 +88,6 @@ def create_model(config, input_shape):
     model_config = config['model']
     model_type = model_config['type']
     weight_regularizer = model_config.get('weight_regularizer', 0.0)
-
-    if model_type == 'multitask':
-        modules = model_config['modules']
-        return MultiTaskModel(encoder, input_shape, modules)
-    elif model_type == 'wav2vec2':
-        config = Wav2Vec2Config()
-        return Wav2Vec2Model(config)
-    elif model_type == 'vq-wav2vec':
-        config = VQWav2VecConfig()
-        return VQWav2VecModel(config)
 
     encoder = create_encoder(config)
     encoder_output_shape = encoder.compute_output_shape(input_shape)
@@ -168,13 +121,16 @@ def create_model(config, input_shape):
         encoder_k = create_encoder(config)
         model = MoCoModel(encoder, encoder_k, model_config, weight_regularizer)
     else:
-        raise Exception('Config: model {} is not supported.'.format(model_type))
+        raise Exception('Model {} is not supported.'.format(model_type))
 
     return model
 
-def load_model(config, input_shape):
-    mirrored_strategy = tf.distribute.MirroredStrategy()
+def load_model(config):
+    # Determine input shape
+    # Usually 20480 (1.28s at 16kHz on LibriSpeech) => nb_timesteps = 128
+    input_shape = (dataset_config['frame_length'], 1)
 
+    mirrored_strategy = tf.distribute.MirroredStrategy()
     with mirrored_strategy.scope():
         model = create_model(config, input_shape)
     
@@ -197,7 +153,7 @@ def load_model(config, input_shape):
         momentum = optimizer_config.get('momentum', 0.0)
         optimizer = SGD(learning_rate, momentum)
     else:
-        raise Exception('Config: optimizer {} is not supported.'.format(opt_type))
+        raise Exception('Optimizer {} is not supported.'.format(opt_type))
     
     # Compile and print model
     run_eagerly = config['training'].get('run_eagerly', False)

@@ -1,12 +1,8 @@
 numpy
-h5py
 tensorflow
 tensorflow-addons
 sklearn
 soundfile
-librosa
-audiomentations
 tqdm
-kaldiio
 torch
 torchaudio
