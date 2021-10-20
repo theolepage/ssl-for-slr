@@ -18,13 +18,12 @@
         "weight_regularizer": 1e-4
     },
     "training": {
-        "run_eagerly": true,
         "epochs": 150,
         "optimizer": {
             "type": "SGD",
             "momentum": 0.9
         },
-        "batch_size": 1,
+        "batch_size": 1024,
         "learning_rate": {
             "scheduler": "cosine",
             "start": 0.1,
@@ -36,8 +35,7 @@
             "scp": "./data/train/feats.scp",
             "utt2spk": "./data/train/utt2spk",
             "frames": {
-                "length": 64000,
-                "pairs": true,
+                "length": 300,
                 "extract_mfcc": true
             }
         }

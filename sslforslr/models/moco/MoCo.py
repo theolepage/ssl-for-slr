@@ -56,13 +56,14 @@ class MoCoModel(Model):
         self.optimizer = optimizer
 
     def call(self, X):
-        return self.encoder_q(self.mlp(X))
+        return self.mlp(self.encoder_q(X))
 
     def train_step(self, data):
         X, _ = data # Discard labels provided by the dataset generator
-        # X shape: (batch_size, frame_length, 40, 1)
+        # X shape: (batch_size, 300, 30)
 
-        X_1_aug, X_2_aug = X
+        X_1_aug = X
+        X_2_aug = tf.identity(X)
 
         with tf.GradientTape() as tape:
             Z_q = self.encoder_q(X_1_aug, training=True)
@@ -93,7 +94,8 @@ class MoCoModel(Model):
     def test_step(self, data):
         X, _ = data # Discard labels provided by the dataset generator
         
-        X_1_aug, X_2_aug = X
+        X_1_aug = X
+        X_2_aug = tf.identity(X)
 
         Z_q = self.encoder_q(X_1_aug, training=False)
         Z_k = self.encoder_k(X_2_aug, training=False)
@@ -129,12 +131,10 @@ def info_nce_loss(anchor, pos, neg, temp):
     loss = tf.reduce_mean(loss)
 
     # Determine accuracy
-    logits_size = tf.shape(logits)[1]
-    logits_softmax = tf.nn.softmax(logits, axis=0)
-    pred_indices = tf.math.argmax(logits_softmax, axis=0, output_type=tf.int32)
-    preds_acc = tf.math.equal(pred_indices, tf.zeros(logits_size, dtype=tf.int32))
-    accuracy = tf.math.count_nonzero(preds_acc, dtype=tf.int32)
-    accuracy /= logits_size
+    logits_softmax = tf.nn.softmax(logits, axis=1)
+    pred_indices = tf.math.argmax(logits_softmax, axis=1, output_type=tf.int32)
+    preds_acc = tf.math.equal(pred_indices, labels)
+    accuracy = tf.math.count_nonzero(preds_acc, dtype=tf.int32) / batch_size
 
     return loss, accuracy
 
