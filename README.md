@@ -17,17 +17,8 @@ Then, you can evaluate model on speaker verification (EER, minDCF) with `python 
 
 ## To-Do
 
-- [ ] Refactor project
-    - [ ] Data: check similar (padding) [30min]
-    - [ ] Evaluate: check works [30min]
-    - [ ] Model: clamp W, init -5 10, check similar encoder, mfcc [1h]
-    - [ ] Start SimCLR training [30min]
-
-- [ ] Reproduce results of SimCLR
-    - [ ] If not working => use voxceleb_trainer implem
-    - [ ] Add data augmentation
-    - [ ] Evaluate: add minDCF
-- [ ] Experiment with VICReg
+- [ ] Reproduce results of SimCLR (voxceleb_trainer, pytorch implem, enable data augmentation / channel invariant loss)
+- [ ] Experiment with different architectures and VICReg
 
 ---
 

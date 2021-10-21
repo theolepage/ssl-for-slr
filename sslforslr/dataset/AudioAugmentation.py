@@ -3,6 +3,7 @@ import os
 import numpy as np
 import random
 from scipy.signal import convolve
+import soundfile as sf
 
 from sslforslr.dataset.utils import load_wav
 
@@ -27,6 +28,7 @@ class AudioAugmentation:
     def reverberate(self, audio):
         rir_file = random.choice(self.rir_files)
         rir, fs = sf.read(rir_file)
+        rir = rir.reshape((-1, 1))
         rir = rir / np.sqrt(np.sum(rir ** 2))
         
         return convolve(audio, rir, mode='full')[:len(audio)]

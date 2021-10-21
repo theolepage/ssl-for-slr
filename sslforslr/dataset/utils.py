@@ -5,13 +5,16 @@ import soundfile as sf
 
 def load_wav(path, frame_length):
     data, sr = sf.read(path)
-    data = data.reshape((len(data), 1))
+
+    # Load entire audio data if frame_length is not specified
+    if frame_length is None: frame_length = len(data)
 
     if len(data) < frame_length:
         data = np.pad(data, (0, frame_length - len(data) + 1), 'wrap')
 
     offset = np.random.randint(0, len(data) - frame_length + 1)
     data = data[offset:offset+frame_length]
+    data = data.reshape((len(data), 1))
 
     return data
 
