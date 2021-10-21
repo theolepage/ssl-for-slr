@@ -10,7 +10,7 @@ def extract_embeddings(model, wav_list_path, frame_length):
     embeddings = {}
     for line in open(wav_list_path):
         utterance_id, file = line.rstrip().split()
-        data = load_wav(file, frame_length)
+        data = load_wav(file, framew_length)
         feats = model(np.expand_dims(data, axis=0))
         embeddings[utterance_id] = feats
 
@@ -83,7 +83,10 @@ def compute_min_dcf(fnrs, fprs, p_target=0.01, c_miss=1, c_fa=1):
 def speaker_verification_evaluate(model, config, round_val=5):
     test_list_path = config['dataset']['test']
     trials_path = config['dataset']['trials']
+    
     frame_length = config['dataset']['frame_length']
+    if config['dataset'].get('frame_split', False):
+        frame_length = frame_length // 2
 
     embeddings = extract_embeddings(model, test_list_path, frame_length)
     scores, labels = score_trials(trials_path, embeddings)
