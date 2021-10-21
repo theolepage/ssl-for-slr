@@ -159,7 +159,10 @@ def create_optimizer(config, learning_rate):
 
 def load_model(config):
     # Usually 20480 (1.28s at 16kHz on LibriSpeech) => nb_timesteps = 128
-    input_shape = (config['dataset']['frame_length'], 1)
+    length = config['dataset']['frame_length']
+    length = length // 2 if config['dataset'].get('frame_split', False) else length
+    dim = 40 if config['dataset'].get('extract_mfcc', False) else 1
+    input_shape = (length, dim)
 
     mirrored_strategy = tf.distribute.MirroredStrategy()
     with mirrored_strategy.scope():

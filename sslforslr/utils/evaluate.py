@@ -4,18 +4,13 @@ import soundfile as sf
 from scipy.spatial.distance import cosine
 from sklearn.metrics import roc_curve
 
+from sslforslr.dataset.utils import load_wav
+
 def extract_embeddings(model, wav_list_path, frame_length):
     embeddings = {}
     for line in open(wav_list_path):
         utterance_id, file = line.rstrip().split()
-        
-        sample, sr = sf.read(file)
-        data = sample.reshape((len(sample), 1))
-
-        assert len(data) >= frame_length
-        offset = np.random.randint(0, len(data) - frame_length + 1)
-        data = data[offset:offset+frame_length]
-        
+        data = load_wav(file, frame_length)
         feats = model(np.expand_dims(data, axis=0))
         embeddings[utterance_id] = feats
 
