@@ -121,6 +121,12 @@ class ThinResNet34Encoder(Model):
         return Sequential(layers)
 
     def call(self, X):
+        # X shape: (B, T, C) = (B, 200, 40)
+
+        X = tf.transpose(X, (0, 2, 1))
+        X = tf.expand_dims(X, axis=-1)
+        # X shape: (B, H, W, C) = (B, 40, 200, 1)
+
         Z = self.conv1(X)
         Z = self.relu(Z)
         Z = self.bn(Z)

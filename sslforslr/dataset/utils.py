@@ -24,4 +24,4 @@ def extract_mfcc(audio):
         window_fn=torch.hamming_window,
         n_mels=40)(audio)
 
-    return mfcc.numpy().transpose(1, 2, 0) # (H, W, C) = (40, W, 1)
+    return mfcc.numpy().squeeze(axis=0).T # (T, C) = (200, 40)
