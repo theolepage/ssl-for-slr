@@ -18,6 +18,7 @@ from sslforslr.models.simclr import SimCLRModel
 from sslforslr.models.moco import MoCoModel
 from sslforslr.models.encoders import CPCEncoder, SincEncoder, Wav2SpkEncoder, XVectorEncoder, ThinResNet34Encoder
 from sslforslr.dataset.KaldiDatasetLoader import KaldiDatasetLoader
+from sslforslr.utils.lr_schedulers import LinearDecay
 
 def summary_for_shape(model, input_shape):
     x = Input(shape=input_shape)
@@ -125,26 +126,26 @@ def create_model(config, input_shape):
 
     return model
 
-def load_model(config):
-    # Determine input shape
-    # Usually 20480 (1.28s at 16kHz on LibriSpeech) => nb_timesteps = 128
-    input_shape = (config['dataset']['frame_length'], 1)
-
-    mirrored_strategy = tf.distribute.MirroredStrategy()
-    with mirrored_strategy.scope():
-        model = create_model(config, input_shape)
-    
-    # Create learning rate scheduler
+def create_lr_scheduler(config):
     learning_rate = config['training']['learning_rate']
     if isinstance(learning_rate, dict):
-        lr_type = learning_rate['scheduler']
-        lr_start = learning_rate['start']
-        lr_end = learning_rate['end']
-        learning_rate = CosineDecay(initial_learning_rate=lr_start,
-                                    decay_steps=config['training']['epochs'],
-                                    alpha=lr_end/lr_start)
+        lr_type = learning_rate['type']
+        if lr_type == 'cosine':
+            start = learning_rate['start']
+            end = learning_rate['end']
+            learning_rate = CosineDecay(initial_learning_rate=start,
+                                        decay_steps=config['training']['epochs'],
+                                        alpha=end/start)
+        elif lr_type == 'linear':
+            initial = learning_rate['initial']
+            interval = learning_rate['interval']
+            factor = learning_rate['factor']
+            learning_rate = LinearDecay(initial, interval, factor)
+        else:
+            raise Exception('LR scheduler {} is not supported.'.format(lr_type))
+    return learning_rate
 
-    # Create optimizer
+def create_optimizer(config, learning_rate):
     optimizer_config = config['training'].get('optimizer', {})
     opt_type = optimizer_config.get('type', 'Adam')
     if opt_type == 'Adam':
@@ -154,6 +155,18 @@ def load_model(config):
         optimizer = SGD(learning_rate, momentum)
     else:
         raise Exception('Optimizer {} is not supported.'.format(opt_type))
+    return optimizer
+
+def load_model(config):
+    # Usually 20480 (1.28s at 16kHz on LibriSpeech) => nb_timesteps = 128
+    input_shape = (config['dataset']['frame_length'], 1)
+
+    mirrored_strategy = tf.distribute.MirroredStrategy()
+    with mirrored_strategy.scope():
+        model = create_model(config, input_shape)
+    
+    learning_rate = create_lr_scheduler(config)
+    optimizer = create_optimizer(config, learning_rate)
     
     # Compile and print model
     run_eagerly = config['training'].get('run_eagerly', False)
