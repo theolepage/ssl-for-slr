@@ -4,28 +4,6 @@ from tensorflow.keras import Model
 from tensorflow.keras import regularizers
 from tensorflow.keras.layers import Layer
 
-def training_data_pipeline(audio):
-    X_1_clean, X_2_clean, X_1_aug, X_2_aug = [], [], [], []
-    for i in range(len(audio)):
-        x_1, x_2 = sample_frames_from_utterance(audio[i])
-
-        x_1_clean, x_2_clean = extract_mfcc(x_1), extract_mfcc(x_2)
-        X_1_clean.append(x_1_clean)
-        X_2_clean.append(x_2_clean)
-        
-        x_1_aug, x_2_aug = wav_augment(x_1), wav_augment(x_2)
-        x_1_aug, x_2_aug = extract_mfcc(x_1_aug), extract_mfcc(x_2_aug)
-        x_1_aug, x_2_aug = spec_augment(x_1_aug), spec_augment(x_2_aug)
-        X_1_aug.append(x_1_aug)
-        X_2_aug.append(x_2_aug)
-
-    # X1 = np.arange(64*4000*40).reshape((64, 4000, 40, 1)).astype(np.float32)
-    return np.array(X_1_clean), \
-           np.array(X_2_clean), \
-           np.array(X_1_aug),   \
-           np.array(X_2_aug)
-
-
 class SimCLRModel(Model):
     '''
     A simple framework for contrastive learning (SimCLR) for audio signals,
@@ -56,12 +34,12 @@ class SimCLRModel(Model):
 
     def train_step(self, data):
         X_1_aug, X_2_aug, _ = data
-        # X shape: (batch_size, frame_length, 40)
+        # X shape: (B, H, W, C) = (B, 40, 200, 1)
 
         with tf.GradientTape() as tape:
             Z_1_aug = self.encoder(X_1_aug, training=True)
             Z_2_aug = self.encoder(X_2_aug, training=True)
-            # Out shape: (batch_size, encoded_dim)
+            # Z shape: (B, encoded_dim)
 
             loss, accuracy = self.simclr_loss([Z_1_aug, Z_2_aug])
             # loss += self.channel_loss_factor * channel_loss(Z_1_clean, Z_1_aug)

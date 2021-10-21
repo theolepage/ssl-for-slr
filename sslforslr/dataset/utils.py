@@ -16,8 +16,12 @@ def load_wav(path, frame_length):
     return data
 
 def extract_mfcc(audio):
-    mfcc = torchaudio.compliance.kaldi.mfcc(torch.from_numpy(audio.T),
-                                            num_ceps=40,
-                                            num_mel_bins=40)
-    # mfcc = torchaudio.transforms.SlidingWindowCmn(norm_vars=False)(mfcc)
-    return mfcc.numpy()
+    audio = torch.from_numpy(audio.astype(np.float32).T) # (T, 1) -> (1, T)
+    mfcc = torchaudio.transforms.MelSpectrogram(
+        n_fft=512,
+        win_length=400,
+        hop_length=160,
+        window_fn=torch.hamming_window,
+        n_mels=40)(audio)
+
+    return mfcc.numpy().transpose(1, 2, 0) # (H, W, C) = (40, W, 1)

@@ -26,7 +26,7 @@
     },
     "dataset": {
         "sample_frequency": 16000,
-        "frame_length": 64000,
+        "frame_length": 62000,
         "frame_split": true,
         "train": "./data/debug.scp",
         "augment": {

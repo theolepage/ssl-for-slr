@@ -40,15 +40,16 @@ class KaldiDatasetGenerator(Sequence):
             index = self.indices[i * self.batch_size + j]
 
             data = load_wav(self.files[index], self.frame_length)
+            data = self.preprocess_data(data)
 
             if self.frame_split:
-                pivot = self.frame_length // 2
-                X1.append(self.preprocess_data(data[:pivot]))
-                X2.append(self.preprocess_data(data[pivot:]))
+                pivot = len(data) // 2
+                X1.append(data[:pivot])
+                X2.append(data[pivot:])
                 y.append(0)
                 continue
             
-            X1.append(self.preprocess_data(data))
+            X1.append(data)
             y.append(0)
 
         if self.frame_split:
