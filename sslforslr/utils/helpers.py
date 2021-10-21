@@ -128,7 +128,7 @@ def create_model(config, input_shape):
 def load_model(config):
     # Determine input shape
     # Usually 20480 (1.28s at 16kHz on LibriSpeech) => nb_timesteps = 128
-    input_shape = (dataset_config['frame_length'], 1)
+    input_shape = (config['dataset']['frame_length'], 1)
 
     mirrored_strategy = tf.distribute.MirroredStrategy()
     with mirrored_strategy.scope():
