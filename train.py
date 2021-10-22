@@ -48,9 +48,9 @@ def train(config_path):
     history = model.fit(train_gen,
                         validation_data=val_gen,
                         epochs=nb_epochs,
-                        callbacks=callbacks,
-                        use_multiprocessing=True,
-                        workers=8)
+                        callbacks=callbacks)
+                        # use_multiprocessing=True,
+                        # workers=8)
 
     np.save(checkpoint_dir + '/history.npy', history.history)
 
