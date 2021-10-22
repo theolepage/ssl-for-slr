@@ -7,7 +7,7 @@ from sklearn.metrics import roc_curve
 
 from sslforslr.dataset.utils import load_wav, extract_mfcc
 
-def extract_embeddings(model, wav_list_path, dataset_config):
+def extract_embeddings(model, wav_list_path, dataset_config, batch_size=64):
     enable_extract_mfcc = dataset_config.get('extract_mfcc', False)
     enable_frame_split = dataset_config.get('frame_split', False)
 
@@ -15,12 +15,34 @@ def extract_embeddings(model, wav_list_path, dataset_config):
     if enable_frame_split: frame_length = frame_length // 2
 
     embeddings = {}
+    curr_batch_ids = []
+    curr_batch_data = []
+
     for line in tqdm(open(wav_list_path)):
-        utterance_id, file = line.rstrip().split()
+        if len(curr_batch_ids) == batch_size:
+            # Feed last batch of samples to model
+            feats = model(np.array(curr_batch_data))
+
+            # Register embeddings
+            for i in range(len(curr_batch_ids)):
+                uttid, data = curr_batch_ids[i], feats[i]
+                embeddings[uttid] = data
+
+            curr_batch_ids, curr_batch_data = [], []
+
+        # Store current utterance id and data
+        uttid, file = line.rstrip().split()
         data = load_wav(file, frame_length)
         if enable_extract_mfcc: data = extract_mfcc(data)
-        feats = model(np.expand_dims(data, axis=0))
-        embeddings[utterance_id] = feats
+        curr_batch_ids.append(uttid)
+        curr_batch_data.append(data)
+
+    # Register remaining samples (if nb samples % 64 != 0)
+    if len(curr_batch_ids) != 0:
+        feats = model(np.array(curr_batch_data))
+        for i in range(len(curr_batch_ids)):
+            uttid, data = curr_batch_ids[i], feats[i]
+            embeddings[uttid] = data
 
     return embeddings
 

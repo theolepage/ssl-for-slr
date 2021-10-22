@@ -17,12 +17,21 @@ Then, you can evaluate model on speaker verification (EER, minDCF) with `python 
 
 ## To-Do
 
-- [ ] Reproduce results of SimCLR (voxceleb_trainer/pytorch implem, enable augmentation / channel invariant loss)
+- [ ] Reproduce results of SimCLR
+    - Possible differences with original SimCLR implem:
+        - [ ] x = self.torchfb(x)+1e-6
+        - [ ] x = x.log()
+        - [ ] x = self.instancenorm(x).unsqueeze(1)
+        - [ ] Thin-ResNet34 implem
+        - [ ] loss implem
+        - [ ] data augmentation is currently disabled
+        - [ ] channel invariant loss is currently disabled
+
 - [ ] Experiment with different architectures and VICReg
+- [ ] Explain data preparation / reproduction + cite articles in README
 
 ---
 
-- [ ] Explain data preparation / reproduction + cite articles in README
 - [ ] Use dataclass and YAML for model configs
 - [ ] CPC/LIM: @tf.function warning when doing tensor[1, :]
 - [ ] Fix warning loading weights not used
