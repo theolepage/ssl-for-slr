@@ -26,8 +26,8 @@ def pre_emphasis(audio, coef=0.97):
     return F.conv1d(audio, w).squeeze(1)
 
 def extract_mfcc(audio):
-    # audio = pre_emphasis(audio)
     audio = torch.from_numpy(audio.astype(np.float32).T) # (T, 1) -> (1, T)
+    audio = pre_emphasis(audio)
     mfcc = torchaudio.transforms.MelSpectrogram(
         n_fft=512,
         win_length=400,

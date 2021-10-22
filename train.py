@@ -8,14 +8,45 @@ import tensorflow as tf
 from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.callbacks import TensorBoard
+from tensorflow.keras.callbacks import LearningRateScheduler
 
 from sslforslr.utils.helpers import load_config, load_dataset, load_model
 from sslforslr.utils.callbacks import SVMetricsCallback
 
 from sslforslr.models.moco import MoCoUpdateCallback
 
+def simclr_lr_scheduler(epoch, lr):
+    activate = (epoch != 0 and epoch % 5 == 0)
+    return lr - lr * 0.05 if activate else lr
+
+def create_callbacks(config, checkpoint_dir):
+    callbacks = []
+
+    if config['model']['type'] == 'MoCo':
+        callbacks.append(MoCoUpdateCallback(train_gen))
+    elif config['model']['type'] == 'SimCLR':
+        callbacks.append(LearningRateScheduler(simclr_lr_scheduler))
+
+    callbacks.append(
+        ModelCheckpoint(filepath=checkpoint_dir + '/training',
+                        monitor='val_loss',
+                        save_best_only=True,
+                        save_weights_only=True,
+                        verbose=1)
+    )
+
+    callbacks.append(SVMetricsCallback(config))
+
+    callbacks.append(
+        TensorBoard(log_dir=checkpoint_dir + '/logs/',
+                    histogram_freq=1)
+    )
+
+    callbacks.append(EarlyStopping(monitor='val_loss', patience=5))
+
+    return callbacks
+
 def train(config_path):
-    # Load config, model and dataset
     config, checkpoint_dir = load_config(config_path)
     model = load_model(config)
 
@@ -28,27 +59,11 @@ def train(config_path):
     if tf.train.latest_checkpoint(checkpoint_dir):
         raise Exception('%s has already been trained.' % config['name'])
 
-    # Setup callbacks
-    sv_metrics = SVMetricsCallback(config)
-    save_callback = ModelCheckpoint(filepath=checkpoint_dir + '/training',
-                                    monitor='val_loss',
-                                    save_best_only=True,
-                                    save_weights_only=True,
-                                    verbose=1)
-    early_stopping = EarlyStopping(monitor='val_loss',
-                                   patience=5)
-    tensorboard = TensorBoard(log_dir=checkpoint_dir + '/logs/',
-                              histogram_freq=1)
-
-    # Start training
     nb_epochs = config['training']['epochs']
-    callbacks = [save_callback, sv_metrics, tensorboard, early_stopping]
-    if config['model']['type'] == 'MoCo':
-        callbacks.append(MoCoUpdateCallback(train_gen))
     history = model.fit(train_gen,
                         validation_data=val_gen,
                         epochs=nb_epochs,
-                        callbacks=callbacks)
+                        callbacks=create_callbacks(config, checkpoint_dir))
                         # use_multiprocessing=True,
                         # workers=8)
 

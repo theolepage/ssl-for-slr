@@ -18,7 +18,6 @@ from sslforslr.models.simclr import SimCLRModel
 from sslforslr.models.moco import MoCoModel
 from sslforslr.models.encoders import CPCEncoder, SincEncoder, Wav2SpkEncoder, XVectorEncoder, ThinResNet34Encoder
 from sslforslr.dataset.KaldiDatasetLoader import KaldiDatasetLoader
-from sslforslr.utils.lr_schedulers import LinearDecay
 
 def summary_for_shape(model, input_shape):
     x = Input(shape=input_shape)
@@ -136,11 +135,6 @@ def create_lr_scheduler(config):
             learning_rate = CosineDecay(initial_learning_rate=start,
                                         decay_steps=config['training']['epochs'],
                                         alpha=end/start)
-        elif lr_type == 'linear':
-            initial = learning_rate['initial']
-            interval = learning_rate['interval']
-            factor = learning_rate['factor']
-            learning_rate = LinearDecay(initial, interval, factor)
         else:
             raise Exception('LR scheduler {} is not supported.'.format(lr_type))
     return learning_rate

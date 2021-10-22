@@ -17,12 +17,7 @@
             "type": "Adam"
         },
         "batch_size": 256,
-        "learning_rate": {
-            "type": "linear",
-            "initial": 0.001,
-            "interval": 5,
-            "factor": 0.05
-        }
+        "learning_rate": 0.001
     },
     "dataset": {
         "sample_frequency": 16000,
