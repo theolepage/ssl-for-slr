@@ -1,3 +1,4 @@
+import tensorflow as tf
 from tensorflow.keras.optimizers.schedules import LearningRateSchedule
 
 class LinearDecay(LearningRateSchedule):
@@ -15,4 +16,5 @@ class LinearDecay(LearningRateSchedule):
         self.decay_factor = decay_factor
 
     def __call__(self, epoch):
-        return self.initial_lr - (epoch // self.interval) * self.decay_factor
+        steps = tf.math.floor(epoch / self.interval)
+        return self.initial_lr - self.initial_lr * steps * self.decay_factor

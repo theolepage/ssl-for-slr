@@ -42,7 +42,7 @@ def train(config_path):
 
     # Start training
     nb_epochs = config['training']['epochs']
-    callbacks = [sv_metrics, save_callback, early_stopping, tensorboard]
+    callbacks = [save_callback, sv_metrics, tensorboard, early_stopping]
     if config['model']['type'] == 'MoCo':
         callbacks.append(MoCoUpdateCallback(train_gen))
     history = model.fit(train_gen,
