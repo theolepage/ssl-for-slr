@@ -10,7 +10,7 @@ def extract_embeddings(model, wav_list_path, frame_length):
     embeddings = {}
     for line in open(wav_list_path):
         utterance_id, file = line.rstrip().split()
-        data = load_wav(file, framew_length)
+        data = load_wav(file, frame_length)
         feats = model(np.expand_dims(data, axis=0))
         embeddings[utterance_id] = feats
 

@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import torch.nn.functional as F
 import torchaudio
 import soundfile as sf
 
@@ -18,7 +19,14 @@ def load_wav(path, frame_length):
 
     return data
 
+def pre_emphasis(audio, coef=0.97):
+    w = torch.FloatTensor([-coef, 1.0]).unsqueeze(0).unsqueeze(0)
+    audio = audio.unsqueeze(1)
+    audio = F.pad(audio, (1, 0), 'reflect')
+    return F.conv1d(audio, w).squeeze(1)
+
 def extract_mfcc(audio):
+    # audio = pre_emphasis(audio)
     audio = torch.from_numpy(audio.astype(np.float32).T) # (T, 1) -> (1, T)
     mfcc = torchaudio.transforms.MelSpectrogram(
         n_fft=512,

@@ -17,7 +17,7 @@ Then, you can evaluate model on speaker verification (EER, minDCF) with `python 
 
 ## To-Do
 
-- [ ] Reproduce results of SimCLR (voxceleb_trainer, pytorch implem, enable data augmentation / channel invariant loss)
+- [ ] Reproduce results of SimCLR (voxceleb_trainer/pytorch implem, enable augmentation / channel invariant loss)
 - [ ] Experiment with different architectures and VICReg
 
 ---
