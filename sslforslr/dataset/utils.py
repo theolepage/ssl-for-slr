@@ -40,7 +40,7 @@ def extract_mfcc(audio):
     mfcc = mfcc.numpy().squeeze(axis=0).T # (T, C)
     
     # torchaudio MelSpectrogram method might return a larger sequence
-    limit = len(audio) // 160
+    limit = audio.shape[1] // 160
     mfcc = mfcc[:limit, :]
     
     return mfcc
