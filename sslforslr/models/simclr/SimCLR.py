@@ -23,7 +23,7 @@ class SimCLRModel(Model):
         self.reg = regularizers.l2(weight_regularizer)
 
         self.encoder = encoder
-        self.simclr_loss = AngularPrototypicalLoss(self.reg)
+        self.loss = AngularPrototypicalLoss(self.reg)
 
     def compile(self, optimizer, **kwargs):
         super().compile(**kwargs)
@@ -41,11 +41,12 @@ class SimCLRModel(Model):
             Z_2_aug = self.encoder(X_2_aug, training=True)
             # Z shape: (B, encoded_dim)
 
-            loss, accuracy = self.simclr_loss([Z_1_aug, Z_2_aug])
+            loss, accuracy = self.loss([Z_1_aug, Z_2_aug], training=True)
             # loss += self.channel_loss_factor * channel_loss(Z_1_clean, Z_1_aug)
             # loss += self.channel_loss_factor * channel_loss(Z_2_clean, Z_2_aug)
 
         trainable_params = self.encoder.trainable_weights
+        trainable_params += self.loss.trainable_weights
 
         grads = tape.gradient(loss, trainable_params)
         self.optimizer.apply_gradients(zip(grads, trainable_params))
@@ -58,7 +59,7 @@ class SimCLRModel(Model):
         Z_1_aug = self.encoder(X_1_aug, training=False)
         Z_2_aug = self.encoder(X_2_aug, training=False)
 
-        loss, accuracy = self.simclr_loss([Z_1_aug, Z_2_aug])
+        loss, accuracy = self.loss([Z_1_aug, Z_2_aug], training=False)
         # loss += self.channel_loss_factor * channel_loss(Z_1_clean, Z_1_aug)
         # loss += self.channel_loss_factor * channel_loss(Z_2_clean, Z_2_aug)
 
