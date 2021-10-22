@@ -9,6 +9,7 @@ from tensorflow.keras.layers import Softmax
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import ReLU
 from tensorflow.keras.layers import Add
+from tensorflow_addons.layers import InstanceNormalization
 from tensorflow.keras import regularizers
 
 class ResNetBlock(Layer):
@@ -105,6 +106,8 @@ class ThinResNet34Encoder(Model):
         self.encoded_dim = encoded_dim
         self.reg = regularizers.l2(weight_regularizer)
 
+        self.instance_norm = InstanceNormalization(axis=1)
+
         self.conv1 = Conv2D(32, 3, 1, padding='same',
                             kernel_regularizer=self.reg,
                             bias_regularizer=self.reg)
@@ -129,11 +132,16 @@ class ThinResNet34Encoder(Model):
         return Sequential(layers)
 
     def call(self, X):
-        # X shape: (B, T, C) = (B, 200, 40)
+        # X shape: (B, T, C)
 
-        X = tf.transpose(X, (0, 2, 1))
-        X = tf.expand_dims(X, axis=-1)
-        # X shape: (B, H, W, C) = (B, 40, 200, 1)
+        X = tf.transpose(X, (0, 2, 1)) # (B, C, T) = (B, 40, 200)
+        
+        X = tf.math.log(X + 1e-06)
+
+        X.set_shape((X.shape[0], 40, X.shape[-1]))
+        X = self.instance_norm(X)
+
+        X = tf.expand_dims(X, axis=-1) # (B, H, W, C) = (B, 40, 200, 1)
 
         Z = self.conv1(X)
         Z = self.relu(Z)

@@ -19,13 +19,10 @@ Then, you can evaluate model on speaker verification (EER, minDCF) with `python 
 
 - [ ] Reproduce results of SimCLR
     - Possible differences with original SimCLR implem:
-        - [ ] x = self.torchfb(x)+1e-6
-        - [ ] x = x.log()
-        - [ ] x = self.instancenorm(x).unsqueeze(1)
-        - [ ] Thin-ResNet34 implem
-        - [ ] loss implem
-        - [ ] data augmentation is currently disabled
-        - [ ] channel invariant loss is currently disabled
+        - [ ] Thin-ResNet34 implem (SE layer)
+        - [ ] Loss implem
+        - [ ] Data augmentation is currently disabled
+        - [ ] Channel invariant loss is currently disabled
 
 - [ ] Experiment with different architectures and VICReg
 - [ ] Explain data preparation / reproduction + cite articles in README
