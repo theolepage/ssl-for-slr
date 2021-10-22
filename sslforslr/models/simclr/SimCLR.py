@@ -67,6 +67,7 @@ class SimCLRModel(Model):
 
 
 class AngularPrototypicalLoss(Layer):
+
     def __init__(self, reg, init_w=10.0, init_b=-5.0):
         super().__init__()
 

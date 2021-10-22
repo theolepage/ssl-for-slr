@@ -1,3 +1,4 @@
+import math
 import numpy as np
 from tensorflow.keras.utils import Sequence
 from sklearn.model_selection import train_test_split
@@ -25,8 +26,7 @@ class KaldiDatasetGenerator(Sequence):
         self.extract_mfcc = extract_mfcc
 
     def __len__(self):
-        # FIXME: Handle last batch having < self.batch_size elements
-        return len(self.indices) // self.batch_size
+        return math.ceil(len(self.indices) / self.batch_size)
 
     def preprocess_data(self, data):
         if self.augment:      data = augment(data)
@@ -34,9 +34,16 @@ class KaldiDatasetGenerator(Sequence):
         return data
 
     def __getitem__(self, i):
-        X1, X2, y = [], [], []
+        curr_batch_size = self.batch_size
 
-        for j in range(self.batch_size):
+        # Last batch may have fewer samples
+        is_last_batch = (i == self.__len__() - 1)
+        remaining_samples = len(self.indices) % self.batch_size
+        if is_last_batch and remaining_samples != 0:
+            curr_batch_size = remaining_samples
+
+        X1, X2, y = [], [], []
+        for j in range(curr_batch_size):
             index = self.indices[i * self.batch_size + j]
 
             data = load_wav(self.files[index], self.frame_length)
