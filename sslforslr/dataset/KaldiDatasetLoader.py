@@ -56,46 +56,59 @@ class KaldiDatasetGenerator(Sequence):
             return np.array(X1), np.array(X2), np.array(y)
         return np.array(X1), np.array(y)
 
+    def on_epoch_end(self):
+        # Randomize samples manually after each epoch
+        np.random.shuffle(self.indices)
+
 class KaldiDatasetLoader:
-    def __init__(self, seed, config):
+    def __init__(self, config):
         self.config = config
 
+        self.frame_length = self.config['frame_length']
+        self.val_ratio = self.config.get('val_ratio', 0.1)
+        self.extract_mfcc = self.config.get('extract_mfcc', False)
+        self.frame_split = self.config.get('frame_split', False)
+        self.max_samples = self.config.get('max_samples', None)
+
+        # Create augmentation module
+        self.augment = None
+        augment_config = self.config.get('augment', None)
+        if augment_config and augment_config.get('enabled', True):
+            self.augment = AudioAugmentation(augment_config)
+
+        # Create a list of audio paths
         self.files = []
         for line in open(self.config['train']):
             _, file = line.rstrip().split()
             self.files.append(file)
 
+    def get_input_shape(self):
+        if self.extract_mfcc:
+            return (self.frame_length // 160, 40)
+        return (self.frame_length, 1)
+
     def load(self, batch_size):
-        frame_length = self.config['frame_length']
-        val_ratio = self.config.get('val_ratio', 0.1)
-        extract_mfcc = self.config.get('extract_mfcc', False)
-        frame_split = self.config.get('frame_split', False)
+        count = self.max_samples if self.max_samples else len(self.files)
+        indices = train_test_split(np.arange(count), test_size=self.val_ratio)
 
-        augment = None
-        augment_config = self.config.get('augment', None)
-        if augment_config and augment_config.get('enabled', True):
-            augment = AudioAugmentation(augment_config)
+        train_gen = KaldiDatasetGenerator(
+            batch_size,
+            self.frame_length,
+            self.frame_split,
+            self.files,
+            indices[0],
+            self.augment,
+            self.extract_mfcc
+        )
 
-        # Create list of indices to shuffle easily during training
-        max_samples = self.config.get('max_samples', None)
-        nb_samples = max_samples if max_samples else len(self.files)
-        indices = np.arange(nb_samples)
-        indices_train, indices_val = train_test_split(indices, test_size=val_ratio)
+        val_gen = KaldiDatasetGenerator(
+            batch_size,
+            self.frame_length,
+            self.frame_split,
+            self.files,
+            indices[1],
+            self.augment,
+            self.extract_mfcc
+        )
 
-        train = KaldiDatasetGenerator(batch_size,
-                                      frame_length,
-                                      frame_split,
-                                      self.files,
-                                      indices_train,
-                                      augment,
-                                      extract_mfcc)
-
-        val = KaldiDatasetGenerator(batch_size,
-                                    frame_length,
-                                    frame_split,
-                                    self.files,
-                                    indices_val,
-                                    augment,
-                                    extract_mfcc)
-
-        return (train, val)
+        return train_gen, val_gen

@@ -48,13 +48,12 @@ def create_callbacks(config, checkpoint_dir):
 
 def train(config_path):
     config, checkpoint_dir = load_config(config_path)
-    model = load_model(config)
+    (train_gen, val_gen), input_shape = load_dataset(config)
+    model = load_model(config, input_shape)
 
-    gens = load_dataset(config)
-    train_gen, val_gen = gens
     print("Number of training batches:", len(train_gen))
     print("Number of val batches:", len(val_gen))
-
+    
     # Prevent re-training model
     if tf.train.latest_checkpoint(checkpoint_dir):
         raise Exception('%s has already been trained.' % config['name'])

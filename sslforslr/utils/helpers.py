@@ -46,14 +46,9 @@ def load_config(config_path):
     return config, checkpoint_dir
 
 def load_dataset(config):
-    dataset_config = config['dataset']
-    batch_size = config['training']['batch_size']
-    seed = config['seed']
-
-    dataset = KaldiDatasetLoader(seed, dataset_config)
-    gens = dataset.load(batch_size)
-
-    return gens
+    dataset = KaldiDatasetLoader(config['dataset'])
+    gens = dataset.load(config['training']['batch_size'])
+    return gens, dataset.get_input_shape()
 
 def create_encoder(config):
     encoder_type = config['encoder']['type']
@@ -151,13 +146,7 @@ def create_optimizer(config, learning_rate):
         raise Exception('Optimizer {} is not supported.'.format(opt_type))
     return optimizer
 
-def load_model(config):
-    # Usually 20480 (1.28s at 16kHz on LibriSpeech) => nb_timesteps = 128
-    length = config['dataset']['frame_length']
-    length = length // 2 if config['dataset'].get('frame_split', False) else length
-    dim = 40 if config['dataset'].get('extract_mfcc', False) else 1
-    input_shape = (length, dim)
-
+def load_model(config, input_shape):
     mirrored_strategy = tf.distribute.MirroredStrategy()
     with mirrored_strategy.scope():
         model = create_model(config, input_shape)

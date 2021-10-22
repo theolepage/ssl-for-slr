@@ -27,12 +27,20 @@ def pre_emphasis(audio, coef=0.97):
 
 def extract_mfcc(audio):
     audio = torch.from_numpy(audio.astype(np.float32).T) # (T, 1) -> (1, T)
+    
     audio = pre_emphasis(audio)
+    
     mfcc = torchaudio.transforms.MelSpectrogram(
         n_fft=512,
         win_length=400,
         hop_length=160,
         window_fn=torch.hamming_window,
-        n_mels=40)(audio)
-
-    return mfcc.numpy().squeeze(axis=0).T # (T, C) = (200, 40)
+        n_mels=40)(audio) # mfcc: (1, C, T)
+    
+    mfcc = mfcc.numpy().squeeze(axis=0).T # (T, C)
+    
+    # torchaudio MelSpectrogram method might return a larger sequence
+    limit = len(audio) // 160
+    mfcc = mfcc[:limit, :]
+    
+    return mfcc

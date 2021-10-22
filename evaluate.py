@@ -4,13 +4,13 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import argparse
 import tensorflow as tf
 
-from sslforslr.utils.helpers import load_config, load_model
+from sslforslr.utils.helpers import load_config, load_dataset, load_model
 from sslforslr.utils.evaluate import speaker_verification_evaluate
 
 def evaluate(config_path):
-    # Load model
     config, checkpoint_dir = load_config(config_path)
-    model = load_model(config)
+    (train_gen, val_gen), input_shape = load_dataset(config)
+    model = load_model(config, input_shape)
 
     # Load pre-trained weights
     last_checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
