@@ -34,8 +34,8 @@
             "musan_path": "/home/theo/Documents/Datasets/musan"
         },
         "extract_mfcc": true,
-        "train": "./data/debug.scp",
-        "test": "./data/debug.scp",
+        "train": "./data/voxceleb2_train/wav.scp",
+        "test": "./data/voxceleb1_test/wav.scp",
         "trials": "./data/voxceleb1_test/trials"
     }
 }
