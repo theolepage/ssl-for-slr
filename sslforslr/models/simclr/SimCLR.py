@@ -30,7 +30,7 @@ class SimCLRModel(Model):
         self.optimizer = optimizer
 
     def call(self, X):
-        return self.encoder(X)
+        return tf.math.l2_normalize(self.encoder(X), axis=-1)
 
     def train_step(self, data):
         X_1_aug, X_2_aug, _ = data
