@@ -68,18 +68,26 @@ class SAP(Layer):
         self.outmap_size = outmap_size
 
         self.attention = Sequential([
-            Conv1D(128, kernel_size=1, data_format='channels_first'),
+            Conv1D(128, kernel_size=1),
             ReLU(),
-            BatchNormalization(axis=1),
-            Conv1D(1280, kernel_size=1, data_format='channels_first'),
-            Softmax(axis=-1)
+            BatchNormalization(),
+            Conv1D(1280, kernel_size=1),
+            Softmax(axis=1)
         ])
 
     def call(self, X):
-        X = tf.transpose(X, (0, 3, 1, 2))
-        X = tf.reshape(X, (tf.shape(X)[0], self.outmap_size, tf.shape(X)[-1]))
+        # (B, H, W, C) = (None, 5, 38, 256) 
+
+        X = tf.transpose(X, (0, 2, 1, 3))
+        # (B, W, H, C) = (None, 38, 5, 256) 
+
+        X = tf.reshape(X, (tf.shape(X)[0], tf.shape(X)[1], self.outmap_size))
+        # (B, W, H*C) = (None, 38, 1280)
+
         W = self.attention(X)
-        X = tf.math.reduce_sum(W * X, axis=-1)
+        X = tf.math.reduce_sum(W * X, axis=1)
+        # (B, H*C) = (None, 1280)
+
         return X
 
 class ThinResNet34Encoder(Model):

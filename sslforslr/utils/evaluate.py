@@ -1,16 +1,24 @@
+from tqdm import tqdm
 from operator import itemgetter
 import numpy as np
 import soundfile as sf
 from scipy.spatial.distance import cosine
 from sklearn.metrics import roc_curve
 
-from sslforslr.dataset.utils import load_wav
+from sslforslr.dataset.utils import load_wav, extract_mfcc
 
-def extract_embeddings(model, wav_list_path, frame_length):
+def extract_embeddings(model, wav_list_path, dataset_config):
+    enable_extract_mfcc = dataset_config.get('extract_mfcc', False)
+    enable_frame_split = dataset_config.get('frame_split', False)
+
+    frame_length = dataset_config['frame_length']
+    if enable_frame_split: frame_length = frame_length // 2
+
     embeddings = {}
-    for line in open(wav_list_path):
+    for line in tqdm(open(wav_list_path)):
         utterance_id, file = line.rstrip().split()
         data = load_wav(file, frame_length)
+        if enable_extract_mfcc: data = extract_mfcc(data)
         feats = model(np.expand_dims(data, axis=0))
         embeddings[utterance_id] = feats
 
@@ -83,12 +91,8 @@ def compute_min_dcf(fnrs, fprs, p_target=0.01, c_miss=1, c_fa=1):
 def speaker_verification_evaluate(model, config, round_val=5):
     test_list_path = config['dataset']['test']
     trials_path = config['dataset']['trials']
-    
-    frame_length = config['dataset']['frame_length']
-    if config['dataset'].get('frame_split', False):
-        frame_length = frame_length // 2
 
-    embeddings = extract_embeddings(model, test_list_path, frame_length)
+    embeddings = extract_embeddings(model, test_list_path, config['dataset'])
     scores, labels = score_trials(trials_path, embeddings)
 
     eer = round(compute_eer(scores, labels), round_val)
