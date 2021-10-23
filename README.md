@@ -4,20 +4,20 @@ Collection of **self-supervised** models for **speaker and language recognition*
 
 ## Models
 
-- **[`sslforslr.models.cpc.CPC`](https://github.com/theolepage/ssl-for-slr/blob/master/sslforslr/models/cpc/CPC.py)**
-  "Representation Learning with Contrastive Predictive Coding" ([arxiv](https://arxiv.org/pdf/1807.03748.pdf))
+- **[`sslforslr.models.cpc.CPC`](https://github.com/theolepage/ssl-for-slr/blob/master/sslforslr/models/cpc/CPC.py)**  
+  "Representation Learning with Contrastive Predictive Coding" ([arxiv](https://arxiv.org/pdf/1807.03748.pdf))  
   *Aaron van den Oord, Yazhe Li, Oriol Vinyals*
 
-- **[`sslforslr.models.lim.LIM`](https://github.com/theolepage/ssl-for-slr/blob/master/sslforslr/models/lim/LIM.py)**
-  "Learning Speaker Representations with Mutual Information" ([arxiv](https://arxiv.org/pdf/1812.00271.pdf))
+- **[`sslforslr.models.lim.LIM`](https://github.com/theolepage/ssl-for-slr/blob/master/sslforslr/models/lim/LIM.py)**  
+  "Learning Speaker Representations with Mutual Information" ([arxiv](https://arxiv.org/pdf/1812.00271.pdf))  
   *Mirco Ravanelli, Yoshua Bengio*
 
-- **[`sslforslr.models.simclr.SimCLR`](https://github.com/theolepage/ssl-for-slr/blob/master/sslforslr/models/simclr/SimCLR.py)**
-  "Contrastive Self-Supervised Learning for Text-Independent Speaker Verification" ([sci-hub](https://sci-hub.mksa.top/10.1109/icassp39728.2021.9413351))
+- **[`sslforslr.models.simclr.SimCLR`](https://github.com/theolepage/ssl-for-slr/blob/master/sslforslr/models/simclr/SimCLR.py)**  
+  "Contrastive Self-Supervised Learning for Text-Independent Speaker Verification" ([sci-hub](https://sci-hub.mksa.top/10.1109/icassp39728.2021.9413351))  
   *Haoran Zhang, Yuexian Zou, Helin Wang*
 
-- **[`sslforslr.models.moco.MoCo`](https://github.com/theolepage/ssl-for-slr/blob/master/sslforslr/models/moco/MoCo.py)**
-  "Self-supervised Text-independent Speaker Verification using Prototypical Momentum Contrastive Learning" ([arxiv](https://arxiv.org/pdf/2012.07178.pdf))
+- **[`sslforslr.models.moco.MoCo`](https://github.com/theolepage/ssl-for-slr/blob/master/sslforslr/models/moco/MoCo.py)**  
+  "Self-supervised Text-independent Speaker Verification using Prototypical Momentum Contrastive Learning" ([arxiv](https://arxiv.org/pdf/2012.07178.pdf))  
   *Wei Xia, Chunlei Zhang, Chao Weng, Meng Yu, Dong Yu*
 
 ## Datasets
