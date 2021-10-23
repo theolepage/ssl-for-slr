@@ -3,6 +3,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 import argparse
 import numpy as np
+import prettyprinter as pp
 
 import tensorflow as tf
 from tensorflow.keras.callbacks import ModelCheckpoint
@@ -22,10 +23,10 @@ def simclr_lr_scheduler(epoch, lr):
 def create_callbacks(config, checkpoint_dir):
     callbacks = []
 
-    if config['model']['type'] == 'MoCo':
-        callbacks.append(MoCoUpdateCallback(train_gen))
-    elif config['model']['type'] == 'SimCLR':
+    if config.model.__NAME__ == 'simclr':
         callbacks.append(LearningRateScheduler(simclr_lr_scheduler))
+    elif config.model.__NAME__ == 'moco':
+        callbacks.append(MoCoUpdateCallback(train_gen))
 
     callbacks.append(SVMetricsCallback(config))
 
@@ -56,17 +57,18 @@ def train(config_path):
     (train_gen, val_gen), input_shape = load_dataset(config)
     model = load_model(config, input_shape)
 
+    pp.install_extras(include=['dataclasses'])
+    pp.pprint(config)
     print("Number of training batches:", len(train_gen))
     print("Number of val batches:", len(val_gen))
     
     # Prevent re-training model
     if tf.train.latest_checkpoint(checkpoint_dir):
-        raise Exception('%s has already been trained.' % config['name'])
+        raise Exception('%s has already been trained.' % config.name)
 
-    nb_epochs = config['training']['epochs']
     history = model.fit(train_gen,
                         validation_data=val_gen,
-                        epochs=nb_epochs,
+                        epochs=config.training.epochs,
                         callbacks=create_callbacks(config, checkpoint_dir))
                         # use_multiprocessing=True,
                         # workers=8)

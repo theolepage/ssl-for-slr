@@ -1,1 +1,2 @@
-from .LIM import LIMModel, lim_loss
+from .LIM import LIMModel
+from .LIMModelConfig import LIMModelConfig

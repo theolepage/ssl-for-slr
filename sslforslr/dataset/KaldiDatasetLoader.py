@@ -33,8 +33,11 @@ class KaldiDatasetGenerator(Sequence):
 
         if self.augment:      data = augment(data)        
         
-        if self.extract_mfcc: data = extract_mfcc(data) # (1, T) -> (1, T, C)
-        data = data.squeeze(axis=0) # (1, T, C) -> (T, C)
+        if self.extract_mfcc:
+            data = extract_mfcc(data) # (1, T) -> (1, T, C)
+            data = data.squeeze(axis=0) # (1, T, C) -> (T, C)
+        else:
+            data = data.T # (1, T) -> (T, 1)
         
         return data
 
@@ -76,51 +79,45 @@ class KaldiDatasetLoader:
     def __init__(self, config):
         self.config = config
 
-        self.frame_length = self.config['frame_length']
-        self.val_ratio = self.config.get('val_ratio', 0.1)
-        self.extract_mfcc = self.config.get('extract_mfcc', False)
-        self.frame_split = self.config.get('frame_split', False)
-        self.max_samples = self.config.get('max_samples', None)
-
         # Create augmentation module
         self.augment = None
-        augment_config = self.config.get('augment', None)
-        if augment_config and augment_config.get('enabled', True):
-            self.augment = AudioAugmentation(augment_config)
+        if self.config.augment:
+            self.augment = AudioAugmentation(self.config.augment)
 
         # Create a list of audio paths
         self.files = []
-        for line in open(self.config['train']):
+        for line in open(self.config.train):
             _, file = line.rstrip().split()
             self.files.append(file)
 
     def get_input_shape(self):
-        if self.extract_mfcc:
-            return (self.frame_length // 160, 40)
-        return (self.frame_length, 1)
+        if self.config.extract_mfcc:
+            return (self.config.frame_length // 160, 40)
+        return (self.config.frame_length, 1)
 
     def load(self, batch_size):
-        count = self.max_samples if self.max_samples else len(self.files)
-        indices = train_test_split(np.arange(count), test_size=self.val_ratio)
+        count = self.config.max_samples if self.config.max_samples else len(self.files)
+        indices = train_test_split(np.arange(count),
+                                   test_size=self.config.val_ratio)
 
         train_gen = KaldiDatasetGenerator(
             batch_size,
-            self.frame_length,
-            self.frame_split,
+            self.config.frame_length,
+            self.config.frame_split,
             self.files,
             indices[0],
             self.augment,
-            self.extract_mfcc
+            self.config.extract_mfcc
         )
 
         val_gen = KaldiDatasetGenerator(
             batch_size,
-            self.frame_length,
-            self.frame_split,
+            self.config.frame_length,
+            self.config.frame_split,
             self.files,
             indices[1],
             self.augment,
-            self.extract_mfcc
+            self.config.extract_mfcc
         )
 
         return train_gen, val_gen

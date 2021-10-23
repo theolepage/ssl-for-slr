@@ -9,6 +9,15 @@ from tensorflow.keras import regularizers
 
 from tensorflow_addons.layers import InstanceNormalization
 
+from dataclasses import dataclass
+from sslforslr.utils.Config import EncoderConfig
+
+@dataclass
+class Wav2SpkEncoderConfig(EncoderConfig):
+    weight_reg: float = 1e-4
+
+Wav2SpkEncoderConfig.__NAME__ = 'wav2spk'
+
 class TemporalGating(Layer):
     def __init__(self, nb_channels, nb_timesteps, reg):
         super().__init__()
@@ -45,11 +54,11 @@ class Wav2SpkEncoder(Model):
     https://indico2.conference4me.psnc.pl/event/35/contributions/3613/attachments/1128/1170/Wed-3-5-1.pdf
     '''
 
-    def __init__(self, encoded_dim=512, weight_regularizer=0.0):
+    def __init__(self, config):
         super(Wav2SpkEncoder, self).__init__()
 
-        self.encoded_dim = encoded_dim
-        self.reg = regularizers.l2(weight_regularizer)
+        self.encoded_dim = config.encoded_dim
+        self.reg = regularizers.l2(config.weight_reg)
 
         nb_filters = [40, 200, 300, 512, 512]
         kernel_sizes = [10, 5, 5, 3, 3]

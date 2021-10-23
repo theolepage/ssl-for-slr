@@ -10,6 +10,15 @@ from tensorflow.keras.layers import Bidirectional
 from tensorflow.keras import regularizers
 from sslforslr.modules import SincConv
 
+from dataclasses import dataclass
+from sslforslr.utils.Config import EncoderConfig
+
+@dataclass
+class SincEncoderConfig(EncoderConfig):
+    weight_reg: float = 1e-4
+
+SincEncoderConfig.__NAME__ = 'sinc'
+
 class SincEncoder(Model):
     '''
     Encoder of the original PASE+ implementation based on SincNet (SincConv).
@@ -19,19 +28,11 @@ class SincEncoder(Model):
     https://arxiv.org/pdf/2001.09239.pdf
     '''
 
-    def __init__(self,
-                 encoded_dim,
-                 frame_length,
-                 sample_frequency,
-                 skip_connections_enabled,
-                 rnn_enabled,
-                 weight_regularizer=0.0):
+    def __init__(self, sample_frequency, config):
         super(SincEncoder, self).__init__()
 
-        self.encoded_dim = encoded_dim
-        self.skip_connections_enabled = skip_connections_enabled
-        self.rnn_enabled = rnn_enabled
-        self.reg = regularizers.l2(weight_regularizer)
+        self.encoded_dim = config.encoded_dim
+        self.reg = regularizers.l2(config.weight_reg)
 
         # conv_nb_filters = [64, 64, 128, 128, 256, 256, 512, 512]
         # conv_kernel_sizes = [251, 20, 11, 11, 11, 11, 11, 11]
@@ -42,7 +43,6 @@ class SincEncoder(Model):
         nb_blocks = len(conv_nb_filters)
 
         self.blocks = []
-        # self.skips = []
         for i, (f, w, s) in enumerate(zip(conv_nb_filters,
                                           conv_kernel_sizes,
                                           conv_strides)):
@@ -51,48 +51,16 @@ class SincEncoder(Model):
                                                 self.reg,
                                                 i == 0))
 
-        #     if self.skip_connections_enabled and i < nb_blocks - 1:
-        #         self.skips.append(Conv1D(filters=self.encoded_dim,
-        #                                  kernel_size=1,
-        #                                  use_bias=False,
-        #                                  kernel_regularizer=self.reg))
-
-        # if self.rnn_enabled:
-        #     self.rnn = Bidirectional(GRU(units=self.encoded_dim,
-        #                                  return_sequences=True,
-        #                                  kernel_regularizer=self.reg,
-        #                                  recurrent_regularizer=self.reg,
-        #                                  bias_regularizer=self.reg))
-
-        # if self.skip_connections_enabled:
-        #     self.pooling1D = AdaptiveAveragePooling1D(frame_length  // 160)
-
-        # self.conv = Conv1D(filters=self.encoded_dim,
-        #                    kernel_size=1,
-        #                    kernel_regularizer=self.reg,
-        #                    bias_regularizer=self.reg)
-        # self.bn = LayerNormalization()
+        self.conv = Conv1D(filters=self.encoded_dim,
+                           kernel_size=1,
+                           kernel_regularizer=self.reg,
+                           bias_regularizer=self.reg)
+        self.bn = LayerNormalization()
 
     def call(self, X):
-        # skip_values = []
-
-        for i, block in enumerate(self.blocks):
-            X = block(X)
-
-            # if self.skip_connections_enabled and i < len(self.skips):
-            #     skip_values.append(self.skips[i](X))
-
-        # if self.rnn_enabled:
-            # X = self.rnn(X)
-
-        # X = self.conv(X)
-
-        # if self.skip_connections_enabled:
-        #     for skip in skip_values:
-        #         skip = self.pooling1D(skip)
-        #         X = Add()([X, skip])
-
-        # X = self.bn(X)
+        for block in self.blocks: X = block(X)
+        X = self.conv(X)
+        X = self.bn(X)
         return X
 
     def compute_output_shape(self, input_shape):
@@ -102,8 +70,16 @@ class SincEncoder(Model):
 
 class SincEncoderBlock(Layer):
 
-    def __init__(self, filters, kernel_size, stride, sample_frequency, reg,
-                 sincconv=False, **kwargs):
+    def __init__(
+        self,
+        filters,
+        kernel_size,
+        stride,
+        sample_frequency,
+        reg,
+        sincconv=False,
+        **kwargs
+    ):
         super(SincEncoderBlock, self).__init__(**kwargs)
 
         if sincconv:

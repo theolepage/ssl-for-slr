@@ -12,6 +12,16 @@ from tensorflow.keras.layers import Add
 from tensorflow_addons.layers import InstanceNormalization
 from tensorflow.keras import regularizers
 
+from dataclasses import dataclass
+from sslforslr.utils.Config import EncoderConfig
+
+@dataclass
+class ThinResNet34EncoderConfig(EncoderConfig):
+    encoded_dim: int = 512
+    weight_reg: float = 1e-4
+
+ThinResNet34EncoderConfig.__NAME__ = 'thinresnet34'
+
 class ResNetBlock(Layer):
     def __init__(self, filters, stride=1, reg=None):
         super().__init__()
@@ -100,11 +110,11 @@ class ThinResNet34Encoder(Model):
     https://arxiv.org/pdf/1910.11238.pdf
     '''
 
-    def __init__(self, encoded_dim=512, weight_regularizer=0.0):
+    def __init__(self, config):
         super().__init__()
 
-        self.encoded_dim = encoded_dim
-        self.reg = regularizers.l2(weight_regularizer)
+        self.encoded_dim = config.encoded_dim
+        self.reg = regularizers.l2(config.weight_reg)
 
         self.instance_norm = InstanceNormalization(axis=1)
 
@@ -122,7 +132,7 @@ class ThinResNet34Encoder(Model):
         outmap_size = int(40 / 8 * 256) # n_mels / 8 * last_filter_size
         self.sap = SAP(outmap_size, self.reg)
 
-        self.fc = Dense(encoded_dim)
+        self.fc = Dense(self.encoded_dim)
 
     def __make_block(self, num, filters, stride=1):
         layers = []

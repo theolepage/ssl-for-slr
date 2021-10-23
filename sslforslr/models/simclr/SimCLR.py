@@ -15,12 +15,11 @@ class SimCLRModel(Model):
 
     def __init__(self,
                  encoder,
-                 channel_loss_factor,
-                 weight_regularizer=0.0):
+                 config):
         super().__init__()
 
-        self.channel_loss_factor = channel_loss_factor
-        self.reg = regularizers.l2(weight_regularizer)
+        self.channel_loss_factor = config.channel_loss_factor
+        self.reg = regularizers.l2(config.weight_reg)
 
         self.encoder = encoder
         self.loss_ = AngularPrototypicalLoss(self.reg)

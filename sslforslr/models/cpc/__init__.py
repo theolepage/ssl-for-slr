@@ -1,1 +1,2 @@
-from .CPC import CPCModel, cpc_loss
+from .CPC import CPCModel
+from .CPCModelConfig import CPCModelConfig

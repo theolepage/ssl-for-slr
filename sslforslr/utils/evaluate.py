@@ -24,11 +24,8 @@ def extract_embeddings(
     num_frames=6
     ):
 
-    enable_extract_mfcc = dataset_config.get('extract_mfcc', False)
-    enable_frame_split = dataset_config.get('frame_split', False)
-
-    frame_length = dataset_config['frame_length']
-    if enable_frame_split: frame_length = frame_length // 2
+    frame_length = dataset_config.frame_length
+    if dataset_config.frame_split: frame_length = frame_length // 2
 
     embeddings = {}
     curr_batch_ids = []
@@ -46,7 +43,7 @@ def extract_embeddings(
         # Store current utterance id and data
         uttid, file = line.rstrip().split()
         data = load_wav(file, frame_length, num_frames=num_frames)
-        if enable_extract_mfcc: data = extract_mfcc(data)
+        if dataset_config.extract_mfcc: data = extract_mfcc(data)
         curr_batch_ids.append(uttid)
         curr_batch_data.append(data)
 
@@ -124,11 +121,8 @@ def compute_min_dcf(fnrs, fprs, p_target=0.01, c_miss=1, c_fa=1):
     return min_dcf
 
 def speaker_verification_evaluate(model, config, round_val=5):
-    test_list_path = config['dataset']['test']
-    trials_path = config['dataset']['trials']
-
-    embeddings = extract_embeddings(model, test_list_path, config['dataset'])
-    scores, labels = score_trials(trials_path, embeddings)
+    embeddings = extract_embeddings(model, config.dataset.test, config.dataset)
+    scores, labels = score_trials(config.dataset.trials, embeddings)
 
     eer = round(compute_eer(scores, labels), round_val)
     fnrs, fprs = compute_error_rates(scores, labels)

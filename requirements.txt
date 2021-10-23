@@ -7,3 +7,6 @@ tqdm
 torch
 torchaudio
 kaldiio
+ruamel.yaml
+dacite
+prettyprinter

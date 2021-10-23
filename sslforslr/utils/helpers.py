@@ -1,8 +1,10 @@
-import json
 import copy
 from pathlib import Path
 import random
 import os
+
+import ruamel.yaml
+from dacite import from_dict
 
 import numpy as np
 import tensorflow as tf
@@ -12,12 +14,32 @@ from tensorflow.keras import Model
 from tensorflow.keras.optimizers import Adam, SGD
 from tensorflow.keras.optimizers.schedules import CosineDecay
 
-from sslforslr.models.cpc import CPCModel
-from sslforslr.models.lim import LIMModel
-from sslforslr.models.simclr import SimCLRModel
-from sslforslr.models.moco import MoCoModel
-from sslforslr.models.encoders import CPCEncoder, SincEncoder, Wav2SpkEncoder, XVectorEncoder, ThinResNet34Encoder
+from sslforslr.utils.Config import Config
+from sslforslr.models.cpc import CPCModel, CPCModelConfig
+from sslforslr.models.lim import LIMModel, LIMModelConfig
+from sslforslr.models.simclr import SimCLRModel, SimCLRModelConfig
+from sslforslr.models.moco import MoCoModel, MoCoModelConfig
+from sslforslr.models.encoders import CPCEncoder, CPCEncoderConfig
+from sslforslr.models.encoders import SincEncoder, SincEncoderConfig
+from sslforslr.models.encoders import Wav2SpkEncoder, Wav2SpkEncoderConfig
+from sslforslr.models.encoders import XVectorEncoder, XVectorEncoderConfig
+from sslforslr.models.encoders import ThinResNet34Encoder, ThinResNet34EncoderConfig
 from sslforslr.dataset.KaldiDatasetLoader import KaldiDatasetLoader
+
+REGISTERED_MODELS = [
+    CPCModelConfig,
+    LIMModelConfig,
+    SimCLRModelConfig,
+    MoCoModelConfig
+]
+
+REGISTERED_ENCODERS = [
+    CPCEncoderConfig,
+    SincEncoderConfig,
+    XVectorEncoderConfig,
+    ThinResNet34EncoderConfig,
+    Wav2SpkEncoderConfig
+]
 
 def summary_for_shape(model, input_shape):
     x = Input(shape=input_shape)
@@ -27,136 +49,107 @@ def summary_for_shape(model, input_shape):
     model_ = Model(inputs=x, outputs=model_copy.call(x))
     return model_.summary()
 
-def load_config(config_path):
-    # Load config file
-    with open(config_path) as config_file:
-        config = json.load(config_file)
+def get_sub_config(data, key, registered):
+    registered_dict = {c.__NAME__:c for c in registered}
+    
+    type_ = data[key]['type']
+    if type_ not in registered_dict:
+        raise (
+            Exception('{} {} not supported'
+                .format(key.capitalize(), type_))
+        )
 
+    return from_dict(registered_dict[type_], data[key])
+
+def load_config(path):
+    data = ruamel.yaml.safe_load(open(path, 'r'))
+    config = from_dict(Config, data)
+
+    config.encoder = get_sub_config(data, 'encoder', REGISTERED_ENCODERS)
+    config.model = get_sub_config(data, 'model', REGISTERED_MODELS)
+    
     # Set seed
-    seed = config['seed']
+    seed = config.seed
     os.environ['PYTHONHASHSEED'] = str(seed)
     random.seed(seed)
     np.random.seed(seed)
     tf.random.set_seed(seed)
 
     # Create checkpoint dir
-    checkpoint_dir = './checkpoints/' + config['name']
+    checkpoint_dir = './checkpoints/' + config.name
     Path(checkpoint_dir).mkdir(parents=True, exist_ok=True)
-    
+
     return config, checkpoint_dir
 
 def load_dataset(config):
-    dataset = KaldiDatasetLoader(config['dataset'])
-    gens = dataset.load(config['training']['batch_size'])
+    dataset = KaldiDatasetLoader(config.dataset)
+    gens = dataset.load(config.training.batch_size)
     return gens, dataset.get_input_shape()
 
 def create_encoder(config):
-    encoder_type = config['encoder']['type']
-    encoded_dim = config['encoder']['encoded_dim']
-    encoder_weight_regularizer = config['encoder'].get('weight_regularizer', 0.0)
-
-    if encoder_type == 'CPC':
-        encoder = CPCEncoder(encoded_dim, encoder_weight_regularizer)
-    elif encoder_type == 'Sinc':
-        sample_frequency = config['training']['dataset']['sample_frequency']
-        skip_connections_enabled = config['encoder'].get('skip_connections_enabled')
-        rnn_enabled = config['encoder'].get('rnn_enabled')
-        frame_length = config['training']['dataset']['frames']['length']
-        encoder = SincEncoder(encoded_dim,
-                              frame_length,
-                              sample_frequency,
-                              skip_connections_enabled,
-                              rnn_enabled,
-                              encoder_weight_regularizer)
-    elif encoder_type == 'Wav2Spk':
-        encoder = Wav2SpkEncoder(encoded_dim, encoder_weight_regularizer)
-    elif encoder_type == 'XVector':
-        encoder = XVectorEncoder(encoded_dim, encoder_weight_regularizer)
-    elif encoder_type == 'ThinResNet34':
-        encoder = ThinResNet34Encoder(encoded_dim, encoder_weight_regularizer)
+    if config.encoder.__NAME__ == CPCEncoderConfig.__NAME__:
+        encoder = CPCEncoder(config.encoder)
+    
+    elif config.encoder.__NAME__ == SincEncoderConfig.__NAME__:
+        encoder = SincEncoder(
+            config.dataset.sample_frequency,
+            config.encoder)
+    
+    elif config.encoder.__NAME__ == Wav2SpkEncoderConfig.__NAME__:
+        encoder = Wav2SpkEncoder(config.encoder)
+    
+    elif config.encoder.__NAME__ == XVectorEncoderConfig.__NAME__:
+        encoder = XVectorEncoder(config.encoder)
+    
+    elif config.encoder.__NAME__ == ThinResNet34EncoderConfig.__NAME__:
+        encoder = ThinResNet34Encoder(config.encoder)
+    
     else:
-        raise Exception('Encoder {} is not supported.'.format(encoder_type))
+        raise Exception('Encoder type not supported')
 
     return encoder
 
 def create_model(config, input_shape):
-    model_config = config['model']
-    model_type = model_config['type']
-    weight_regularizer = model_config.get('weight_regularizer', 0.0)
-
     encoder = create_encoder(config)
     encoder_output_shape = encoder.compute_output_shape(input_shape)
 
-    if model_type == 'CPC':
+    if config.model.__NAME__ == CPCModelConfig.__NAME__:
         nb_timesteps = encoder_output_shape[0]
         encoded_dim = encoder_output_shape[1]
-        nb_timesteps_to_predict = model_config['nb_timesteps_to_predict']
-        bidirectional = model_config.get('bidirectional', False)
-        context_network = model_config.get('context_network', {})
-        model = CPCModel(encoder,
-                         encoded_dim,
-                         nb_timesteps,
-                         nb_timesteps_to_predict,
-                         bidirectional,
-                         context_network,
-                         weight_regularizer)
-    elif model_type == 'LIM':
+        model = CPCModel(encoder, encoded_dim, nb_timesteps, config.model)
+    
+    elif config.model.__NAME__ == LIMModelConfig.__NAME__:
         nb_timesteps = encoder_output_shape[0]
-        loss_fn = model_config['loss_fn']
-        context_length = model_config.get('context_length', 1)
-        model = LIMModel(encoder,
-                         nb_timesteps,
-                         loss_fn,
-                         context_length,
-                         weight_regularizer)
-    elif model_type == 'SimCLR':
-        channel_loss_factor = model_config.get('channel_loss_factor', 0.1)
-        model = SimCLRModel(encoder, channel_loss_factor, weight_regularizer)
-    elif model_type == 'MoCo':
+        model = LIMModel(encoder, nb_timesteps, config.model)
+    
+    elif config.model.__NAME__ == SimCLRModelConfig.__NAME__:
+        model = SimCLRModel(encoder, config.model)
+    
+    elif config.model.__NAME__ == MoCoModelConfig.__NAME__:
         encoder_k = create_encoder(config)
-        model = MoCoModel(encoder, encoder_k, model_config, weight_regularizer)
+        model = MoCoModel(encoder, encoder_k, config.model)
+    
     else:
-        raise Exception('Model {} is not supported.'.format(model_type))
+        raise Exception('Model type not supported')
 
     return model
-
-def create_lr_scheduler(config):
-    learning_rate = config['training']['learning_rate']
-    if isinstance(learning_rate, dict):
-        lr_type = learning_rate['type']
-        if lr_type == 'cosine':
-            start = learning_rate['start']
-            end = learning_rate['end']
-            learning_rate = CosineDecay(initial_learning_rate=start,
-                                        decay_steps=config['training']['epochs'],
-                                        alpha=end/start)
-        else:
-            raise Exception('LR scheduler {} is not supported.'.format(lr_type))
-    return learning_rate
-
-def create_optimizer(config, learning_rate):
-    optimizer_config = config['training'].get('optimizer', {})
-    opt_type = optimizer_config.get('type', 'Adam')
-    if opt_type == 'Adam':
-        optimizer = Adam(learning_rate)
-    elif opt_type == 'SGD':
-        momentum = optimizer_config.get('momentum', 0.0)
-        optimizer = SGD(learning_rate, momentum)
-    else:
-        raise Exception('Optimizer {} is not supported.'.format(opt_type))
-    return optimizer
 
 def load_model(config, input_shape):
     mirrored_strategy = tf.distribute.MirroredStrategy()
     with mirrored_strategy.scope():
         model = create_model(config, input_shape)
     
-    learning_rate = create_lr_scheduler(config)
-    optimizer = create_optimizer(config, learning_rate)
+    # Create optimizer
+    opt_type = config.training.optimizer
+    if opt_type == 'Adam':
+        optimizer = Adam(config.training.learning_rate)
+    elif opt_type == 'SGD':
+        optimizer = SGD(config.training.learning_rate)
+    else:
+        raise Exception('Optimizer {} not supported'.format(opt_type))
     
     # Compile and print model
-    run_eagerly = config['training'].get('run_eagerly', False)
-    model.compile(optimizer, run_eagerly=run_eagerly)
+    model.compile(optimizer)
     summary_for_shape(model, input_shape)
 
     return model

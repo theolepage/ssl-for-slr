@@ -27,26 +27,25 @@ class MoCoModel(Model):
     def __init__(self,
                  encoder_q,
                  encoder_k,
-                 config,
-                 weight_regularizer=0.0):
+                 config):
         super().__init__()
 
         self.config = config
-        self.reg = regularizers.l2(weight_regularizer)
+        self.reg = regularizers.l2(config.weight_reg)
 
         self.enable_proto_nce = False
 
         self.encoder_q = encoder_q
         self.encoder_k = encoder_k
-        self.mlp = MLP(self.config['embedding_dim'])
+        self.mlp = MLP(self.config.embedding_dim)
 
         self.kmeans = None
         self.kmeans_temp = None
-        # self.kmeans = faiss.Kmeans(self.config['embedding_dim'],
-        #                            self.config['nb_clusters'])
+        # self.kmeans = faiss.Kmeans(self.config.embedding_dim,
+        #                            self.config.nb_clusters)
 
         with tf.device("CPU:0"):
-            queue_shape = [self.config['queue_size'], self.config['embedding_dim']]
+            queue_shape = [self.config.queue_size, self.config.embedding_dim]
             self.queue = tf.random.normal(queue_shape)
 
         update_model_weights_with_ema(self.encoder_q, self.encoder_k, 0.1)
@@ -158,7 +157,7 @@ def compute_kmeans_temp(data, kmeans):
 
 @tf.function
 def proto_nce_loss(Z_q, kmeans, kmeans_temp, config):
-    nb_negs = config['clustering_negs_count']
+    nb_negs = config.clustering_negs_count
     batch_size = tf.shape(Z_q)[0]
 
     # Sample positive prototypes
@@ -196,10 +195,10 @@ def proto_nce_loss(Z_q, kmeans, kmeans_temp, config):
 
 @tf.function
 def moco_loss(Z_q, Z_k, queue, kmeans, kmeans_temp, config, enable_proto_nce=False):
-    loss, accuracy = info_nce_loss(Z_q, tf.stop_gradient(Z_k), queue, config['info_nce_temp'])
+    loss, accuracy = info_nce_loss(Z_q, tf.stop_gradient(Z_k), queue, config.info_nce_temp)
 
     if enable_proto_nce:
-        loss += config['proto_nce_loss_factor'] \
+        loss += config.proto_nce_loss_factor \
                 * proto_nce_loss(Z_q, kmeans, kmeans_temp, config)
 
     return loss, accuracy
@@ -239,10 +238,10 @@ class MoCoUpdateCallback(Callback):
         keys = logs.pop('keys')
 
         self.model.queue = tf.concat([keys, self.model.queue], axis=0)
-        self.model.queue = self.model.queue[:self.model.config['queue_size']]
+        self.model.queue = self.model.queue[:self.model.config.queue_size]
 
     def on_epoch_end(self, epoch, logs=None):
-        if epoch <= self.model.config['epochs_before_proto_nce']:
+        if epoch <= self.model.config.epochs_before_proto_nce:
             return
 
         self.model.enable_proto_nce = True

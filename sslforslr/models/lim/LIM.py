@@ -15,15 +15,13 @@ class LIMModel(Model):
     def __init__(self,
                  encoder,
                  nb_timesteps,
-                 loss_fn='bce',
-                 context_length=1,
-                 weight_regularizer=0.0):
+                 config):
         super(LIMModel, self).__init__()
 
         self.nb_timesteps = nb_timesteps
-        self.loss_fn = loss_fn
-        self.context_length = context_length
-        self.reg = regularizers.l2(weight_regularizer)
+        self.loss_fn = config.loss_fn
+        self.context_length = config.context_length
+        self.reg = regularizers.l2(config.weight_reg)
 
         self.encoder = encoder
         self.discriminator = Discriminator(self.reg)
@@ -155,4 +153,4 @@ def lim_loss(loss_fn, pos, neg):
         loss = tf.math.reduce_mean(pos - loss)
         return -loss, acc
 
-    raise Exception('LIM: loss {} is not supported.'.format(loss_fn))
+    raise Exception('LIM: loss {} is not supported'.format(loss_fn))

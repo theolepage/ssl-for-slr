@@ -5,6 +5,16 @@ from tensorflow.keras.layers import LayerNormalization
 from tensorflow.keras.layers import ReLU
 from tensorflow.keras import regularizers
 
+from dataclasses import dataclass
+from sslforslr.utils.Config import EncoderConfig
+
+@dataclass
+class CPCEncoderConfig(EncoderConfig):
+    encoded_dim: int = 512
+    weight_reg: float = 1e-4
+
+CPCEncoderConfig.__NAME__ = 'cpc'
+
 class CPCEncoder(Model):
     '''
     Encoder of the original CPC implementation.
@@ -14,11 +24,11 @@ class CPCEncoder(Model):
     https://arxiv.org/pdf/1807.03748.pdf
     '''
 
-    def __init__(self, encoded_dim, weight_regularizer=0.0):
+    def __init__(self, config):
         super(CPCEncoder, self).__init__()
 
-        self.encoded_dim = encoded_dim
-        self.reg = regularizers.l2(weight_regularizer)
+        self.encoded_dim = config.encoded_dim
+        self.reg = regularizers.l2(config.weight_reg)
 
         nb_filters = [512, 512, 512, 512, self.encoded_dim]
         kernel_sizes = [10, 8, 4, 4, 4]

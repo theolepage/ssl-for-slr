@@ -17,16 +17,15 @@ def cache_features(config_path, output_path, nb_aug=2, limit_length=10*16000):
     
     # Load augmentation module
     augment = None
-    augment_config = config['dataset'].get('augment', None)
-    if augment_config and augment_config.get('enabled', True):
-        augment = AudioAugmentation(augment_config)
+    if config.augment:
+        augment = AudioAugmentation(config.augment)
 
     # Prepare progress bar
-    nb_feats = sum(1 for line in open(config['dataset']['train']))
+    nb_feats = sum(1 for line in open(config.dataset.train))
     nb_feats = nb_feats * (1 + nb_aug)
     pbar = tqdm(total=nb_feats)
 
-    for line in open(config['dataset']['train']):
+    for line in open(config.dataset.train):
         utterance_id, file = line.rstrip().split()
         data = load_wav(file, None)
         data = data[:, :limit_length]

@@ -22,31 +22,28 @@ class CPCModel(Model):
                  encoder,
                  encoded_dim,
                  nb_timesteps,
-                 nb_timesteps_to_predict,
-                 bidirectional,
-                 context_network,
-                 weight_regularizer=0.0):
+                 config):
         super(CPCModel, self).__init__()
 
         self.encoded_dim = encoded_dim
         self.nb_timesteps = nb_timesteps
-        self.nb_timesteps_to_predict = nb_timesteps_to_predict
-        self.nb_timesteps_for_context = nb_timesteps - nb_timesteps_to_predict
-        self.bidirectional = bidirectional
+        self.nb_t_to_predict = config.nb_timesteps_to_predict
+        self.nb_t_for_context = nb_timesteps - self.nb_t_to_predict
+        self.bidirectional = config.bidirectional
 
-        self.reg = regularizers.l2(weight_regularizer)
+        self.reg = regularizers.l2(config.weight_reg)
 
         # Instantiate sub models
         self.encoder = encoder
-        self.ar1 = Autoregressive(context_network, self.reg)
+        self.ar1 = Autoregressive(config.context_network, self.reg)
         self.predictor1 = Predictor(self.encoded_dim,
-                                    self.nb_timesteps_to_predict,
+                                    self.nb_t_to_predict,
                                     self.reg)
 
         if self.bidirectional:
             self.ar2 = Autoregressive(context_network, self.reg)
             self.predictor2 = Predictor(self.encoded_dim,
-                                        self.nb_timesteps_to_predict,
+                                        self.nb_t_to_predict,
                                         self.reg)
 
     def compile(self, optimizer, **kwargs):
@@ -70,8 +67,8 @@ class CPCModel(Model):
             Z = self.encoder(X, training=True)
             # Out shape: (batch_size, frame_length / 160, encoded_dim)
 
-            Z_past = Z[:, 0:self.nb_timesteps_for_context, ...]
-            Z_future = Z[:, self.nb_timesteps_for_context:, ...]
+            Z_past = Z[:, 0:self.nb_t_for_context, ...]
+            Z_future = Z[:, self.nb_t_for_context:, ...]
 
             C = self.ar1(Z_past, training=True)
             # Out shape: (batch_size, context_dim)
@@ -79,7 +76,7 @@ class CPCModel(Model):
             predictions = self.predictor1(C, training=True)
             # Out shape: (batch_size, nb_timesteps_to_predict, encoded_dim)
 
-            loss, accuracy = cpc_loss(self.nb_timesteps_to_predict,
+            loss, accuracy = cpc_loss(self.nb_t_to_predict,
                                       predictions,
                                       Z_future)
 
@@ -88,14 +85,14 @@ class CPCModel(Model):
 
                 Z = self.encoder(X_r, training=True)
 
-                Z_past = Z[:, 0:self.nb_timesteps_for_context, ...]
-                Z_future = Z[:, self.nb_timesteps_for_context:, ...]
+                Z_past = Z[:, 0:self.nb_t_for_context, ...]
+                Z_future = Z[:, self.nb_t_for_context:, ...]
 
                 C = self.ar2(Z_past, training=True)
 
                 predictions = self.predictor2(C, training=True)
 
-                loss2, accuracy2 = cpc_loss(self.nb_timesteps_to_predict,
+                loss2, accuracy2 = cpc_loss(self.nb_t_to_predict,
                                             predictions,
                                             Z_future)
 
@@ -118,13 +115,13 @@ class CPCModel(Model):
         X, _ = data # Discard labels provided by the dataset generator
         
         Z = self.encoder(X, training=False)
-        Z_past = Z[:, 0:self.nb_timesteps_for_context, ...]
-        Z_future = Z[:, self.nb_timesteps_for_context:, ...]
+        Z_past = Z[:, 0:self.nb_t_for_context, ...]
+        Z_future = Z[:, self.nb_t_for_context:, ...]
 
         C = self.ar1(Z_past, training=False)
         predictions = self.predictor1(C, training=False)
 
-        loss, accuracy = cpc_loss(self.nb_timesteps_to_predict,
+        loss, accuracy = cpc_loss(self.nb_t_to_predict,
                                   predictions,
                                   Z_future)
 
@@ -132,13 +129,13 @@ class CPCModel(Model):
             X_r = tf.reverse(X, axis=[1])
            
             Z = self.encoder(X, training=False)
-            Z_past = Z[:, 0:self.nb_timesteps_for_context, ...]
-            Z_future = Z[:, self.nb_timesteps_for_context:, ...]
+            Z_past = Z[:, 0:self.nb_t_for_context, ...]
+            Z_future = Z[:, self.nb_t_for_context:, ...]
 
             C = self.ar2(Z_past, training=False)
             predictions = self.predictor2(C, training=False)
 
-            loss2, accuracy2 = cpc_loss(self.nb_timesteps_to_predict,
+            loss2, accuracy2 = cpc_loss(self.nb_t_to_predict,
                                         predictions,
                                         Z_future)
 
@@ -153,25 +150,23 @@ class Autoregressive(Model):
     def __init__(self, context_network, reg):
         super(Autoregressive, self).__init__()
 
-        rnn_type = context_network.get('type', 'GRU')
-        nb_layers = context_network.get('nb_layers', 1)
-        context_dim = context_network.get('dim', 256)
-
         self.layers_ = []
-        for i in range(nb_layers):
-            return_sequence = i != (nb_layers - 1)
-            if rnn_type == 'GRU':
-                self.layers_.append(GRU(units=context_dim,
+        for i in range(context_network.nb_layers):
+            return_sequence = i != (context_network.nb_layers - 1)
+            if context_network.model_type == 'gru':
+                self.layers_.append(GRU(units=context_network.dim,
                                         return_sequences=return_sequence,
                                         kernel_regularizer=reg,
                                         recurrent_regularizer=reg,
                                         bias_regularizer=reg))
-            elif rnn_type == 'LSTM':
-                self.layers_.append(LSTM(units=context_dim,
+            elif context_network.model_type == 'lstm':
+                self.layers_.append(LSTM(units=context_network.dim,
                                          return_sequences=return_sequence,
                                          kernel_regularizer=reg,
                                          recurrent_regularizer=reg,
                                          bias_regularizer=reg))
+            else:
+                raise Exception('CPC: context network model type not supported')
 
     def call(self, X):
         for layer in self.layers_:

@@ -10,6 +10,15 @@ from tensorflow.keras.layers import Dropout
 from tensorflow.keras import regularizers
 from tensorflow.keras import backend as K
 
+from dataclasses import dataclass
+from sslforslr.utils.Config import EncoderConfig
+
+@dataclass
+class XVectorEncoderConfig(EncoderConfig):
+    weight_reg: float = 1e-4
+
+XVectorEncoderConfig.__NAME__ = 'xvector'
+
 class TDNN(Layer):
     '''
     Time delay neural network (TDNN) layer.
@@ -66,11 +75,11 @@ class XVectorEncoder(Model):
     https://www.danielpovey.com/files/2018_icassp_xvectors.pdf
     '''
 
-    def __init__(self, encoded_dim, weight_regularizer=0.0):
+    def __init__(self, config):
         super().__init__()
 
-        self.encoded_dim = encoded_dim
-        self.reg = regularizers.l2(weight_regularizer)
+        self.encoded_dim = config.encoded_dim
+        self.reg = regularizers.l2(config.weight_reg)
 
         self.tdnn1 = TDNN(filters=512, kernel_size=5, sub_sampling=False, reg=self.reg)
         self.tdnn2 = TDNN(filters=512, kernel_size=5, sub_sampling=True, reg=self.reg)

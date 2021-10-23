@@ -1,0 +1,13 @@
+name: 'simclr-base'
+encoder:
+  type: 'thinresnet34'
+model:
+  type: 'simclr'
+training:
+  epochs: 100
+  batch_size: 256
+  learning_rate: 0.001
+dataset:
+  frame_length: 64000
+  frame_split: true
+  extract_mfcc: true

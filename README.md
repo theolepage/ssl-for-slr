@@ -51,21 +51,20 @@ Regarding data augmentation, we rely on [MUSAN](http://www.openslr.org/17/) and 
 
 ## Usage
 
-Start self-supervised training with `python train.py configs/cpc-base.json`.
+Start self-supervised training with `python train.py configs/cpc-base.yml`.
 
-Then, you can evaluate model on speaker verification (EER, minDCF) with `python evaluate.py configs/cpc-base.json`.
+Then, you can evaluate model on speaker verification (EER, minDCF) with `python evaluate.py configs/cpc-base.yml`.
 
 ## To-Do
 
 - [ ] Reproduce results of SimCLR
     - [ ] Fix NaN values
     - [ ] Enable data augmentation
-- [ ] Experiment with different architectures and VICReg
-- [ ] Remove utt2spk and provide scripts to generate wav.scp files
+- [ ] Experiment with different architectures (VICReg)
+- [ ] Provide scripts to download and prepare data
 
 ---
 
-- [ ] Use dataclass and YAML for model configs
 - [ ] CPC/LIM: @tf.function warning when doing tensor[1, :]
 - [ ] Fix warning loading weights not used
 - [ ] Create custom training loop (https://stackoverflow.com/questions/57971007/tensorflow-2-0-display-progress-bar-in-custom-training-loop)

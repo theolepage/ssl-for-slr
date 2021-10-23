@@ -7,19 +7,15 @@ import soundfile as sf
 
 from sslforslr.dataset.utils import load_wav
 
-MUSAN_SNR = {
-    'noise': [0, 15],
-    'speech': [13, 20],
-    'music': [5, 15]
-}
-
 class AudioAugmentation:
 
     def __init__(self, config):
-        self.rir_files = glob.glob(os.path.join(config['rir_path'], '*/*/*.wav'))
+        self.config = config
+
+        self.rir_files = glob.glob(os.path.join(config.rir_path, '*/*/*.wav'))
 
         self.musan_files = {}
-        for file in glob.glob(os.path.join(config['musan_path'], '*/*/*.wav')):
+        for file in glob.glob(os.path.join(config.musan_path, '*/*/*.wav')):
             category = file.split('/')[-3]
             if not category in self.musan_files:
                 self.musan_files[category] = []
@@ -34,6 +30,14 @@ class AudioAugmentation:
         
         return convolve(audio, rir, mode='full')[:, :audio.shape[1]]
 
+    def get_noise_snr(self, category):
+        min_, max_ = self.config.musan_noise_snr # category == 'noise'
+        if category == 'speech':
+            min_, max_ = self.config.musan_speech_snr
+        elif category == 'music':
+            min_, max_ = self.config.musan_music_snr
+        return random.uniform(min_, max_)
+
     def add_noise(self, audio, category):
         noise_file = random.choice(self.musan_files[category])
         noise = load_wav(noise_file, audio.shape[1])
@@ -41,10 +45,7 @@ class AudioAugmentation:
         # Determine noise scale factor according to desired SNR
         clean_db = 10 * np.log10(np.mean(audio ** 2) + 1e-4) 
         noise_db = 10 * np.log10(np.mean(noise[0] ** 2) + 1e-4) 
-        noise_snr = random.uniform(
-            MUSAN_SNR[category][0],
-            MUSAN_SNR[category][1]
-        )
+        noise_snr = self.get_noise_snr(category)
         noise_scale = np.sqrt(10 ** ((clean_db - noise_db - noise_snr) / 10))
 
         return noise * noise_scale + audio
