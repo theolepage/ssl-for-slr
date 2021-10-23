@@ -31,7 +31,7 @@ class KaldiDatasetGenerator(Sequence):
     def preprocess_data(self, data):
         assert data.ndim == 2 and data.shape[0] == 1 # (1, T)
 
-        if self.augment:      data = augment(data)        
+        if self.augment: data = augment(data)        
         
         if self.extract_mfcc:
             data = extract_mfcc(data) # (1, T) -> (1, T, C)
@@ -42,18 +42,25 @@ class KaldiDatasetGenerator(Sequence):
         return data
 
     def __getitem__(self, i):
-        curr_batch_size = self.batch_size
-
         # Last batch may have fewer samples
+        curr_batch_size = self.batch_size
         is_last_batch = (i == self.__len__() - 1)
         remaining_samples = len(self.indices) % self.batch_size
         if is_last_batch and remaining_samples != 0:
             curr_batch_size = remaining_samples
 
-        X1, X2, y = [], [], []
-        for j in range(curr_batch_size):
-            index = self.indices[i * self.batch_size + j]
+        start = i * self.batch_size
+        end   = i * self.batch_size + remaining_samples
+        indices = self.indices[start:end]
 
+        if is_last_batch and remaining_samples != 0:
+            indices += np.random.choice(
+                self.indices[:start],
+                size=self.batch_size - remaining_samples
+            )
+
+        X1, X2, y = [], [], []
+        for index in indices:
             data = load_wav(self.files[index], self.frame_length) # (N, T)
             data = self.preprocess_data(data)
             
