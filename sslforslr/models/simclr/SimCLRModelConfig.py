@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from sslforslr.utils.Config import ModelConfig
+from sslforslr.configs import ModelConfig
 
 @dataclass
 class SimCLRModelConfig(ModelConfig):

@@ -11,10 +11,11 @@ from tensorflow.keras import regularizers
 from tensorflow.keras import backend as K
 
 from dataclasses import dataclass
-from sslforslr.utils.Config import EncoderConfig
+from sslforslr.configs import EncoderConfig
 
 @dataclass
 class XVectorEncoderConfig(EncoderConfig):
+    encoded_dim: int = 3000
     weight_reg: float = 1e-4
 
 XVectorEncoderConfig.__NAME__ = 'xvector'
@@ -42,6 +43,11 @@ class TDNN(Layer):
 
     def build(self, input_shape):
         input_dim = input_shape[-1] # Assuming BTC format
+
+        # FIXME
+        if self.sub_sampling: input_dim = 512
+        else: input_dim = 40
+
         self.kernel_shape = (self.kernel_size, input_dim, self.filters)
         self.kernel = self.add_weight(name='kernel',
                                       shape=self.kernel_shape,
@@ -85,7 +91,7 @@ class XVectorEncoder(Model):
         self.tdnn2 = TDNN(filters=512, kernel_size=5, sub_sampling=True, reg=self.reg)
         self.tdnn3 = TDNN(filters=512, kernel_size=7, sub_sampling=True, reg=self.reg)
         self.tdnn4 = TDNN(filters=512, kernel_size=1, sub_sampling=True, reg=self.reg)
-        self.tdnn5 = TDNN(filters=encoded_dim // 2, kernel_size=1, sub_sampling=True, reg=self.reg)
+        self.tdnn5 = TDNN(filters=self.encoded_dim // 2, kernel_size=1, sub_sampling=True, reg=self.reg)
 
     def call(self, X):
         # TDNN layers

@@ -10,10 +10,11 @@ from tensorflow.keras import regularizers
 from tensorflow_addons.layers import InstanceNormalization
 
 from dataclasses import dataclass
-from sslforslr.utils.Config import EncoderConfig
+from sslforslr.configs import EncoderConfig
 
 @dataclass
 class Wav2SpkEncoderConfig(EncoderConfig):
+    encoded_dim: int = 512
     weight_reg: float = 1e-4
 
 Wav2SpkEncoderConfig.__NAME__ = 'wav2spk'

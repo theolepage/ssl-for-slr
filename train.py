@@ -26,7 +26,7 @@ def create_callbacks(config, checkpoint_dir):
     if config.model.__NAME__ == 'simclr':
         callbacks.append(LearningRateScheduler(simclr_lr_scheduler))
     elif config.model.__NAME__ == 'moco':
-        callbacks.append(MoCoUpdateCallback(train_gen))
+        callbacks.append(MoCoUpdateCallback())
 
     callbacks.append(SVMetricsCallback(config))
 
@@ -66,12 +66,11 @@ def train(config_path):
     if tf.train.latest_checkpoint(checkpoint_dir):
         raise Exception('%s has already been trained.' % config.name)
 
+    callbacks = create_callbacks(config, checkpoint_dir)
     history = model.fit(train_gen,
                         validation_data=val_gen,
                         epochs=config.training.epochs,
-                        callbacks=create_callbacks(config, checkpoint_dir))
-                        # use_multiprocessing=True,
-                        # workers=8)
+                        callbacks=callbacks)
 
     np.save(checkpoint_dir + '/history.npy', history.history)
 

@@ -1,0 +1,14 @@
+name: 'lim-base_debug'
+encoder:
+  type: 'sinc'
+model:
+  type: 'lim'
+training:
+  epochs: 100
+  batch_size: 4
+  learning_rate: 0.001
+dataset:
+  max_samples: 100
+  frame_length: 32000
+  train: './data/debug.scp'
+  test: './data/debug.scp'

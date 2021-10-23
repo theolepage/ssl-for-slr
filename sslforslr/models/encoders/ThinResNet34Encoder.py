@@ -13,7 +13,7 @@ from tensorflow_addons.layers import InstanceNormalization
 from tensorflow.keras import regularizers
 
 from dataclasses import dataclass
-from sslforslr.utils.Config import EncoderConfig
+from sslforslr.configs import EncoderConfig
 
 @dataclass
 class ThinResNet34EncoderConfig(EncoderConfig):

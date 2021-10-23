@@ -6,7 +6,7 @@ from tensorflow.keras.layers import ReLU
 from tensorflow.keras import regularizers
 
 from dataclasses import dataclass
-from sslforslr.utils.Config import EncoderConfig
+from sslforslr.configs import EncoderConfig
 
 @dataclass
 class CPCEncoderConfig(EncoderConfig):

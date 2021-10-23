@@ -12,9 +12,8 @@ import tensorflow as tf
 from tensorflow.keras.layers import Input
 from tensorflow.keras import Model
 from tensorflow.keras.optimizers import Adam, SGD
-from tensorflow.keras.optimizers.schedules import CosineDecay
 
-from sslforslr.utils.Config import Config
+from sslforslr.configs import Config
 from sslforslr.models.cpc import CPCModel, CPCModelConfig
 from sslforslr.models.lim import LIMModel, LIMModelConfig
 from sslforslr.models.simclr import SimCLRModel, SimCLRModelConfig

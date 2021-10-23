@@ -8,13 +8,14 @@ from tensorflow.keras.layers import ReLU
 from tensorflow.keras.layers import GRU
 from tensorflow.keras.layers import Bidirectional
 from tensorflow.keras import regularizers
-from sslforslr.modules import SincConv
+from sslforslr.modules.SincConv import SincConv
 
 from dataclasses import dataclass
-from sslforslr.utils.Config import EncoderConfig
+from sslforslr.configs import EncoderConfig
 
 @dataclass
 class SincEncoderConfig(EncoderConfig):
+    encoded_dim: int = 256
     weight_reg: float = 1e-4
 
 SincEncoderConfig.__NAME__ = 'sinc'
@@ -46,10 +47,9 @@ class SincEncoder(Model):
         for i, (f, w, s) in enumerate(zip(conv_nb_filters,
                                           conv_kernel_sizes,
                                           conv_strides)):
-            self.blocks.append(SincEncoderBlock(f, w, s,
-                                                sample_frequency,
-                                                self.reg,
-                                                i == 0))
+            self.blocks.append(
+                SincEncoderBlock(f, w, s, sample_frequency, self.reg, i == 0)
+            )
 
         self.conv = Conv1D(filters=self.encoded_dim,
                            kernel_size=1,

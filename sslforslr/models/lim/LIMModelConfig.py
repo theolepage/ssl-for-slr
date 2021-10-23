@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 
-from sslforslr.utils.Config import ModelConfig
+from sslforslr.configs import ModelConfig
 
 class LIMLossFnEnum(Enum):
     BCE = 'bce'
