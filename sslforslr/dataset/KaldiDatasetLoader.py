@@ -29,8 +29,12 @@ class KaldiDatasetGenerator(Sequence):
         return math.ceil(len(self.indices) / self.batch_size)
 
     def preprocess_data(self, data):
-        if self.augment:      data = augment(data)
+        # For augment module: (1, T) -> (T, 1) -> (1, T)
+        if self.augment:      data = augment(data.T).T
+        
         if self.extract_mfcc: data = extract_mfcc(data)
+        data = data.squeeze(axis=0) # (1, T, C) -> (T, C)
+        
         return data
 
     def __getitem__(self, i):
@@ -46,9 +50,9 @@ class KaldiDatasetGenerator(Sequence):
         for j in range(curr_batch_size):
             index = self.indices[i * self.batch_size + j]
 
-            data = load_wav(self.files[index], self.frame_length)
+            data = load_wav(self.files[index], self.frame_length) # (N, T)
             data = self.preprocess_data(data)
-
+            
             if self.frame_split:
                 pivot = len(data) // 2
                 X1.append(data[:pivot])

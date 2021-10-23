@@ -7,7 +7,24 @@ from sklearn.metrics import roc_curve
 
 from sslforslr.dataset.utils import load_wav, extract_mfcc
 
-def extract_embeddings(model, wav_list_path, dataset_config, batch_size=64):
+def extract_embeddings_from_batch(curr_batch_data, model):
+    batch = np.array(curr_batch_data)
+    B, N, T, C = batch.shape
+    batch = batch.reshape((B * N, T, C))
+
+    feats = model(batch).numpy()
+    feats = feats.reshape((B, N, -1))
+    feats = feats.mean(axis=1)
+    return feats
+
+def extract_embeddings(
+    model,
+    wav_list_path,
+    dataset_config,
+    batch_size=128,
+    num_frames=6
+    ):
+
     enable_extract_mfcc = dataset_config.get('extract_mfcc', False)
     enable_frame_split = dataset_config.get('frame_split', False)
 
@@ -20,10 +37,7 @@ def extract_embeddings(model, wav_list_path, dataset_config, batch_size=64):
 
     for line in tqdm(open(wav_list_path)):
         if len(curr_batch_ids) == batch_size:
-            # Feed last batch of samples to model
-            feats = model(np.array(curr_batch_data))
-
-            # Register embeddings
+            feats = extract_embeddings_from_batch(curr_batch_data, model)
             for i in range(len(curr_batch_ids)):
                 uttid, data = curr_batch_ids[i], feats[i]
                 embeddings[uttid] = data
@@ -32,14 +46,14 @@ def extract_embeddings(model, wav_list_path, dataset_config, batch_size=64):
 
         # Store current utterance id and data
         uttid, file = line.rstrip().split()
-        data = load_wav(file, frame_length)
+        data = load_wav(file, frame_length, num_frames=num_frames)
         if enable_extract_mfcc: data = extract_mfcc(data)
         curr_batch_ids.append(uttid)
         curr_batch_data.append(data)
 
     # Register remaining samples (if nb samples % 64 != 0)
     if len(curr_batch_ids) != 0:
-        feats = model(np.array(curr_batch_data))
+        feats = extract_embeddings_from_batch(curr_batch_data, model)
         for i in range(len(curr_batch_ids)):
             uttid, data = curr_batch_ids[i], feats[i]
             embeddings[uttid] = data
