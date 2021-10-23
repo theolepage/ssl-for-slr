@@ -24,7 +24,7 @@ data
     └── wav.scp
 ```
 
-*Note: `trials` file of VoxCeleb1 can be download [here](https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/veri_test.txt) and `wav.scp` files were generated with Kaldi `make_voxceleb1.pl`/`make_voxceleb2.pl` scripts.*
+*Note: `trials` file of VoxCeleb1 can be download [here](https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/veri_test.txt) and `wav.scp` files were generated using [Kaldi scripts](https://github.com/kaldi-asr/kaldi/tree/master/egs/sitw/v1/local) (make_voxceleb1.pl and make_voxceleb2.pl).*
 
 The format of `wav.scp` files must follow the one detaild below.
 
@@ -46,22 +46,12 @@ Then, you can evaluate model on speaker verification (EER, minDCF) with `python 
 
 ## To-Do
 
-- [ ] fix AudioAugmentation/cache_features
-- [ ] is online eval faster? (40s) => remove tqdm
-- [ ] Find NaN values
-
----
-
 - [ ] Reproduce results of SimCLR
-    - Possible differences with original SimCLR implem:
-        - [ ] Data augmentation is currently disabled
-        - [ ] Thin-ResNet34 implem (SE layer)
-        - [ ] Loss implem
-        - [ ] Channel invariant loss is currently disabled
-
+    - [ ] Fix NaN values
+    - [ ] Enable data augmentation
 - [ ] Experiment with different architectures and VICReg
 - [ ] Cite articles in README
-- [ ] Remote utt2spk and provide scripts to generate wav.scp files
+- [ ] Remove utt2spk and provide scripts to generate wav.scp files
 
 ---
 

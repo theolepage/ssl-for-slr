@@ -1,4 +1,3 @@
-from tqdm import tqdm
 from operator import itemgetter
 import numpy as np
 import soundfile as sf
@@ -35,7 +34,7 @@ def extract_embeddings(
     curr_batch_ids = []
     curr_batch_data = []
 
-    for line in tqdm(open(wav_list_path)):
+    for line in open(wav_list_path):
         if len(curr_batch_ids) == batch_size:
             feats = extract_embeddings_from_batch(curr_batch_data, model)
             for i in range(len(curr_batch_ids)):
