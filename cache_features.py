@@ -29,18 +29,18 @@ def cache_features(config_path, output_path, nb_aug=2, limit_length=10*16000):
     for line in open(config['dataset']['train']):
         utterance_id, file = line.rstrip().split()
         data = load_wav(file, None)
-        data = data[:limit_length]
+        data = data[:, :limit_length]
 
         for i in range(nb_aug):
             data_ = augment(data) if augment else data
-            data_ = extract_mfcc(data_)
+            data_ = extract_mfcc(data_).squeeze(axis=0)
             utterance_id_ = utterance_id + '_aug_' + str(i)
             kaldiio.save_ark(output_ark,
                              { utterance_id_: data_ },
                              scp=output_scp,
                              append=True)
 
-        data = extract_mfcc(data)
+        data = extract_mfcc(data).squeeze(axis=0)
         kaldiio.save_ark(output_ark,
                          { utterance_id: data },
                          scp=output_scp,

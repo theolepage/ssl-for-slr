@@ -7,6 +7,9 @@ import soundfile as sf
 def load_wav(path, frame_length, num_frames=1):
     audio, sr = sf.read(path)
 
+    # Load entire audio data if frame_length is not specified
+    if frame_length is None: frame_length = len(audio)
+
     # Pad signal if it is shorter than frame_length
     if len(audio) < frame_length:
         audio = np.pad(audio, (0, frame_length - len(audio) + 1), 'wrap')

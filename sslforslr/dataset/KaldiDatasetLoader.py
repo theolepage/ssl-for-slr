@@ -29,10 +29,11 @@ class KaldiDatasetGenerator(Sequence):
         return math.ceil(len(self.indices) / self.batch_size)
 
     def preprocess_data(self, data):
-        # For augment module: (1, T) -> (T, 1) -> (1, T)
-        if self.augment:      data = augment(data.T).T
+        assert data.ndim == 2 and data.shape[0] == 1 # (1, T)
+
+        if self.augment:      data = augment(data)        
         
-        if self.extract_mfcc: data = extract_mfcc(data)
+        if self.extract_mfcc: data = extract_mfcc(data) # (1, T) -> (1, T, C)
         data = data.squeeze(axis=0) # (1, T, C) -> (T, C)
         
         return data

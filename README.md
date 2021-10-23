@@ -11,9 +11,7 @@ Collection of **self-supervised** models for **speaker and language recognition*
 
 ## Datasets
 
-[VoxCeleb1](https://www.robots.ox.ac.uk/~vgg/data/voxceleb/vox1.html) and [VoxCeleb2](https://www.robots.ox.ac.uk/~vgg/data/voxceleb/vox2.html) are used for our experiments.
-
-A folder `data` must be created at the root of the project with the following structure.
+[VoxCeleb1](https://www.robots.ox.ac.uk/~vgg/data/voxceleb/vox1.html) and [VoxCeleb2](https://www.robots.ox.ac.uk/~vgg/data/voxceleb/vox2.html) are used for our experiments. A folder `data` must be created at the root of the project with the structure shown below.
 
 ```
 data
@@ -26,11 +24,9 @@ data
     └── wav.scp
 ```
 
-The `trials` file of VoxCeleb1 can be download [here](https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/veri_test.txt).
+*Note: `trials` file of VoxCeleb1 can be download [here](https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/veri_test.txt) and `wav.scp` files were generated with Kaldi `make_voxceleb1.pl`/`make_voxceleb2.pl` scripts.*
 
-The `wav.scp` files were generated with Kaldi `make_voxceleb1.pl` and `make_voxceleb2.pl` scripts.
-
-An example format of `wav.scp` file is detailed below.
+The format of `wav.scp` files must follow the one detaild below.
 
 ```
 id00012-21Uxsk56VDQ-00001 /path/to/VoxCeleb2/dev/aac/id00012/21Uxsk56VDQ/00001.wav
@@ -40,6 +36,8 @@ id09272-u7VNkYraCw0-00026 /path/to/VoxCeleb2/dev/aac/id09272/u7VNkYraCw0/00026.w
 id09272-u7VNkYraCw0-00027 /path/to/VoxCeleb2/dev/aac/id09272/u7VNkYraCw0/00027.wav
 ```
 
+Regarding data augmentation, we rely on [MUSAN](http://www.openslr.org/17/) and [Room Impulse Response and Noise Database](https://www.openslr.org/28/).
+
 ## Usage
 
 Start self-supervised training with `python train.py configs/cpc-base.json`.
@@ -48,8 +46,12 @@ Then, you can evaluate model on speaker verification (EER, minDCF) with `python 
 
 ## To-Do
 
-- [ ] Find NaN values, is online eval faster?
-- [ ] AudioAugmentation and cache_features may not work anymore
+- [ ] fix AudioAugmentation/cache_features
+- [ ] is online eval faster? (40s) => remove tqdm
+- [ ] Find NaN values
+
+---
+
 - [ ] Reproduce results of SimCLR
     - Possible differences with original SimCLR implem:
         - [ ] Data augmentation is currently disabled
@@ -59,6 +61,7 @@ Then, you can evaluate model on speaker verification (EER, minDCF) with `python 
 
 - [ ] Experiment with different architectures and VICReg
 - [ ] Cite articles in README
+- [ ] Remote utt2spk and provide scripts to generate wav.scp files
 
 ---
 

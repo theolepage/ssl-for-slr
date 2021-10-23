@@ -27,15 +27,16 @@ class AudioAugmentation:
 
     def reverberate(self, audio):
         rir_file = random.choice(self.rir_files)
+
         rir, fs = sf.read(rir_file)
-        rir = rir.reshape((-1, 1))
+        rir = rir.reshape((1, -1)).astype(np.float32)
         rir = rir / np.sqrt(np.sum(rir ** 2))
         
-        return convolve(audio, rir, mode='full')[:len(audio)]
+        return convolve(audio, rir, mode='full')[:, :audio.shape[1]]
 
     def add_noise(self, audio, category):
         noise_file = random.choice(self.musan_files[category])
-        noise = load_wav(noise_file, len(audio))
+        noise = load_wav(noise_file, audio.shape[1])
         
         # Determine noise scale factor according to desired SNR
         clean_db = 10 * np.log10(np.mean(audio ** 2) + 1e-4) 
