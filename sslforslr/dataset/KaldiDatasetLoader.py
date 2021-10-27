@@ -50,14 +50,16 @@ class KaldiDatasetGenerator(Sequence):
             curr_batch_size = remaining_samples
 
         start = i * self.batch_size
-        end   = i * self.batch_size + remaining_samples
+        end   = i * self.batch_size + curr_batch_size
         indices = self.indices[start:end]
 
         if is_last_batch and remaining_samples != 0:
-            indices += np.random.choice(
+            resampled_indices = np.random.choice(
                 self.indices[:start],
                 size=self.batch_size - remaining_samples
             )
+            indices = np.concatenate((indices, resampled_indices))
+        assert len(indices) == self.batch_size
 
         X1, X2, y = [], [], []
         for index in indices:
@@ -65,9 +67,9 @@ class KaldiDatasetGenerator(Sequence):
             # data = self.preprocess_data(data)
             
             if self.frame_split:
-                pivot = len(data) // 2
-                X1.append(data[:, :pivot])
-                X2.append(data[:, pivot:])
+                pivot = data.shape[1] // 2
+                X1.append(self.preprocess_data(data[:, :pivot]))
+                X2.append(self.preprocess_data(data[:, pivot:]))
                 y.append(0)
                 continue
             
