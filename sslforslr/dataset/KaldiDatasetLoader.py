@@ -31,7 +31,7 @@ class KaldiDatasetGenerator(Sequence):
     def preprocess_data(self, data):
         assert data.ndim == 2 and data.shape[0] == 1 # (1, T)
 
-        if self.augment: data = augment(data)        
+        if self.augment: data = self.augment(data)        
         
         if self.extract_mfcc:
             data = extract_mfcc(data) # (1, T) -> (1, T, C)
@@ -61,13 +61,13 @@ class KaldiDatasetGenerator(Sequence):
 
         X1, X2, y = [], [], []
         for index in indices:
-            data = load_wav(self.files[index], self.frame_length) # (N, T)
-            data = self.preprocess_data(data)
+            data = load_wav(self.files[index], self.frame_length) # (1, T)
+            # data = self.preprocess_data(data)
             
             if self.frame_split:
                 pivot = len(data) // 2
-                X1.append(data[:pivot])
-                X2.append(data[pivot:])
+                X1.append(data[:, :pivot])
+                X2.append(data[:, pivot:])
                 y.append(0)
                 continue
             
