@@ -8,10 +8,12 @@ training:
   batch_size: 256
   learning_rate: 0.001
 dataset:
-  frame_length: 64000
+  frame_length: 32000
   frame_split: true
   extract_mfcc: true
   train: './data/voxceleb1_train/wav.scp'
+  val_ratio: 0.0
+  spec_augment: False
   augment:
     rir_path: '/diskssd1/ing2/datasets/simulated_rirs'
     musan_path: '/diskssd1/ing2/datasets/musan_split'

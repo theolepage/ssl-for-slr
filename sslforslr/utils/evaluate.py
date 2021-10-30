@@ -126,6 +126,7 @@ def speaker_verification_evaluate(model, config, round_val=5):
 
     eer = round(compute_eer(scores, labels), round_val)
     fnrs, fprs = compute_error_rates(scores, labels)
-    min_dcf = round(compute_min_dcf(fnrs, fprs), round_val)
+    min_dcf_001 = round(compute_min_dcf(fnrs, fprs, p_target=0.01), round_val)
+    min_dcf_005 = round(compute_min_dcf(fnrs, fprs, p_target=0.05), round_val)
 
-    return eer, min_dcf
+    return eer, min_dcf_001, min_dcf_005

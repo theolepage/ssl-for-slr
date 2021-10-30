@@ -4,15 +4,19 @@ import torch.nn.functional as F
 import torchaudio
 import soundfile as sf
 
-def load_wav(path, frame_length, num_frames=1):
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+from SpecAugment.spec_augment_pytorch import spec_augment
+
+def load_wav(path, frame_length, num_frames=1, min_audio_length=None):
     audio, sr = sf.read(path)
+
+    # Pad signal if it is shorter than min_audio_length
+    if min_audio_length and len(audio) < min_audio_length:
+        audio = np.pad(audio, (0, min_audio_length - len(audio) + 1), 'wrap')
 
     # Load entire audio data if frame_length is not specified
     if frame_length is None: frame_length = len(audio)
-
-    # Pad signal if it is shorter than frame_length
-    if len(audio) < frame_length:
-        audio = np.pad(audio, (0, frame_length - len(audio) + 1), 'wrap')
 
     # Determine frames start indices
     idx = []
@@ -33,7 +37,7 @@ def pre_emphasis(audio, coef=0.97):
     audio = F.pad(audio, (1, 0), 'reflect')
     return F.conv1d(audio, w).squeeze(1)
 
-def extract_mfcc(audio):
+def extract_mfcc(audio, enable_spec_augment=False):
     audio = torch.from_numpy(audio) # (N, T)
 
     audio = pre_emphasis(audio)
@@ -45,6 +49,9 @@ def extract_mfcc(audio):
         window_fn=torch.hamming_window,
         n_mels=40)(audio) # mfcc: (N, C, T)
     
+    if enable_spec_augment:
+        mfcc = spec_augment(mfcc)
+
     mfcc = mfcc.numpy().transpose(0, 2, 1) # (N, T, C)
     
     # torchaudio MelSpectrogram method might return a larger sequence

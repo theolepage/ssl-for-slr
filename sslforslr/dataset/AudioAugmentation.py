@@ -51,13 +51,12 @@ class AudioAugmentation:
         return noise * noise_scale + audio
 
     def __call__(self, audio):
-        transform_type = random.randint(0, 4)
-        if transform_type == 1:
-            audio = self.reverberate(audio)
-        elif transform_type == 2:
+        transform_type = random.randint(0, 2)
+        if transform_type == 0:
             audio = self.add_noise(audio, 'music')
-        elif transform_type == 3:
+        elif transform_type == 1:
             audio = self.add_noise(audio, 'speech')
-        elif transform_type == 4:
+        elif transform_type == 2:
             audio = self.add_noise(audio, 'noise')
+        audio = self.reverberate(audio)
         return audio

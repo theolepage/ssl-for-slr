@@ -21,9 +21,10 @@ def evaluate(config_path):
     else:
         raise Exception('%s has not been trained.' % config['name'])
 
-    eer, min_dcf = speaker_verification_evaluate(model, config)
+    eer, min_dcf_001, min_dcf_005 = speaker_verification_evaluate(model, config)
     print('EER (%):', eer)
-    print('minDCF (p=0.01):', min_dcf)
+    print('minDCF (p=0.01):', min_dcf_001)
+    print('minDCF (p=0.05):', min_dcf_005)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -6,6 +6,28 @@ from sklearn.model_selection import train_test_split
 from sslforslr.dataset.AudioAugmentation import AudioAugmentation
 from sslforslr.dataset.utils import load_wav, extract_mfcc
 
+def sample_frames(audio, frame_length):
+    audio_length = audio.shape[1]
+    assert audio_length >= 2 * frame_length, \
+        "audio_length should >= 2 * frame_length"
+
+    dist = audio_length - 2 * frame_length
+    dist = np.random.randint(0, dist + 1)
+
+    lower = frame_length + dist // 2
+    upper = audio_length - (frame_length + dist // 2)
+    pivot = np.random.randint(lower, upper + 1)
+
+    frame1_from = pivot - dist // 2 - frame_length
+    frame1_to = pivot - dist // 2
+    frame1 = audio[:, frame1_from:frame1_to]
+
+    frame2_from = pivot + dist // 2
+    frame2_to = pivot + dist // 2 + frame_length
+    frame2 = audio[:, frame2_from:frame2_to]
+
+    return frame1, frame2
+
 class KaldiDatasetGenerator(Sequence):
     def __init__(
         self,
@@ -15,6 +37,7 @@ class KaldiDatasetGenerator(Sequence):
         files,
         indices,
         augment=None,
+        spec_augment=False,
         extract_mfcc=False
     ):
         self.batch_size = batch_size
@@ -23,6 +46,7 @@ class KaldiDatasetGenerator(Sequence):
         self.files = files
         self.indices = indices
         self.augment = augment
+        self.spec_augment = spec_augment
         self.extract_mfcc = extract_mfcc
 
     def __len__(self):
@@ -34,7 +58,7 @@ class KaldiDatasetGenerator(Sequence):
         if self.augment: data = self.augment(data)        
         
         if self.extract_mfcc:
-            data = extract_mfcc(data) # (1, T) -> (1, T, C)
+            data = extract_mfcc(data, enable_spec_augment=True) # (1, T) -> (1, T, C)
             data = data.squeeze(axis=0) # (1, T, C) -> (T, C)
         else:
             data = data.T # (1, T) -> (T, 1)
@@ -63,18 +87,21 @@ class KaldiDatasetGenerator(Sequence):
 
         X1, X2, y = [], [], []
         for index in indices:
-            data = load_wav(self.files[index], self.frame_length) # (1, T)
-            # data = self.preprocess_data(data)
-            
             if self.frame_split:
-                pivot = data.shape[1] // 2
-                X1.append(self.preprocess_data(data[:, :pivot]))
-                X2.append(self.preprocess_data(data[:, pivot:]))
+                data = load_wav(
+                    self.files[index],
+                    frame_length=None,
+                    min_audio_length=2*self.frame_length
+                ) # (1, T)
+                frame1, frame2 = sample_frames(data, self.frame_length)
+                X1.append(self.preprocess_data(frame1))
+                X2.append(self.preprocess_data(frame2))
                 y.append(0)
-                continue
-            
-            X1.append(data)
-            y.append(0)
+            else:
+                data = load_wav(self.files[index], self.frame_length) # (1, T)
+                data = self.preprocess_data(data)
+                X1.append(data)
+                y.append(0)
 
         if self.frame_split:
             return np.array(X1), np.array(X2), np.array(y)
@@ -106,27 +133,37 @@ class KaldiDatasetLoader:
 
     def load(self, batch_size):
         count = self.config.max_samples if self.config.max_samples else len(self.files)
-        indices = train_test_split(np.arange(count),
-                                   test_size=self.config.val_ratio)
+        
+        train_indices = np.random.shuffle(np.arange(count))
+        if self.config.val_ratio:
+            train_indices, val_indices = train_test_split(
+                train_indices,
+                test_size=self.config.val_ratio,
+                random_state=0
+            )
 
         train_gen = KaldiDatasetGenerator(
             batch_size,
             self.config.frame_length,
             self.config.frame_split,
             self.files,
-            indices[0],
+            train_indices,
             self.augment,
+            self.config.spec_augment,
             self.config.extract_mfcc
         )
 
-        val_gen = KaldiDatasetGenerator(
-            batch_size,
-            self.config.frame_length,
-            self.config.frame_split,
-            self.files,
-            indices[1],
-            self.augment,
-            self.config.extract_mfcc
-        )
+        val_gen = None
+        if self.config.val_ratio:
+            val_gen = KaldiDatasetGenerator(
+                batch_size,
+                self.config.frame_length,
+                self.config.frame_split,
+                self.files,
+                val_indices,
+                self.augment,
+                self.config.spec_augment,
+                self.config.extract_mfcc
+            )
 
         return train_gen, val_gen

@@ -9,8 +9,17 @@ class SVMetricsCallback(Callback):
         self.config = config
 
     def on_epoch_end(self, epoch, logs):
-        eer, min_dcf = speaker_verification_evaluate(self.model, self.config)
+        eer, min_dcf_001, min_dcf_005 = speaker_verification_evaluate(
+            self.model,
+            self.config
+        )
         
         print('EER (%):', eer)
-        print('minDCF (p=0.01):', min_dcf)
-        logs.update({'test_eer': eer, 'test_min_dcf': min_dcf})
+        print('minDCF (p=0.01):', min_dcf_001)
+        print('minDCF (p=0.05):', min_dcf_005)
+
+        logs.update({
+            'test_eer': eer,
+            'test_min_dcf_001': min_dcf_001,
+            'test_min_dcf_005': min_dcf_005
+        })

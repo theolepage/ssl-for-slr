@@ -10,3 +10,4 @@ kaldiio
 ruamel.yaml
 dacite
 prettyprinter
+git+git://github.com/DemisEom/SpecAugment.git

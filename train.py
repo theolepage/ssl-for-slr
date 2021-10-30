@@ -17,7 +17,7 @@ from sslforslr.utils.callbacks import SVMetricsCallback
 from sslforslr.models.moco import MoCoUpdateCallback
 
 def simclr_lr_scheduler(epoch, lr):
-    activate = (epoch != 0 and epoch % 1 == 0)
+    activate = (epoch != 0 and epoch % 5 == 0)
     return lr - lr * 0.05 if activate else lr
 
 def create_callbacks(config, checkpoint_dir):
@@ -60,7 +60,8 @@ def train(config_path):
     pp.install_extras(include=['dataclasses'])
     pp.pprint(config)
     print("Number of training batches:", len(train_gen))
-    print("Number of val batches:", len(val_gen))
+    if val_gen:
+        print("Number of val batches:", len(val_gen))
     
     # Prevent re-training model
     if tf.train.latest_checkpoint(checkpoint_dir):

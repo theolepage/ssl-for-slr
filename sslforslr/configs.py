@@ -24,6 +24,7 @@ class DatasetConfig:
     frame_split: bool = False
     max_samples: int = None
     extract_mfcc: bool = False
+    spec_augment: bool = False
     val_ratio: float = 0.1
     train: str = './data/voxceleb2_train/wav.scp'
     test: str = './data/voxceleb1_test/wav.scp'
