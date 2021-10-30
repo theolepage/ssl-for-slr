@@ -58,7 +58,7 @@ class KaldiDatasetGenerator(Sequence):
         if self.augment: data = self.augment(data)        
         
         if self.extract_mfcc:
-            data = extract_mfcc(data, enable_spec_augment=True) # (1, T) -> (1, T, C)
+            data = extract_mfcc(data, self.spec_augment) # (1, T) -> (1, T, C)
             data = data.squeeze(axis=0) # (1, T, C) -> (T, C)
         else:
             data = data.T # (1, T) -> (T, 1)
@@ -134,7 +134,8 @@ class KaldiDatasetLoader:
     def load(self, batch_size):
         count = self.config.max_samples if self.config.max_samples else len(self.files)
         
-        train_indices = np.random.shuffle(np.arange(count))
+        train_indices = np.arange(count)
+        np.random.shuffle(train_indices)
         if self.config.val_ratio:
             train_indices, val_indices = train_test_split(
                 train_indices,
