@@ -91,7 +91,7 @@ class KaldiDatasetGenerator(Sequence):
                 data = load_wav(
                     self.files[index],
                     frame_length=None,
-                    min_audio_length=2*self.frame_length
+                    min_length=2*self.frame_length
                 ) # (1, T)
                 frame1, frame2 = sample_frames(data, self.frame_length)
                 X1.append(self.preprocess_data(frame1))

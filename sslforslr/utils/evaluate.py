@@ -22,11 +22,7 @@ def extract_embeddings(
     dataset_config,
     batch_size=128,
     num_frames=6
-    ):
-
-    frame_length = dataset_config.frame_length
-    if dataset_config.frame_split: frame_length = frame_length // 2
-
+):
     embeddings = {}
     curr_batch_ids = []
     curr_batch_data = []
@@ -42,7 +38,7 @@ def extract_embeddings(
 
         # Store current utterance id and data
         uttid, file = line.rstrip().split()
-        data = load_wav(file, frame_length, num_frames=num_frames)
+        data = load_wav(file, dataset_config.frame_length, num_frames=num_frames)
         if dataset_config.extract_mfcc: data = extract_mfcc(data)
         curr_batch_ids.append(uttid)
         curr_batch_data.append(data)

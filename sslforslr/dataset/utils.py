@@ -8,12 +8,13 @@ import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 from SpecAugment.spec_augment_pytorch import spec_augment
 
-def load_wav(path, frame_length, num_frames=1, min_audio_length=None):
+def load_wav(path, frame_length, num_frames=1, min_length=None):
     audio, sr = sf.read(path)
 
-    # Pad signal if it is shorter than min_audio_length
-    if min_audio_length and len(audio) < min_audio_length:
-        audio = np.pad(audio, (0, min_audio_length - len(audio) + 1), 'wrap')
+    # Pad signal if it is shorter than min_length
+    if min_length is None: min_length = frame_length
+    if min_length and len(audio) < min_length:
+        audio = np.pad(audio, (0, min_length - len(audio) + 1), 'wrap')
 
     # Load entire audio data if frame_length is not specified
     if frame_length is None: frame_length = len(audio)
