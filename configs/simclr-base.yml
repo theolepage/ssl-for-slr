@@ -13,7 +13,7 @@ dataset:
   extract_mfcc: true
   train: './data/voxceleb1_train/wav.scp'
   val_ratio: 0.0
-  spec_augment: False
+  spec_augment: true
   augment:
     rir_path: '/diskssd1/ing2/datasets/simulated_rirs'
     musan_path: '/diskssd1/ing2/datasets/musan_split'

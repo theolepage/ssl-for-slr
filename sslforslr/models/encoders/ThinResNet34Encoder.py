@@ -10,17 +10,34 @@ from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import ReLU
 from tensorflow.keras.layers import Add
 from tensorflow_addons.layers import InstanceNormalization
+from tensorflow_addons.layers import AdaptiveAveragePooling2D
 from tensorflow.keras import regularizers
 
 from dataclasses import dataclass
-from sslforslr.configs import EncoderConfig
 
 @dataclass
-class ThinResNet34EncoderConfig(EncoderConfig):
+class ThinResNet34EncoderConfig():
     encoded_dim: int = 512
     weight_reg: float = 1e-4
 
 ThinResNet34EncoderConfig.__NAME__ = 'thinresnet34'
+
+class SELayer(Layer):
+    def __init__(self, channels, reduction=8):
+        super().__init__()
+
+        self.avg_pool = AdaptiveAveragePooling2D(1)
+        self.fc = Sequential([
+            Dense(channels // reduction, activation='relu'),
+            Dense(channels, activation='sigmoid')
+        ])
+
+    def call(self, X):
+        Z = self.avg_pool(X) # (B, 1, 1, C)
+        Z = tf.squeeze(Z, (1, 2)) # (B, C)
+        Z = self.fc(Z)
+        Z = tf.expand_dims(tf.expand_dims(Z, axis=1), axis=2)
+        return X * Z
 
 class ResNetBlock(Layer):
     def __init__(self, filters, stride=1, reg=None):
@@ -42,7 +59,8 @@ class ResNetBlock(Layer):
                             kernel_regularizer=self.reg,
                             bias_regularizer=self.reg)
         self.bn2 = BatchNormalization()
-        
+        self.se = SELayer(filters)
+
         self.relu = ReLU()
 
         self.downsample = Sequential()
@@ -61,6 +79,7 @@ class ResNetBlock(Layer):
 
         Z = self.conv2(Z)
         Z = self.bn2(Z)
+        Z = self.se(Z)
         
         Z = Add()([Z, residual])
         Z = self.relu(Z)
