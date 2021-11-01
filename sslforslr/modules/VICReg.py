@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow.keras.layers import Layer
 
 @tf.function
 def off_diagonal(matrix):
@@ -7,7 +8,7 @@ def off_diagonal(matrix):
 
 class VICReg(Layer):
 
-    def __init__(self, reg, lamda=25, mu=25, nu=1):
+    def __init__(self, lamda=25, mu=25, nu=1):
         super().__init__()
 
         self.lamda = lamda
@@ -17,7 +18,8 @@ class VICReg(Layer):
     def call(self, data):
         X_a, X_b = data
 
-        N, D = tf.shape(X_a)
+        N = tf.cast(tf.shape(X_a)[0], tf.float32)
+        D = tf.cast(tf.shape(X_a)[1], tf.float32)
 
         X_a_mean, X_a_var = tf.nn.moments(X_a, axes=[0])
         X_b_mean, X_b_var = tf.nn.moments(X_b, axes=[0])
