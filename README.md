@@ -57,15 +57,17 @@ Then, you can evaluate model on speaker verification (EER, minDCF) with `python 
 
 ## To-Do
 
-- [ ] Reproduce results of SimCLR
-    - [ ] Fix NaN values
-    - [ ] Enable data augmentation
 - [ ] Experiment with different architectures (VICReg)
-- [ ] Provide scripts to download and prepare data
+    - [ ] loss = nce + 0.1 * vic
+    - [ ] loss = vic
+    - [ ] Ablation study on VICReg hyper-params
+- [ ] Train other models (MoCo/XVectorEncoder, CPC/CPCEncoder, LIM/SincEncoder, Wav2Spk)
+- [ ] Pytorch implementation of best model
+- [ ] Provide script to download and prepare data
 
 ---
 
 - [ ] CPC/LIM: @tf.function warning when doing tensor[1, :]
-- [ ] Fix warning loading weights not used
-- [ ] Create custom training loop (https://stackoverflow.com/questions/57971007/tensorflow-2-0-display-progress-bar-in-custom-training-loop)
+- [ ] Fix warning when loading: some weights are not used
 - [ ] Allow restore optimizer
+- [ ] Pytorch implementation

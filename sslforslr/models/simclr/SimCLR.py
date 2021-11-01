@@ -4,6 +4,8 @@ from tensorflow.keras import Model
 from tensorflow.keras import regularizers
 from tensorflow.keras.layers import Layer
 
+from sslforslr.modules.VICReg import VICReg
+
 class SimCLRModel(Model):
     '''
     A simple framework for contrastive learning (SimCLR) for audio signals,
@@ -18,11 +20,13 @@ class SimCLRModel(Model):
                  config):
         super().__init__()
 
-        self.channel_loss_factor = config.channel_loss_factor
+        self.loss_factor = config.loss_factor
+        self.vic_reg_factor = config.vic_reg_factor
         self.reg = regularizers.l2(config.weight_reg)
 
         self.encoder = encoder
-        self.loss_ = AngularPrototypicalLoss(self.reg)
+        self.nce_loss = AngularPrototypicalLoss(self.reg)
+        self.vic_reg = VICReg()
 
     def compile(self, optimizer, **kwargs):
         super().compile(**kwargs)
@@ -40,12 +44,12 @@ class SimCLRModel(Model):
             Z_2_aug = self.encoder(X_2_aug, training=True)
             # Z shape: (B, encoded_dim)
 
-            loss, accuracy = self.loss_([Z_1_aug, Z_2_aug], training=True)
-            # loss += self.channel_loss_factor * channel_loss(Z_1_clean, Z_1_aug)
-            # loss += self.channel_loss_factor * channel_loss(Z_2_clean, Z_2_aug)
+            loss, accuracy = self.nce_loss((Z_1_aug, Z_2_aug), training=True)
+            loss = self.loss_factor * loss
+            loss += self.vic_reg_factor * self.vic_reg((Z_1_aug, Z_2_aug), training=True)
 
         trainable_params = self.encoder.trainable_weights
-        trainable_params += self.loss_.trainable_weights
+        trainable_params += self.nce_loss.trainable_weights
 
         grads = tape.gradient(loss, trainable_params)
         self.optimizer.apply_gradients(zip(grads, trainable_params))
@@ -58,9 +62,9 @@ class SimCLRModel(Model):
         Z_1_aug = self.encoder(X_1_aug, training=False)
         Z_2_aug = self.encoder(X_2_aug, training=False)
 
-        loss, accuracy = self.loss_([Z_1_aug, Z_2_aug], training=False)
-        # loss += self.channel_loss_factor * channel_loss(Z_1_clean, Z_1_aug)
-        # loss += self.channel_loss_factor * channel_loss(Z_2_clean, Z_2_aug)
+        loss, accuracy = self.nce_loss((Z_1_aug, Z_2_aug), training=False)
+        loss = self.loss_factor * loss
+        loss += self.vic_reg_factor * self.vic_reg((Z_1_aug, Z_2_aug), training=False)
 
         return { 'loss': loss, 'accuracy': accuracy }
 
