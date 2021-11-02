@@ -8,7 +8,7 @@ def off_diagonal(matrix):
 
 class VICReg(Layer):
 
-    def __init__(self, lamda=25, mu=25, nu=1):
+    def __init__(self, lamda=1, mu=1, nu=0.04):
         super().__init__()
 
         self.lamda = lamda

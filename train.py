@@ -47,7 +47,7 @@ def create_callbacks(config, checkpoint_dir):
     callbacks.append(
         EarlyStopping(monitor='test_eer',
                       mode='min',
-                      patience=5)
+                      patience=10)
     )
 
     return callbacks

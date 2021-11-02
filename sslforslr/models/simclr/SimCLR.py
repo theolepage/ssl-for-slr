@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras import regularizers
-from tensorflow.keras.layers import Layer
+from tensorflow.keras.layers import Layer, Dense, BatchNormalization, ReLU
 
 from sslforslr.modules.VICReg import VICReg
 
@@ -20,6 +20,7 @@ class SimCLRModel(Model):
                  config):
         super().__init__()
 
+        self.enable_mlp = config.enable_mlp
         self.loss_factor = config.loss_factor
         self.vic_reg_factor = config.vic_reg_factor
         self.reg = regularizers.l2(config.weight_reg)
@@ -44,12 +45,18 @@ class SimCLRModel(Model):
             Z_2_aug = self.encoder(X_2_aug, training=True)
             # Z shape: (B, encoded_dim)
 
+            if self.enable_mlp:
+                Z_1_aug = self.mlp(Z_1_aug, training=True)
+                Z_2_aug = self.mlp(Z_2_aug, training=True)
+
             loss, accuracy = self.nce_loss((Z_1_aug, Z_2_aug), training=True)
             loss = self.loss_factor * loss
             loss += self.vic_reg_factor * self.vic_reg((Z_1_aug, Z_2_aug), training=True)
 
         trainable_params = self.encoder.trainable_weights
         trainable_params += self.nce_loss.trainable_weights
+        if self.enable_mlp:
+            trainable_params += self.mlp.trainable_weights
 
         grads = tape.gradient(loss, trainable_params)
         self.optimizer.apply_gradients(zip(grads, trainable_params))
@@ -62,11 +69,43 @@ class SimCLRModel(Model):
         Z_1_aug = self.encoder(X_1_aug, training=False)
         Z_2_aug = self.encoder(X_2_aug, training=False)
 
+        if self.enable_mlp:
+            Z_1_aug = self.mlp(Z_1_aug, training=False)
+            Z_2_aug = self.mlp(Z_2_aug, training=False)
+
         loss, accuracy = self.nce_loss((Z_1_aug, Z_2_aug), training=False)
         loss = self.loss_factor * loss
         loss += self.vic_reg_factor * self.vic_reg((Z_1_aug, Z_2_aug), training=False)
 
         return { 'loss': loss, 'accuracy': accuracy }
+
+
+class MLP(Model):
+
+    def __init__(self, dim):
+        super().__init__()
+
+        self.relu = ReLU()
+
+        self.fc1 = Dense(2048)
+        self.bn1 = BatchNormalization()
+
+        self.fc2 = Dense(2048)
+        self.bn2 = BatchNormalization()
+
+        self.fc3 = Dense(dim)
+
+    def call(self, X):
+        Z = self.fc1(X)
+        Z = self.bn1(Z)
+        Z = self.relu(Z)
+
+        Z = self.fc2(X)
+        Z = self.bn2(Z)
+        Z = self.relu(Z)
+
+        Z = self.fc3(Z)
+        return Z
 
 
 class AngularPrototypicalLoss(Layer):
