@@ -144,13 +144,13 @@ class AngularPrototypicalLoss(Layer):
         w_clamped = tf.clip_by_value(self.w, clip_value_min=1e-6, clip_value_max=1e+6)
         dot = w_clamped * dot + self.b
         
-        log_softmax_dot = tf.nn.log_softmax(dot, axis=0)
+        log_softmax_dot = tf.nn.log_softmax(dot, axis=1)
         diag = tf.linalg.tensor_diag_part(log_softmax_dot)
         loss = -tf.math.reduce_mean(diag)
 
         # Determine accuracy
-        softmax_dot = tf.nn.softmax(dot, axis=0)
-        pred_indices = tf.math.argmax(softmax_dot, axis=0, output_type=tf.int32)
+        softmax_dot = tf.nn.softmax(dot, axis=1)
+        pred_indices = tf.math.argmax(softmax_dot, axis=1, output_type=tf.int32)
         preds_acc = tf.math.equal(pred_indices, tf.range(0, batch_size))
         accuracy = tf.math.count_nonzero(preds_acc, dtype=tf.int32) / batch_size
 
