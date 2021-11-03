@@ -26,6 +26,7 @@ class SimCLRModel(Model):
         self.reg = regularizers.l2(config.weight_reg)
 
         self.encoder = encoder
+        self.mlp = MLP()
         self.nce_loss = AngularPrototypicalLoss(self.reg)
         self.vic_reg = VICReg()
 
@@ -82,7 +83,7 @@ class SimCLRModel(Model):
 
 class MLP(Model):
 
-    def __init__(self, dim):
+    def __init__(self):
         super().__init__()
 
         self.relu = ReLU()
@@ -93,14 +94,14 @@ class MLP(Model):
         self.fc2 = Dense(2048)
         self.bn2 = BatchNormalization()
 
-        self.fc3 = Dense(dim)
+        self.fc3 = Dense(512)
 
     def call(self, X):
         Z = self.fc1(X)
         Z = self.bn1(Z)
         Z = self.relu(Z)
 
-        Z = self.fc2(X)
+        Z = self.fc2(Z)
         Z = self.bn2(Z)
         Z = self.relu(Z)
 
