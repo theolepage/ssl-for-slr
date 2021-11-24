@@ -114,19 +114,19 @@ class AngularPrototypicalLoss(Layer):
     def __init__(self, reg, init_w=10.0, init_b=-5.0):
         super().__init__()
 
-        self.w = self.add_weight(
-            name='w',
-            shape=(1,),
-            initializer=tf.keras.initializers.Constant(init_w),
-            trainable=True,
-            regularizer=reg)
+        # self.w = self.add_weight(
+        #     name='w',
+        #     shape=(1,),
+        #     initializer=tf.keras.initializers.Constant(init_w),
+        #     trainable=True,
+        #     regularizer=reg)
 
-        self.b = self.add_weight(
-            name='b',
-            shape=(1,),
-            initializer=tf.keras.initializers.Constant(init_b),
-            trainable=True,
-            regularizer=reg)
+        # self.b = self.add_weight(
+        #     name='b',
+        #     shape=(1,),
+        #     initializer=tf.keras.initializers.Constant(init_b),
+        #     trainable=True,
+        #     regularizer=reg)
 
     def call(self, data):
         Z_1_aug, Z_2_aug = data
@@ -140,10 +140,7 @@ class AngularPrototypicalLoss(Layer):
 
         # Determine loss
         dot = tf.linalg.matmul(Z_1_aug, Z_2_aug, transpose_b=True)
-
-        # Angular prototypical loss
-        w_clamped = tf.clip_by_value(self.w, clip_value_min=1e-6, clip_value_max=1e+6)
-        dot = w_clamped * dot + self.b
+        dot = dot / 0.07
         
         log_softmax_dot = tf.nn.log_softmax(dot, axis=1)
         diag = tf.linalg.tensor_diag_part(log_softmax_dot)

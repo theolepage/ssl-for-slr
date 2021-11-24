@@ -1,0 +1,22 @@
+name: 'vicreg'
+encoder:
+  type: 'thinresnet34'
+model:
+  type: 'simclr'
+  enable_mlp: true
+  loss_factor: 0.0
+  vic_reg_factor: 25.0
+training:
+  epochs: 500
+  batch_size: 256
+  learning_rate: 0.001
+dataset:
+  frame_length: 32000
+  frame_split: true
+  extract_mfcc: true
+  train: './data/voxceleb1_train/wav.scp'
+  val_ratio: 0.0
+  spec_augment: false
+  augment:
+    rir_path: '/diskssd1/ing2/datasets/simulated_rirs'
+    musan_path: '/diskssd1/ing2/datasets/musan_split'
