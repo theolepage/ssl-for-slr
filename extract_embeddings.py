@@ -2,13 +2,18 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
 import argparse
+import pickle
 import tensorflow as tf
 
 from sslforslr.utils.helpers import load_config, load_dataset, load_model
-from sslforslr.utils.evaluate import speaker_verification_evaluate
+from sslforslr.utils.evaluate import extract_embeddings
 
-def evaluate(config_path):
-    config, checkpoint_dir = load_config(config_path)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('config', help='Path to model config file.')
+    args = parser.parse_args()
+
+    config, checkpoint_dir = load_config(args.config)
     (train_gen, val_gen), input_shape = load_dataset(config)
     model = load_model(config, input_shape)
 
@@ -21,14 +26,7 @@ def evaluate(config_path):
     else:
         raise Exception('%s has not been trained.' % config['name'])
 
-    eer, min_dcf_001, min_dcf_005 = speaker_verification_evaluate(model, config)
-    print('EER (%):', eer)
-    print('minDCF (p=0.01):', min_dcf_001)
-    print('minDCF (p=0.05):', min_dcf_005)
+    embeddings = extract_embeddings(model, config.dataset.test, config.dataset)
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('config', help='Path to model config file.')
-    args = parser.parse_args()
-
-    evaluate(args.config)
+    with open(checkpoint_dir + '/embeddings.pkl', 'wb') as f:
+        pickle.dump(embeddings, f, protocol=pickle.HIGHEST_PROTOCOL)

@@ -116,13 +116,12 @@ def compute_min_dcf(fnrs, fprs, p_target=0.01, c_miss=1, c_fa=1):
 
     return min_dcf
 
-def speaker_verification_evaluate(model, config, round_val=5):
-    embeddings = extract_embeddings(model, config.dataset.test, config.dataset)
-    scores, labels = score_trials(config.dataset.trials, embeddings)
+def evaluate(embeddings, trials):
+    scores, labels = score_trials(trials, embeddings)
 
-    eer = round(compute_eer(scores, labels), round_val)
+    eer = compute_eer(scores, labels)
+
     fnrs, fprs = compute_error_rates(scores, labels)
-    min_dcf_001 = round(compute_min_dcf(fnrs, fprs, p_target=0.01), round_val)
-    min_dcf_005 = round(compute_min_dcf(fnrs, fprs, p_target=0.05), round_val)
+    min_dcf_001 = compute_min_dcf(fnrs, fprs, p_target=0.01)
 
-    return eer, min_dcf_001, min_dcf_005
+    return eer, min_dcf_001, fnrs, fprs

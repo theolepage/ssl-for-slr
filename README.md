@@ -57,17 +57,7 @@ Then, you can evaluate model on speaker verification (EER, minDCF) with `python 
 
 ## To-Do
 
-- [ ] Experiment with different architectures (VICReg)
-    - [ ] loss = nce + 0.1 * vic
-    - [ ] loss = vic
-    - [ ] Ablation study on VICReg hyper-params
-- [ ] Train other models (MoCo/XVectorEncoder, CPC/CPCEncoder, LIM/SincEncoder, Wav2Spk)
-- [ ] Pytorch implementation of best model
-- [ ] Provide script to download and prepare data
-
----
-
+- [ ] Make sure other models work (MoCo/XVectorEncoder, CPC/CPCEncoder, LIM/SincEncoder, Wav2Spk)
 - [ ] CPC/LIM: @tf.function warning when doing tensor[1, :]
 - [ ] Fix warning when loading: some weights are not used
 - [ ] Allow restore optimizer
-- [ ] Pytorch implementation

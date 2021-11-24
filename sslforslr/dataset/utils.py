@@ -4,10 +4,6 @@ import torch.nn.functional as F
 import torchaudio
 import soundfile as sf
 
-import warnings
-warnings.filterwarnings("ignore", category=UserWarning)
-from SpecAugment.spec_augment_pytorch import spec_augment
-
 def load_wav(path, frame_length, num_frames=1, min_length=None):
     audio, sr = sf.read(path)
 
@@ -51,7 +47,7 @@ def extract_mfcc(audio, enable_spec_augment=False):
         n_mels=40)(audio) # mfcc: (N, C, T)
     
     if enable_spec_augment:
-        mfcc = spec_augment(mfcc)
+        raise Exception('SpecAugment not supported')
 
     mfcc = mfcc.numpy().transpose(0, 2, 1) # (N, T, C)
     
