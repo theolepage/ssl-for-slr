@@ -23,7 +23,7 @@ from sslforslr.models.encoders import SincEncoder, SincEncoderConfig
 from sslforslr.models.encoders import Wav2SpkEncoder, Wav2SpkEncoderConfig
 from sslforslr.models.encoders import XVectorEncoder, XVectorEncoderConfig
 from sslforslr.models.encoders import ThinResNet34Encoder, ThinResNet34EncoderConfig
-from sslforslr.dataset.KaldiDatasetLoader import KaldiDatasetLoader
+from sslforslr.dataset.AudioDatasetLoader import AudioDatasetLoader
 
 REGISTERED_MODELS = [
     CPCModelConfig,
@@ -81,7 +81,7 @@ def load_config(path):
     return config, checkpoint_dir
 
 def load_dataset(config):
-    dataset = KaldiDatasetLoader(config.dataset)
+    dataset = AudioDatasetLoader(config.dataset)
     gens = dataset.load(config.training.batch_size)
     return gens, dataset.get_input_shape()
 

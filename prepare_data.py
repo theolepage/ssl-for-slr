@@ -44,6 +44,11 @@ AUG_EXTRACT = [
     'musan.tar.gz'
 ]
 
+TRIALS_URL      = 'https://www.robots.ox.ac.uk/~vgg/data/voxceleb/meta/veri_test.txt'
+TRIALS_FILENAME = 'trials'
+VOX1_TRAIN_LIST = 'voxceleb1_train_list'
+VOX2_TRAIN_LIST = 'voxceleb2_train_list'
+
 
 def get_md5(path):
     hash_md5 = hashlib.md5()
@@ -153,6 +158,57 @@ def split_2_ssd(output_path):
         shutil.copytree(src, dst)
 
 
+def create_vox1_train_list_file(output_path):
+    test_speakers = set()
+    with open(os.path.join(output_path, TRIALS_FILENAME)) as trials:
+        for line in trials.readlines():
+            parts = line.rstrip().split()
+            spkr_id_a = parts[1].split('/')[0]
+            spkr_id_b = parts[2].split('/')[0]
+            test_speakers.add(spkr_id_a)
+            test_speakers.add(spkr_id_b)
+
+    files = glob.glob('%s/voxceleb1/*/*/*.wav' % output_path)
+    files.sort()
+    out_file = open('%s/%s' % (output_path, VOX1_TRAIN_LIST), 'w')
+    for file in files:
+        spkr_id = file.split('/')[-3]
+        file = os.path.abspath(file)
+        if spkr_id not in test_speakers:
+            out_file.write(spkr_id + ' ' + file + '\n')
+    out_file.close()
+
+
+def create_vox2_train_list_file(output_path):
+    files = glob.glob('%s/voxceleb2/*/*/*.wav' % output_path)
+    files.sort()
+    out_file = open('%s/%s' % (output_path, VOX2_TRAIN_LIST), 'w')
+    for file in files:
+        spkr_id = file.split('/')[-3]
+        file = os.path.abspath(file)
+        out_file.write(spkr_id + ' ' + file + '\n')
+    out_file.close()
+
+
+def download_trials_file(output_path):
+    out = os.path.join(output_path, TRIALS_FILENAME)
+    status = subprocess.call('wget %s -O %s' % (TRIALS_URL, out), shell=True)
+    if status != 0:
+        raise Exception('Download of %s failed' % TRIALS_FILENAME)
+
+    # Put absolute paths
+    with open(out) as trials:
+        lines = trials.readlines()
+    new_lines = []
+    for line in lines:
+        target, a, b = line.strip().split()
+        a = os.path.abspath('voxceleb1/' + a)
+        b = os.path.abspath('voxceleb1/' + b)
+        new_lines.append(target + ' ' + a + ' ' + b + '\n')
+    with open(out, 'w') as trials:
+        trials.writelines(new_lines)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('output_path', help='Path to store datasets.')
@@ -170,3 +226,7 @@ if __name__ == "__main__":
     extract(AUG_EXTRACT, args.output_path)
     fix_aug_structure(args.output_path)
     split_musan(args.output_path)
+
+    download_trials_file(args.output_path)
+    create_vox1_train_list_file(args.output_path)
+    create_vox2_train_list_file(args.output_path)

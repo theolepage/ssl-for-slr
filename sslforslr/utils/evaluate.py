@@ -18,29 +18,34 @@ def extract_embeddings_from_batch(curr_batch_data, model):
 
 def extract_embeddings(
     model,
-    wav_list_path,
+    trials_path,
     dataset_config,
     batch_size=128,
     num_frames=6
 ):
+    # Get a list of unique utterances
+    utterances = set()
+    for line in open(trials_path):
+        target, a, b = line.rstrip().split(' ')
+        utterances.add(a)
+        utterances.add(b)
+
+    # Determine embeddings for each unique utterance
     embeddings = {}
     curr_batch_ids = []
     curr_batch_data = []
-
-    for line in open(wav_list_path):
+    for utterance in open(utterances):
         if len(curr_batch_ids) == batch_size:
             feats = extract_embeddings_from_batch(curr_batch_data, model)
             for i in range(len(curr_batch_ids)):
                 uttid, data = curr_batch_ids[i], feats[i]
                 embeddings[uttid] = data
-
             curr_batch_ids, curr_batch_data = [], []
 
         # Store current utterance id and data
-        uttid, file = line.rstrip().split()
-        data = load_wav(file, dataset_config.frame_length, num_frames=num_frames)
+        data = load_wav(utterance, dataset_config.frame_length, num_frames=num_frames)
         if dataset_config.extract_mfcc: data = extract_mfcc(data)
-        curr_batch_ids.append(uttid)
+        curr_batch_ids.append(utterance)
         curr_batch_data.append(data)
 
     # Register remaining samples (if nb samples % 64 != 0)
@@ -55,10 +60,10 @@ def extract_embeddings(
 def score_trials(trials_path, embeddings):
     scores, labels = [], []
     for line in open(trials_path):
-        a, b, target = line.rstrip().split(' ')
+        target, a, b = line.rstrip().split(' ')
 
         score = 1 - cosine(embeddings[a], embeddings[b])
-        label = 1 if (target == 'target') else 0
+        label = int(target)
 
         scores.append(score)
         labels.append(label)

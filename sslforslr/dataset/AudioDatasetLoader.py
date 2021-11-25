@@ -28,7 +28,8 @@ def sample_frames(audio, frame_length):
 
     return frame1, frame2
 
-class KaldiDatasetGenerator(Sequence):
+class AudioDatasetGenerator(Sequence):
+
     def __init__(
         self,
         batch_size,
@@ -111,7 +112,8 @@ class KaldiDatasetGenerator(Sequence):
         # Randomize samples manually after each epoch
         np.random.shuffle(self.indices)
 
-class KaldiDatasetLoader:
+class AudioDatasetLoader:
+
     def __init__(self, config):
         self.config = config
 
@@ -123,7 +125,7 @@ class KaldiDatasetLoader:
         # Create a list of audio paths
         self.files = []
         for line in open(self.config.train):
-            _, file = line.rstrip().split()
+            speaker_id, file = line.rstrip().split()
             self.files.append(file)
 
     def get_input_shape(self):
@@ -143,7 +145,7 @@ class KaldiDatasetLoader:
                 random_state=0
             )
 
-        train_gen = KaldiDatasetGenerator(
+        train_gen = AudioDatasetGenerator(
             batch_size,
             self.config.frame_length,
             self.config.frame_split,
@@ -156,7 +158,7 @@ class KaldiDatasetLoader:
 
         val_gen = None
         if self.config.val_ratio:
-            val_gen = KaldiDatasetGenerator(
+            val_gen = AudioDatasetGenerator(
                 batch_size,
                 self.config.frame_length,
                 self.config.frame_split,
