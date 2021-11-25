@@ -24,7 +24,7 @@ Collection of **self-supervised** models for **speaker and language recognition*
 
 [VoxCeleb1](https://www.robots.ox.ac.uk/~vgg/data/voxceleb/vox1.html) and [VoxCeleb2](https://www.robots.ox.ac.uk/~vgg/data/voxceleb/vox2.html) are used for our experiments and we rely on [MUSAN](http://www.openslr.org/17/) and [Room Impulse Response and Noise Database](https://www.openslr.org/28/) for data augmentation.
 
-The script `prepare_data.py` is responsible for downloading and preparing all datasets, as well as creating trials and train lists files, following the structure detailed below.
+To download, extract and prepare all datasets run `python prepare_data.py data/`.  The `data/` directory will have the structure detailed below.
 
 ```
 data
@@ -37,19 +37,23 @@ data
 └── voxceleb2_train_list
 ```
 
-- `voxceleb1_train_list` and `voxceleb2_train_list` files must follow the format specified below.
+Trials and train lists files are also automatically created with the following formats.
+
+- `trials`
+    ```
+    1 /path/to/voxceleb1/id10270/x6uYqmx31kE/00001.wav /path/to/voxceleb1/id10270/8jEAjG6SegY/00008.wav
+    ...
+    0 /path/to/voxceleb1/id10309/0cYFdtyWVds/00005.wav /path/to/voxceleb1/id10296/Y-qKARMSO7k/00001.wav
+    ```
+
+- `voxceleb1_train_list` and `voxceleb2_train_list`
     ```
     id00012 /path/to/voxceleb2/id00012/21Uxsk56VDQ/00001.wav
     ...
     id09272 /path/to/voxceleb2/id09272/u7VNkYraCw0/00027.wav
     ```
 
-- `trials` file must follow the format specified below.
-    ```
-    1 id10270/x6uYqmx31kE/00001.wav id10270/8jEAjG6SegY/00008.wav
-    ...
-    0 id10309/0cYFdtyWVds/00005.wav id10296/Y-qKARMSO7k/00001.wav
-    ```
+*Please refer to this script if you want further details about data preparation.*
 
 ## Usage
 
