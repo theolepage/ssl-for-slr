@@ -173,7 +173,8 @@ def create_vox1_train_list_file(output_path):
     out_file = open('%s/%s' % (output_path, VOX1_TRAIN_LIST), 'w')
     for file in files:
         spkr_id = file.split('/')[-3]
-        file = os.path.abspath(file)
+        file = '/'.join(file.split('/')[-3:])
+        file = os.path.join('voxceleb1', file)
         if spkr_id not in test_speakers:
             out_file.write(spkr_id + ' ' + file + '\n')
     out_file.close()
@@ -185,7 +186,8 @@ def create_vox2_train_list_file(output_path):
     out_file = open('%s/%s' % (output_path, VOX2_TRAIN_LIST), 'w')
     for file in files:
         spkr_id = file.split('/')[-3]
-        file = os.path.abspath(file)
+        file = '/'.join(file.split('/')[-3:])
+        file = os.path.join('voxceleb2', file)
         out_file.write(spkr_id + ' ' + file + '\n')
     out_file.close()
 
@@ -195,18 +197,6 @@ def download_trials_file(output_path):
     status = subprocess.call('wget %s -O %s' % (TRIALS_URL, out), shell=True)
     if status != 0:
         raise Exception('Download of %s failed' % TRIALS_FILENAME)
-
-    # Put absolute paths
-    with open(out) as trials:
-        lines = trials.readlines()
-    new_lines = []
-    for line in lines:
-        target, a, b = line.strip().split()
-        a = os.path.abspath('voxceleb1/' + a)
-        b = os.path.abspath('voxceleb1/' + b)
-        new_lines.append(target + ' ' + a + ' ' + b + '\n')
-    with open(out, 'w') as trials:
-        trials.writelines(new_lines)
 
 
 if __name__ == "__main__":

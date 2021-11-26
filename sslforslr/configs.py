@@ -28,6 +28,7 @@ class DatasetConfig:
     val_ratio: float = 0.1
     train: str = './data/voxceleb2_train_list'
     trials: str = './data/trials'
+    base_path: str = '/diskssd1/ing2/datasets/'
 
 @dataclass
 class ModelConfig:

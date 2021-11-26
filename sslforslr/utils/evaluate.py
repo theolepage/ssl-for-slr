@@ -1,3 +1,4 @@
+import os
 from operator import itemgetter
 import numpy as np
 import soundfile as sf
@@ -42,7 +43,8 @@ def extract_embeddings(
             curr_batch_ids, curr_batch_data = [], []
 
         # Store current utterance id and data
-        data = load_wav(utterance, dataset_config.frame_length, num_frames=num_frames)
+        audio_path = os.path.join(dataset_config.base_path, 'voxceleb1', utterance)
+        data = load_wav(audio_path, dataset_config.frame_length, num_frames=num_frames)
         if dataset_config.extract_mfcc: data = extract_mfcc(data)
         curr_batch_ids.append(utterance)
         curr_batch_data.append(data)

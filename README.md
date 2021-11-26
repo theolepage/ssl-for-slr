@@ -41,16 +41,16 @@ Trials and train lists files are also automatically created with the following f
 
 - `trials`
     ```
-    1 /path/to/voxceleb1/id10270/x6uYqmx31kE/00001.wav /path/to/voxceleb1/id10270/8jEAjG6SegY/00008.wav
+    1 id10270/x6uYqmx31kE/00001.wav id10270/8jEAjG6SegY/00008.wav
     ...
-    0 /path/to/voxceleb1/id10309/0cYFdtyWVds/00005.wav /path/to/voxceleb1/id10296/Y-qKARMSO7k/00001.wav
+    0 id10309/0cYFdtyWVds/00005.wav id10296/Y-qKARMSO7k/00001.wav
     ```
 
 - `voxceleb1_train_list` and `voxceleb2_train_list`
     ```
-    id00012 /path/to/voxceleb2/id00012/21Uxsk56VDQ/00001.wav
+    id00012 voxceleb2/id00012/21Uxsk56VDQ/00001.wav
     ...
-    id09272 /path/to/voxceleb2/id09272/u7VNkYraCw0/00027.wav
+    id09272 voxceleb2/id09272/u7VNkYraCw0/00027.wav
     ```
 
 *Please refer to `prepare_data.py` script if you want further details about data preparation.*

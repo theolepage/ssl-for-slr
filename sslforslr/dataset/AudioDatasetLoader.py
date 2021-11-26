@@ -1,3 +1,4 @@
+import os
 import math
 import numpy as np
 from tensorflow.keras.utils import Sequence
@@ -126,6 +127,7 @@ class AudioDatasetLoader:
         self.files = []
         for line in open(self.config.train):
             speaker_id, file = line.rstrip().split()
+            file = os.path.join(config.base_path, file)
             self.files.append(file)
 
     def get_input_shape(self):
