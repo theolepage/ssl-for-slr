@@ -5,7 +5,7 @@ import random
 from scipy.signal import convolve
 import soundfile as sf
 
-from sslforslr.dataset.utils import load_wav
+from sslforslr.dataset.utils import load_audio, read_audio
 
 class AudioAugmentation:
 
@@ -26,7 +26,7 @@ class AudioAugmentation:
     def reverberate(self, audio):
         rir_file = random.choice(self.rir_files)
 
-        rir, fs = sf.read(rir_file)
+        rir, fs = read_audio(rir_file)
         rir = rir.reshape((1, -1)).astype(np.float32)
         rir = rir / np.sqrt(np.sum(rir ** 2))
         
@@ -42,7 +42,7 @@ class AudioAugmentation:
 
     def add_noise(self, audio, category):
         noise_file = random.choice(self.musan_files[category])
-        noise = load_wav(noise_file, audio.shape[1])
+        noise = load_audio(noise_file, audio.shape[1])
         
         # Determine noise scale factor according to desired SNR
         clean_db = 10 * np.log10(np.mean(audio ** 2) + 1e-4) 

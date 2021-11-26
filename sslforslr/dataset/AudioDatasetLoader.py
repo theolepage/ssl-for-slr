@@ -5,7 +5,7 @@ from tensorflow.keras.utils import Sequence
 from sklearn.model_selection import train_test_split
 
 from sslforslr.dataset.AudioAugmentation import AudioAugmentation
-from sslforslr.dataset.utils import load_wav, extract_mfcc
+from sslforslr.dataset.utils import load_audio, extract_mfcc
 
 def sample_frames(audio, frame_length):
     audio_length = audio.shape[1]
@@ -90,7 +90,7 @@ class AudioDatasetGenerator(Sequence):
         X1, X2, y = [], [], []
         for index in indices:
             if self.frame_split:
-                data = load_wav(
+                data = load_audio(
                     self.files[index],
                     frame_length=None,
                     min_length=2*self.frame_length
@@ -108,7 +108,7 @@ class AudioDatasetGenerator(Sequence):
                     X2.append(self.preprocess_data(frame2))
                 y.append(0)
             else:
-                data = load_wav(self.files[index], self.frame_length) # (1, T)
+                data = load_audio(self.files[index], self.frame_length) # (1, T)
                 data = self.preprocess_data(data)
                 X1.append(data)
                 y.append(0)

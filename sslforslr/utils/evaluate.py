@@ -5,7 +5,7 @@ import soundfile as sf
 from scipy.spatial.distance import cosine
 from sklearn.metrics import roc_curve
 
-from sslforslr.dataset.utils import load_wav, extract_mfcc
+from sslforslr.dataset.utils import load_audio, extract_mfcc
 
 def extract_embeddings_from_batch(curr_batch_data, model):
     batch = np.array(curr_batch_data)
@@ -44,7 +44,7 @@ def extract_embeddings(
 
         # Store current utterance id and data
         audio_path = os.path.join(dataset_config.base_path, 'voxceleb1', utterance)
-        data = load_wav(audio_path, dataset_config.frame_length, num_frames=num_frames)
+        data = load_audio(audio_path, dataset_config.frame_length, num_frames=num_frames)
         if dataset_config.extract_mfcc: data = extract_mfcc(data)
         curr_batch_ids.append(utterance)
         curr_batch_data.append(data)

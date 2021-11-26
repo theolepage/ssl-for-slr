@@ -3,9 +3,32 @@ import torch
 import torch.nn.functional as F
 import torchaudio
 import soundfile as sf
+from collections import OrderedDict
 
-def load_wav(path, frame_length, num_frames=1, min_length=None):
-    audio, sr = sf.read(path)
+AUDIO_FILE_CACHE_ENABLE = False
+AUDIO_FILE_CACHE_LIMIT = -1
+
+class AudioFileCache:
+    data = OrderedDict()
+
+def read_audio(path):
+    if not AUDIO_FILE_CACHE_ENABLE:
+        return sf.read(path)
+
+    # Retrieve from cache or store file
+    if path in AudioFileCache.data:
+        return AudioFileCache.data[path]
+    
+    AudioFileCache.data[path] = sf.read(path)
+
+    if AUDIO_FILE_CACHE_LIMIT > 0:
+        if len(AudioFileCache.data) >= AUDIO_FILE_CACHE_LIMIT:
+            AudioFileCache.data.popitem(last=False)
+
+    return AudioFileCache.data[path]
+
+def load_audio(path, frame_length, num_frames=1, min_length=None):
+    audio, sr = read_audio(path)
 
     # Pad signal if it is shorter than min_length
     if min_length is None: min_length = frame_length
