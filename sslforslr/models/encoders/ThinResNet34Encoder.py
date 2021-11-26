@@ -102,7 +102,7 @@ class SAP(Layer):
             Conv1D(128, kernel_size=1),
             ReLU(),
             BatchNormalization(),
-            Conv1D(1280, kernel_size=1),
+            Conv1D(self.outmap_size, kernel_size=1),
             Softmax(axis=1)
         ])
 

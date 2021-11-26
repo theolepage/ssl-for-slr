@@ -21,8 +21,10 @@ class SimCLRModel(Model):
         super().__init__()
 
         self.enable_mlp = config.enable_mlp
+        self.enable_mse_clean_aug = config.enable_mse_clean_aug
         self.loss_factor = config.loss_factor
         self.vic_reg_factor = config.vic_reg_factor
+        self.mse_clean_aug_factor = config.mse_clean_aug_factor
         self.reg = regularizers.l2(config.weight_reg)
 
         self.encoder = encoder
@@ -35,24 +37,45 @@ class SimCLRModel(Model):
         self.optimizer = optimizer
 
     def call(self, X):
+        if len(X.shape) == 4 and self.enable_mse_clean_aug:
+            X, _ = self.extract_clean_and_aug(X)
         return tf.math.l2_normalize(self.encoder(X), axis=-1)
+
+    @tf.function
+    def get_embeddings(self, X_1, X_2):
+        Z_1 = self.encoder(X_1, training=True)
+        Z_2 = self.encoder(X_2, training=True)
+        if self.enable_mlp:
+            Z_1 = self.mlp(Z_1, training=True)
+            Z_2 = self.mlp(Z_2, training=True)
+        return Z_1, Z_2
+
+    @tf.function
+    def extract_clean_and_aug(self, X):
+        X_clean, X_aug = tf.split(X, 2, axis=-1)
+        X_clean = tf.squeeze(X_clean, axis=-1)
+        X_aug = tf.squeeze(X_aug, axis=-1)
+        return X_clean, X_aug
 
     def train_step(self, data):
         X_1_aug, X_2_aug, _ = data
         # X shape: (B, H, W, C) = (B, 40, 200, 1)
 
-        with tf.GradientTape() as tape:
-            Z_1_aug = self.encoder(X_1_aug, training=True)
-            Z_2_aug = self.encoder(X_2_aug, training=True)
-            # Z shape: (B, encoded_dim)
+        if self.enable_mse_clean_aug:
+            X_1_clean, X_1_aug = self.extract_clean_and_aug(X_1_aug)
+            X_2_clean, X_2_aug = self.extract_clean_and_aug(X_2_aug)
 
-            if self.enable_mlp:
-                Z_1_aug = self.mlp(Z_1_aug, training=True)
-                Z_2_aug = self.mlp(Z_2_aug, training=True)
+        with tf.GradientTape() as tape:
+            Z_1_aug, Z_2_aug = self.get_embeddings(X_1_aug, X_2_aug)
 
             loss, accuracy = self.nce_loss((Z_1_aug, Z_2_aug), training=True)
             loss = self.loss_factor * loss
             loss += self.vic_reg_factor * self.vic_reg((Z_1_aug, Z_2_aug), training=True)
+
+            if self.enable_mse_clean_aug:
+                Z_1_clean, Z_2_clean = self.get_embeddings(X_1_clean, X_2_clean)
+                loss += self.mse_clean_aug_factor * mse_loss(Z_1_clean, Z_1_aug)
+                loss += self.mse_clean_aug_factor * mse_loss(Z_2_clean, Z_2_aug)
 
         trainable_params = self.encoder.trainable_weights
         trainable_params += self.nce_loss.trainable_weights
@@ -67,16 +90,20 @@ class SimCLRModel(Model):
     def test_step(self, data):
         X_1_aug, X_2_aug, _ = data
         
-        Z_1_aug = self.encoder(X_1_aug, training=False)
-        Z_2_aug = self.encoder(X_2_aug, training=False)
+        if self.enable_mse_clean_aug:
+            X_1_clean, X_1_aug = self.extract_clean_and_aug(X_1_aug)
+            X_2_clean, X_2_aug = self.extract_clean_and_aug(X_2_aug)
 
-        if self.enable_mlp:
-            Z_1_aug = self.mlp(Z_1_aug, training=False)
-            Z_2_aug = self.mlp(Z_2_aug, training=False)
+        Z_1_aug, Z_2_aug = self.get_embeddings(X_1_aug, X_2_aug)
 
         loss, accuracy = self.nce_loss((Z_1_aug, Z_2_aug), training=False)
         loss = self.loss_factor * loss
         loss += self.vic_reg_factor * self.vic_reg((Z_1_aug, Z_2_aug), training=False)
+
+        if self.enable_mse_clean_aug:
+            Z_1_clean, Z_2_clean = self.get_embeddings(X_1_clean, X_2_clean)
+            loss += self.mse_clean_aug_factor * mse_loss(Z_1_clean, Z_1_aug)
+            loss += self.mse_clean_aug_factor * mse_loss(Z_2_clean, Z_2_aug)
 
         return { 'loss': loss, 'accuracy': accuracy }
 
@@ -156,6 +183,6 @@ class AngularPrototypicalLoss(Layer):
 
 
 @tf.function
-def channel_loss(Z_clean, Z_aug):
+def mse_loss(Z_clean, Z_aug):
     mse = tf.keras.metrics.mean_squared_error(Z_clean, Z_aug)
     return tf.math.reduce_mean(mse)

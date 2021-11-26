@@ -39,6 +39,7 @@ class AudioDatasetGenerator(Sequence):
         files,
         indices,
         wav_augment=None,
+        provide_clean_and_aug=False,
         extract_mfcc=False
     ):
         self.batch_size = batch_size
@@ -47,15 +48,16 @@ class AudioDatasetGenerator(Sequence):
         self.files = files
         self.indices = indices
         self.wav_augment = wav_augment
+        self.provide_clean_and_aug = provide_clean_and_aug
         self.extract_mfcc = extract_mfcc
 
     def __len__(self):
         return math.ceil(len(self.indices) / self.batch_size)
 
-    def preprocess_data(self, data):
+    def preprocess_data(self, data, augment=True):
         assert data.ndim == 2 and data.shape[0] == 1 # (1, T)
 
-        if self.wav_augment: data = self.wav_augment(data)        
+        if augment and self.wav_augment: data = self.wav_augment(data)        
         
         if self.extract_mfcc:
             data = extract_mfcc(data) # (1, T) -> (1, T, C)
@@ -94,8 +96,16 @@ class AudioDatasetGenerator(Sequence):
                     min_length=2*self.frame_length
                 ) # (1, T)
                 frame1, frame2 = sample_frames(data, self.frame_length)
-                X1.append(self.preprocess_data(frame1))
-                X2.append(self.preprocess_data(frame2))
+                if self.provide_clean_and_aug:
+                    frame1_clean = self.preprocess_data(frame1, augment=False)
+                    frame1_aug = self.preprocess_data(frame1)
+                    X1.append(np.stack((frame1_clean, frame1_aug), axis=-1))
+                    frame2_clean = self.preprocess_data(frame2, augment=False)
+                    frame2_aug = self.preprocess_data(frame2)
+                    X2.append(np.stack((frame2_clean, frame2_aug), axis=-1))
+                else:
+                    X1.append(self.preprocess_data(frame1))
+                    X2.append(self.preprocess_data(frame2))
                 y.append(0)
             else:
                 data = load_wav(self.files[index], self.frame_length) # (1, T)
@@ -155,6 +165,7 @@ class AudioDatasetLoader:
             self.files,
             train_indices,
             self.wav_augment,
+            self.config.provide_clean_and_aug,
             self.config.extract_mfcc
         )
 
@@ -167,6 +178,7 @@ class AudioDatasetLoader:
                 self.files,
                 val_indices,
                 self.wav_augment,
+                self.config.provide_clean_and_aug,
                 self.config.extract_mfcc
             )
 

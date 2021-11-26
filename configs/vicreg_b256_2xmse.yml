@@ -4,6 +4,7 @@ encoder:
 model:
   type: 'simclr'
   enable_mlp: true
+  enable_mse_clean_aug: true
   loss_factor: 0.0
   vic_reg_factor: 25.0
 training:
@@ -16,6 +17,7 @@ dataset:
   extract_mfcc: true
   train: './data/voxceleb1_train_list'
   val_ratio: 0.0
+  provide_clean_and_aug: true
   spec_augment: false
   wav_augment:
     enable: true

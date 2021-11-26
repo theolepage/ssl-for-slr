@@ -22,6 +22,7 @@ class DatasetConfig:
     frame_length: int = 16000
     frame_split: bool = False
     max_samples: int = None
+    provide_clean_and_aug: bool = False
     extract_mfcc: bool = False
     spec_augment: bool = False
     val_ratio: float = 0.1
