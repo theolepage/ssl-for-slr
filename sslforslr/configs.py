@@ -9,16 +9,15 @@ class TrainingConfig:
     optimizer: str = 'Adam'
 
 @dataclass
-class DatasetAugmentConfig:
-    musan_path: str
-    rir_path: str
+class WavAugmentConfig:
+    enable: bool = False
     musan_noise_snr: Tuple[int, int] = (0, 15)
     musan_speech_snr: Tuple[int, int] = (13, 20)
     musan_music_snr: Tuple[int, int] = (5, 15)
 
 @dataclass
 class DatasetConfig:
-    augment: DatasetAugmentConfig = None
+    wav_augment: WavAugmentConfig = None
     sample_frequency: int = 16000
     frame_length: int = 16000
     frame_split: bool = False

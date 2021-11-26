@@ -9,13 +9,15 @@ from sslforslr.dataset.utils import load_wav
 
 class AudioAugmentation:
 
-    def __init__(self, config):
+    def __init__(self, config, base_path):
         self.config = config
 
-        self.rir_files = glob.glob(os.path.join(config.rir_path, '*/*/*.wav'))
+        self.rir_path = os.path.join(base_path, 'simulated_rirs', '*/*/*.wav')
+        self.rir_files = glob.glob(self.rir_path)
 
         self.musan_files = {}
-        for file in glob.glob(os.path.join(config.musan_path, '*/*/*.wav')):
+        self.musan_path = os.path.join(base_path, 'musan_split', '*/*/*.wav')
+        for file in glob.glob(self.musan_path):
             category = file.split('/')[-3]
             if not category in self.musan_files:
                 self.musan_files[category] = []

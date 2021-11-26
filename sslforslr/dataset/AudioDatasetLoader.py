@@ -38,8 +38,7 @@ class AudioDatasetGenerator(Sequence):
         frame_split,
         files,
         indices,
-        augment=None,
-        spec_augment=False,
+        wav_augment=None,
         extract_mfcc=False
     ):
         self.batch_size = batch_size
@@ -47,8 +46,7 @@ class AudioDatasetGenerator(Sequence):
         self.frame_split = frame_split
         self.files = files
         self.indices = indices
-        self.augment = augment
-        self.spec_augment = spec_augment
+        self.wav_augment = wav_augment
         self.extract_mfcc = extract_mfcc
 
     def __len__(self):
@@ -57,10 +55,10 @@ class AudioDatasetGenerator(Sequence):
     def preprocess_data(self, data):
         assert data.ndim == 2 and data.shape[0] == 1 # (1, T)
 
-        if self.augment: data = self.augment(data)        
+        if self.wav_augment: data = self.wav_augment(data)        
         
         if self.extract_mfcc:
-            data = extract_mfcc(data, self.spec_augment) # (1, T) -> (1, T, C)
+            data = extract_mfcc(data) # (1, T) -> (1, T, C)
             data = data.squeeze(axis=0) # (1, T, C) -> (T, C)
         else:
             data = data.T # (1, T) -> (T, 1)
@@ -119,9 +117,12 @@ class AudioDatasetLoader:
         self.config = config
 
         # Create augmentation module
-        self.augment = None
-        if self.config.augment:
-            self.augment = AudioAugmentation(self.config.augment)
+        self.wav_augment = None
+        if self.config.wav_augment.enable:
+            self.wav_augment = AudioAugmentation(
+                self.config.wav_augment,
+                self.config.base_path
+            )
 
         # Create a list of audio paths
         self.files = []
@@ -153,8 +154,7 @@ class AudioDatasetLoader:
             self.config.frame_split,
             self.files,
             train_indices,
-            self.augment,
-            self.config.spec_augment,
+            self.wav_augment,
             self.config.extract_mfcc
         )
 
@@ -166,8 +166,7 @@ class AudioDatasetLoader:
                 self.config.frame_split,
                 self.files,
                 val_indices,
-                self.augment,
-                self.config.spec_augment,
+                self.wav_augment,
                 self.config.extract_mfcc
             )
 

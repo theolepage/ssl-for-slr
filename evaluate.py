@@ -27,9 +27,11 @@ if __name__ == "__main__":
         raise Exception('%s has not been trained.' % config['name'])
 
     # Exract and save embeddings
+    embeddings_save_path = checkpoint_dir + '/embeddings.pkl'
     embeddings = extract_embeddings(model, config.dataset)
-    with open(checkpoint_dir + '/embeddings.pkl', 'wb') as f:
+    with open(embeddings_save_path, 'wb') as f:
         pickle.dump(embeddings, f, protocol=pickle.HIGHEST_PROTOCOL)
+    print('Speaker embeddings saved to {}'.format(embeddings_save_path))
 
     # Show metrics on speaker verification
     eer, min_dcf_001, _, _ = evaluate(embeddings, config.dataset.trials)

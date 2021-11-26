@@ -34,7 +34,7 @@ def pre_emphasis(audio, coef=0.97):
     audio = F.pad(audio, (1, 0), 'reflect')
     return F.conv1d(audio, w).squeeze(1)
 
-def extract_mfcc(audio, enable_spec_augment=False):
+def extract_mfcc(audio):
     audio = torch.from_numpy(audio) # (N, T)
 
     audio = pre_emphasis(audio)
@@ -45,9 +45,6 @@ def extract_mfcc(audio, enable_spec_augment=False):
         hop_length=160,
         window_fn=torch.hamming_window,
         n_mels=40)(audio) # mfcc: (N, C, T)
-    
-    if enable_spec_augment:
-        raise Exception('SpecAugment not supported')
 
     mfcc = mfcc.numpy().transpose(0, 2, 1) # (N, T, C)
     

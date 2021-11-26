@@ -16,6 +16,5 @@ dataset:
   train: './data/voxceleb1_train_list'
   val_ratio: 0.0
   spec_augment: false
-  augment:
-    rir_path: '/diskssd1/ing2/datasets/simulated_rirs'
-    musan_path: '/diskssd1/ing2/datasets/musan_split'
+  wav_augment:
+    enable: true
