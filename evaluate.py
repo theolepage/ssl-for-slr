@@ -27,7 +27,7 @@ if __name__ == "__main__":
         raise Exception('%s has not been trained.' % config['name'])
 
     # Exract and save embeddings
-    embeddings = extract_embeddings(model, config.dataset.test, config.dataset)
+    embeddings = extract_embeddings(model, config.dataset)
     with open(checkpoint_dir + '/embeddings.pkl', 'wb') as f:
         pickle.dump(embeddings, f, protocol=pickle.HIGHEST_PROTOCOL)
 

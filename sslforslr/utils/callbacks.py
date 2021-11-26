@@ -9,16 +9,9 @@ class SVMetricsCallback(Callback):
         self.config = config
 
     def on_epoch_end(self, epoch, logs):
-        embeddings = extract_embeddings(
-            model,
-            self.config.dataset.test,
-            self.config.dataset
-        )
+        embeddings = extract_embeddings(model, self.config.dataset)
 
-        eer, min_dcf_001, _, _ = evaluate(
-            embeddings,
-            self.config.dataset.trials
-        )
+        eer, min_dcf_001, _, _ = evaluate(embeddings, self.config.dataset.trials)
 
         print('EER (%):', eer)
         print('minDCF (p=0.01):', min_dcf_001)

@@ -18,14 +18,13 @@ def extract_embeddings_from_batch(curr_batch_data, model):
 
 def extract_embeddings(
     model,
-    trials_path,
     dataset_config,
     batch_size=128,
     num_frames=6
 ):
     # Get a list of unique utterances
     utterances = set()
-    for line in open(trials_path):
+    for line in open(dataset_config.trials):
         target, a, b = line.rstrip().split(' ')
         utterances.add(a)
         utterances.add(b)
