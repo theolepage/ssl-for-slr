@@ -26,9 +26,8 @@ class DatasetConfig:
     extract_mfcc: bool = False
     spec_augment: bool = False
     val_ratio: float = 0.1
-    train: str = './data/voxceleb2_train/wav.scp'
-    test: str = './data/voxceleb1_test/wav.scp'
-    trials: str = './data/voxceleb1_test/trials'
+    train: str = './data/voxceleb2_train_list'
+    trials: str = './data/trials'
 
 @dataclass
 class ModelConfig:

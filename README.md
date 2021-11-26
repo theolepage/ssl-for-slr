@@ -53,7 +53,7 @@ Trials and train lists files are also automatically created with the following f
     id09272 /path/to/voxceleb2/id09272/u7VNkYraCw0/00027.wav
     ```
 
-*Please refer to this script if you want further details about data preparation.*
+*Please refer to `prepare_data.py` script if you want further details about data preparation.*
 
 ## Usage
 
@@ -62,12 +62,6 @@ Start self-supervised training with `python train.py configs/cpc-base.yml`.
 Then, you can evaluate model on speaker verification (EER, minDCF) with `python evaluate.py configs/cpc-base.yml`.
 
 ## To-Do
-
-- [ ] Config files for last trainings (batch size, mse aug clean, scale)
-- [ ] Load files in RAM
-- [ ] Test that simple training work
-
----
 
 - [ ] Label efficient evaluation
 - [ ] Pytorch implementation

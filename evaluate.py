@@ -6,7 +6,7 @@ import pickle
 import tensorflow as tf
 
 from sslforslr.utils.helpers import load_config, load_dataset, load_model
-from sslforslr.utils.evaluate import extract_embeddings
+from sslforslr.utils.evaluate import extract_embeddings, evaluate
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -26,7 +26,12 @@ if __name__ == "__main__":
     else:
         raise Exception('%s has not been trained.' % config['name'])
 
+    # Exract and save embeddings
     embeddings = extract_embeddings(model, config.dataset.test, config.dataset)
-
     with open(checkpoint_dir + '/embeddings.pkl', 'wb') as f:
         pickle.dump(embeddings, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    # Show metrics on speaker verification
+    eer, min_dcf_001, _, _ = evaluate(embeddings, config.dataset.trials)
+    print('EER (%):', eer)
+    print('minDCF (p=0.01):', min_dcf_001)
