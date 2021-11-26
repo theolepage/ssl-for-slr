@@ -13,7 +13,7 @@ dataset:
   frame_length: 32000
   frame_split: true
   extract_mfcc: true
-  train: './data/voxceleb1_train/wav.scp'
+  train: './data/voxceleb1_train_list'
   val_ratio: 0.0
   spec_augment: false
   augment:
