@@ -18,6 +18,7 @@ from dataclasses import dataclass
 @dataclass
 class ThinResNet34EncoderConfig():
     encoded_dim: int = 512
+    scale: int = 1
     weight_reg: float = 1e-4
 
 ThinResNet34EncoderConfig.__NAME__ = 'thinresnet34'
@@ -137,18 +138,20 @@ class ThinResNet34Encoder(Model):
 
         self.instance_norm = InstanceNormalization(axis=1)
 
-        self.conv1 = Conv2D(32, 3, 1, padding='same',
+        self.conv1 = Conv2D(32 * config.scale, 3, 1, padding='same',
                             kernel_regularizer=self.reg,
                             bias_regularizer=self.reg)
         self.bn = BatchNormalization()
         self.relu = ReLU()
 
-        self.block1 = self.__make_block(3, 32, 1)
-        self.block2 = self.__make_block(4, 64, 2)
-        self.block3 = self.__make_block(6, 128, 2)
-        self.block4 = self.__make_block(3, 256, 2)
+        self.block1 = self.__make_block(3, 32 * config.scale, 1)
+        self.block2 = self.__make_block(4, 64 * config.scale, 2)
+        self.block3 = self.__make_block(6, 128 * config.scale, 2)
+        self.block4 = self.__make_block(3, 256 * config.scale, 2)
         
-        outmap_size = int(40 / 8 * 256) # n_mels / 8 * last_filter_size
+        outmap_size = int(40 / 8 * 256 * config.scale)
+        # n_mels / 8 * last_filter_size
+
         self.sap = SAP(outmap_size, self.reg)
 
         self.fc = Dense(self.encoded_dim)
