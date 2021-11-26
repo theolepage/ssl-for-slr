@@ -33,7 +33,7 @@ def extract_embeddings(
     embeddings = {}
     curr_batch_ids = []
     curr_batch_data = []
-    for utterance in open(utterances):
+    for utterance in utterances:
         if len(curr_batch_ids) == batch_size:
             feats = extract_embeddings_from_batch(curr_batch_data, model)
             for i in range(len(curr_batch_ids)):
