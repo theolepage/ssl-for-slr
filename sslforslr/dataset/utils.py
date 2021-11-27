@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torchaudio
 import soundfile as sf
 from collections import OrderedDict
+from io import BytesIO
 
 AUDIO_FILE_CACHE_ENABLE = False
 AUDIO_FILE_CACHE_LIMIT = -1
@@ -15,17 +16,19 @@ def read_audio(path):
     if not AUDIO_FILE_CACHE_ENABLE:
         return sf.read(path)
 
-    # Retrieve from cache or store file
+    # Retrieve file from cache
     if path in AudioFileCache.data:
-        return AudioFileCache.data[path]
-    
-    AudioFileCache.data[path] = sf.read(path)
+        return sf.read(BytesIO(AudioFileCache.data[path]))
+
+    # Store file raw data in cache
+    with open(path, 'rb') as file_data:
+        AudioFileCache.data[path] = file_data.read()
 
     if AUDIO_FILE_CACHE_LIMIT > 0:
         if len(AudioFileCache.data) >= AUDIO_FILE_CACHE_LIMIT:
             AudioFileCache.data.popitem(last=False)
 
-    return AudioFileCache.data[path]
+    return sf.read(BytesIO(AudioFileCache.data[path]))
 
 def load_audio(path, frame_length, num_frames=1, min_length=None):
     audio, sr = read_audio(path)
