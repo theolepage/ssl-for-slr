@@ -37,6 +37,7 @@ class AudioDatasetGenerator(Sequence):
         frame_length,
         frame_split,
         files,
+        labels,
         indices,
         wav_augment=None,
         provide_clean_and_aug=False,
@@ -46,6 +47,7 @@ class AudioDatasetGenerator(Sequence):
         self.frame_length = frame_length
         self.frame_split = frame_split
         self.files = files
+        self.labels = labels
         self.indices = indices
         self.wav_augment = wav_augment
         self.provide_clean_and_aug = provide_clean_and_aug
@@ -106,12 +108,12 @@ class AudioDatasetGenerator(Sequence):
                 else:
                     X1.append(self.preprocess_data(frame1))
                     X2.append(self.preprocess_data(frame2))
-                y.append(0)
+                y.append(self.labels[index])
             else:
                 data = load_audio(self.files[index], self.frame_length) # (1, T)
                 data = self.preprocess_data(data)
                 X1.append(data)
-                y.append(0)
+                y.append(self.labels[index])
 
         if self.frame_split:
             return np.array(X1), np.array(X2), np.array(y)
@@ -134,12 +136,21 @@ class AudioDatasetLoader:
                 self.config.base_path
             )
 
-        # Create a list of audio paths
+        # Create lists of audio paths and labels
         self.files = []
+        self.labels = []
+        self.nb_classes = 0
+        labels_id = {}
         for line in open(self.config.train):
-            speaker_id, file = line.rstrip().split()
-            file = os.path.join(config.base_path, file)
-            self.files.append(file)
+            label, file = line.rstrip().split()
+
+            path = os.path.join(config.base_path, file)
+            self.files.append(path)
+
+            if label not in labels_id:
+                labels_id[label] = self.nb_classes
+                self.nb_classes += 1
+            self.labels.append(labels_id[label])
 
     def get_input_shape(self):
         if self.config.extract_mfcc:
@@ -163,6 +174,7 @@ class AudioDatasetLoader:
             self.config.frame_length,
             self.config.frame_split,
             self.files,
+            self.labels,
             train_indices,
             self.wav_augment,
             self.config.provide_clean_and_aug,
@@ -176,6 +188,7 @@ class AudioDatasetLoader:
                 self.config.frame_length,
                 self.config.frame_split,
                 self.files,
+                self.labels,
                 val_indices,
                 self.wav_augment,
                 self.config.provide_clean_and_aug,
