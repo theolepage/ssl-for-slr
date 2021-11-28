@@ -54,7 +54,7 @@ def create_callbacks(config, checkpoint_dir):
 
 def train(config_path):
     config, checkpoint_dir = load_config(config_path)
-    (train_gen, val_gen), input_shape = load_dataset(config)
+    (train_gen, val_gen), input_shape, _ = load_dataset(config)
     model = load_model(config, input_shape)
 
     pp.install_extras(include=['dataclasses'])

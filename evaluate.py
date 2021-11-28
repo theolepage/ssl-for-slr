@@ -14,7 +14,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     config, checkpoint_dir = load_config(args.config)
-    (train_gen, val_gen), input_shape = load_dataset(config)
+    (train_gen, val_gen), input_shape, _ = load_dataset(config)
     model = load_model(config, input_shape)
 
     # Load pre-trained weights

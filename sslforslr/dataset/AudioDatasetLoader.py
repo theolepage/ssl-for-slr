@@ -125,7 +125,7 @@ class AudioDatasetGenerator(Sequence):
 
 class AudioDatasetLoader:
 
-    def __init__(self, config):
+    def __init__(self, config, labels_ratio=1):
         self.config = config
 
         # Create augmentation module
@@ -135,7 +135,11 @@ class AudioDatasetLoader:
                 self.config.wav_augment,
                 self.config.base_path
             )
+        
+        self.load_data()
+        self.filter_data(labels_ratio)
 
+    def load_data(self):
         # Create lists of audio paths and labels
         self.files = []
         self.labels = []
@@ -144,13 +148,17 @@ class AudioDatasetLoader:
         for line in open(self.config.train):
             label, file = line.rstrip().split()
 
-            path = os.path.join(config.base_path, file)
+            path = os.path.join(self.config.base_path, file)
             self.files.append(path)
 
             if label not in labels_id:
                 labels_id[label] = self.nb_classes
                 self.nb_classes += 1
             self.labels.append(labels_id[label])
+
+    def filter_data(self, labels_ratio):
+        print('FILTER DATA')
+        print(np.bincount(self.labels))
 
     def get_input_shape(self):
         if self.config.extract_mfcc:
