@@ -97,7 +97,7 @@ def train(
     # Determine name of current model
     checkpoint_dir += '_label-efficient-'
     checkpoint_dir += str(labels_ratio) + '-'
-    if not supervised:
+    if supervised:
         checkpoint_dir += 'supervised'
     else:
         checkpoint_dir += 'fine-tuned' if fine_tune else 'frozen'
