@@ -157,8 +157,18 @@ class AudioDatasetLoader:
             self.labels.append(labels_id[label])
 
     def filter_data(self, labels_ratio):
-        print('FILTER DATA')
-        print(np.bincount(self.labels))
+        self.labels = np.array(self.labels) # To be able to use np.where
+        files_ = []
+        labels_ = []
+        nb_utt_per_speaker = np.bincount(self.labels)
+        for speaker_id, nb_utt in enumerate(nb_utt_per_speaker):
+            nb_utt_to_keep = int(labels_ratio * nb_utt)
+            idx = np.where(self.labels == speaker_id)[0][:nb_utt_to_keep]
+            for i in idx:
+                files_.append(self.files[i])
+                labels_.append(self.labels[i])
+        self.files = files_
+        self.labels = labels_
 
     def get_input_shape(self):
         if self.config.extract_mfcc:

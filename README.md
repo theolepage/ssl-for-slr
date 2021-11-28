@@ -63,7 +63,6 @@ Then, you can evaluate model on speaker verification (EER, minDCF) with `python 
 
 ## To-Do
 
-- [ ] Label efficient evaluation
 - [ ] Pytorch implementation
 
 ---

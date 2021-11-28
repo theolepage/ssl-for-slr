@@ -76,6 +76,11 @@ def train(
     supervised=False
 ):
     config, checkpoint_dir = load_config(config_path)
+
+    # Disable features required only by self-supervised training
+    config.dataset.frame_split = False
+    config.dataset.provide_clean_and_aug = False
+
     gens, input_shape, nb_classes = load_dataset(config, labels_ratio)
     (train_gen, val_gen) = gens
 
@@ -89,8 +94,13 @@ def train(
 
     classifier = create_classifier(input_shape, nb_classes, lr, model)
 
-    checkpoint_dir = '_label-efficient-'
-    checkpoint_dir += 'fine-tuned' if fine_tune else 'frozen'
+    # Determine name of current model
+    checkpoint_dir += '_label-efficient-'
+    checkpoint_dir += str(labels_ratio) + '-'
+    if not supervised:
+        checkpoint_dir += 'supervised'
+    else:
+        checkpoint_dir += 'fine-tuned' if fine_tune else 'frozen'
 
     callbacks = create_callbacks(config, checkpoint_dir)
     history = classifier.fit(train_gen,
