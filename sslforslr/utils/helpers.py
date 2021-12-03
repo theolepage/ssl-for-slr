@@ -80,8 +80,8 @@ def load_config(path):
 
     return config, checkpoint_dir
 
-def load_dataset(config, labels_ratio=1):
-    dataset = AudioDatasetLoader(config.dataset, labels_ratio)
+def load_dataset(config):
+    dataset = AudioDatasetLoader(config.dataset)
     gens = dataset.load(config.training.batch_size)
     return gens, dataset.get_input_shape(), dataset.nb_classes
 

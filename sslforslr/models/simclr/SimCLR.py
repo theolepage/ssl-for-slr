@@ -3,6 +3,7 @@ import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras import regularizers
 from tensorflow.keras.layers import Layer, Dense, BatchNormalization, ReLU
+from tensorflow.keras.losses import SparseCategoricalCrossentropy
 
 from sslforslr.modules.VICReg import VICReg
 
@@ -29,7 +30,7 @@ class SimCLRModel(Model):
 
         self.encoder = encoder
         self.mlp = MLP()
-        self.nce_loss = AngularPrototypicalLoss(self.reg)
+        self.infonce_loss = InfoNCELoss()
         self.vic_reg = VICReg()
 
     def compile(self, optimizer, **kwargs):
@@ -39,7 +40,7 @@ class SimCLRModel(Model):
     def call(self, X):
         if len(X.shape) == 4 and self.enable_mse_clean_aug:
             X, _ = self.extract_clean_and_aug(X)
-        return tf.math.l2_normalize(self.encoder(X), axis=-1)
+        return self.encoder(X)
 
     @tf.function
     def get_embeddings(self, X_1, X_2):
@@ -68,9 +69,9 @@ class SimCLRModel(Model):
         with tf.GradientTape() as tape:
             Z_1_aug, Z_2_aug = self.get_embeddings(X_1_aug, X_2_aug)
 
-            loss, accuracy = self.nce_loss((Z_1_aug, Z_2_aug), training=True)
+            loss, accuracy = self.infonce_loss((Z_1_aug, Z_2_aug))
             loss = self.loss_factor * loss
-            loss += self.vic_reg_factor * self.vic_reg((Z_1_aug, Z_2_aug), training=True)
+            loss += self.vic_reg_factor * self.vic_reg((Z_1_aug, Z_2_aug))
 
             if self.enable_mse_clean_aug:
                 Z_1_clean, Z_2_clean = self.get_embeddings(X_1_clean, X_2_clean)
@@ -78,32 +79,11 @@ class SimCLRModel(Model):
                 loss += self.mse_clean_aug_factor * mse_loss(Z_2_clean, Z_2_aug)
 
         trainable_params = self.encoder.trainable_weights
-        trainable_params += self.nce_loss.trainable_weights
         if self.enable_mlp:
             trainable_params += self.mlp.trainable_weights
 
         grads = tape.gradient(loss, trainable_params)
         self.optimizer.apply_gradients(zip(grads, trainable_params))
-
-        return { 'loss': loss, 'accuracy': accuracy }
-
-    def test_step(self, data):
-        X_1_aug, X_2_aug, _ = data
-        
-        if self.enable_mse_clean_aug:
-            X_1_clean, X_1_aug = self.extract_clean_and_aug(X_1_aug)
-            X_2_clean, X_2_aug = self.extract_clean_and_aug(X_2_aug)
-
-        Z_1_aug, Z_2_aug = self.get_embeddings(X_1_aug, X_2_aug)
-
-        loss, accuracy = self.nce_loss((Z_1_aug, Z_2_aug), training=False)
-        loss = self.loss_factor * loss
-        loss += self.vic_reg_factor * self.vic_reg((Z_1_aug, Z_2_aug), training=False)
-
-        if self.enable_mse_clean_aug:
-            Z_1_clean, Z_2_clean = self.get_embeddings(X_1_clean, X_2_clean)
-            loss += self.mse_clean_aug_factor * mse_loss(Z_1_clean, Z_1_aug)
-            loss += self.mse_clean_aug_factor * mse_loss(Z_2_clean, Z_2_aug)
 
         return { 'loss': loss, 'accuracy': accuracy }
 
@@ -136,47 +116,35 @@ class MLP(Model):
         return Z
 
 
-class AngularPrototypicalLoss(Layer):
+class InfoNCELoss(Layer):
 
-    def __init__(self, reg, init_w=10.0, init_b=-5.0):
+    def __init__(self):
         super().__init__()
 
-        # self.w = self.add_weight(
-        #     name='w',
-        #     shape=(1,),
-        #     initializer=tf.keras.initializers.Constant(init_w),
-        #     trainable=True,
-        #     regularizer=reg)
-
-        # self.b = self.add_weight(
-        #     name='b',
-        #     shape=(1,),
-        #     initializer=tf.keras.initializers.Constant(init_b),
-        #     trainable=True,
-        #     regularizer=reg)
-
-    def call(self, data):
-        Z_1_aug, Z_2_aug = data
-        # Shape: (batch_size, encoded_dim)
+        self.ce = SparseCategoricalCrossentropy(
+                reduction=tf.keras.losses.Reduction.SUM,
+                from_logits=True
+        )
     
-        batch_size = tf.shape(Z_1_aug)[0]
-
-        # Normalize embeddings for cosine distance
-        Z_1_aug = tf.math.l2_normalize(Z_1_aug, axis=-1)
-        Z_2_aug = tf.math.l2_normalize(Z_2_aug, axis=-1)
-
-        # Determine loss
-        dot = tf.linalg.matmul(Z_1_aug, Z_2_aug, transpose_b=True)
-        dot = dot / 0.07
+    def call(self, data):
+        Z_1, Z_2 = data
+        # Shape: (batch_size, encoded_dim)
         
-        log_softmax_dot = tf.nn.log_softmax(dot, axis=1)
-        diag = tf.linalg.tensor_diag_part(log_softmax_dot)
-        loss = -tf.math.reduce_mean(diag)
+        batch_size = tf.shape(Z_1)[0]
+        labels = tf.range(batch_size)
+
+        Z_1 = tf.math.l2_normalize(Z_1, axis=-1)
+        Z_2 = tf.math.l2_normalize(Z_2, axis=-1)
+        
+        # Determine loss
+        dot = tf.linalg.matmul(Z_1, Z_2, transpose_b=True)
+        dot = dot / 0.07
+        loss = self.ce(labels, dot) / tf.cast(batch_size, tf.float32)
 
         # Determine accuracy
         softmax_dot = tf.nn.softmax(dot, axis=1)
         pred_indices = tf.math.argmax(softmax_dot, axis=1, output_type=tf.int32)
-        preds_acc = tf.math.equal(pred_indices, tf.range(0, batch_size))
+        preds_acc = tf.math.equal(pred_indices, labels)
         accuracy = tf.math.count_nonzero(preds_acc, dtype=tf.int32) / batch_size
 
         return loss, accuracy

@@ -5,6 +5,7 @@ from tensorflow.keras.utils import Sequence
 from sklearn.model_selection import train_test_split
 
 from sslforslr.dataset.AudioAugmentation import AudioAugmentation
+from sslforslr.dataset.SupervisedTrainingSampler import SupervisedTrainingSampler
 from sslforslr.dataset.utils import load_audio, extract_mfcc
 
 def sample_frames(audio, frame_length):
@@ -43,6 +44,9 @@ class AudioDatasetGenerator(Sequence):
         provide_clean_and_aug=False,
         extract_mfcc=False
     ):
+        self.epoch = 0
+        self.supervised_sampler = None
+        
         self.batch_size = batch_size
         self.frame_length = frame_length
         self.frame_split = frame_split
@@ -54,7 +58,7 @@ class AudioDatasetGenerator(Sequence):
         self.extract_mfcc = extract_mfcc
 
     def __len__(self):
-        return math.ceil(len(self.indices) / self.batch_size)
+        return len(self.indices) // self.batch_size
 
     def preprocess_data(self, data, augment=True):
         assert data.ndim == 2 and data.shape[0] == 1 # (1, T)
@@ -70,27 +74,11 @@ class AudioDatasetGenerator(Sequence):
         return data
 
     def __getitem__(self, i):
-        # Last batch may have fewer samples
-        curr_batch_size = self.batch_size
-        is_last_batch = (i == self.__len__() - 1)
-        remaining_samples = len(self.indices) % self.batch_size
-        if is_last_batch and remaining_samples != 0:
-            curr_batch_size = remaining_samples
-
         start = i * self.batch_size
-        end   = i * self.batch_size + curr_batch_size
-        indices = self.indices[start:end]
-
-        if is_last_batch and remaining_samples != 0:
-            resampled_indices = np.random.choice(
-                self.indices[:start],
-                size=self.batch_size - remaining_samples
-            )
-            indices = np.concatenate((indices, resampled_indices))
-        assert len(indices) == self.batch_size
+        end   = i * self.batch_size + self.batch_size
 
         X1, X2, y = [], [], []
-        for index in indices:
+        for index in self.indices[start:end]:
             if self.frame_split:
                 data = load_audio(
                     self.files[index],
@@ -110,22 +98,36 @@ class AudioDatasetGenerator(Sequence):
                     X2.append(self.preprocess_data(frame2))
                 y.append(self.labels[index])
             else:
-                data = load_audio(self.files[index], self.frame_length) # (1, T)
-                data = self.preprocess_data(data)
-                X1.append(data)
-                y.append(self.labels[index])
+                data1 = load_audio(self.files[index[0]], self.frame_length) # (1, T)
+                data1 = self.preprocess_data(data1)
+                X1.append(data1)
+                data2 = load_audio(self.files[index[1]], self.frame_length) # (1, T)
+                data2 = self.preprocess_data(data2)
+                X2.append(data2)
+                y.append(self.labels[index[0]])
 
-        if self.frame_split:
-            return np.array(X1), np.array(X2), np.array(y)
-        return np.array(X1), np.array(y)
+        #if self.frame_split:
+        return np.array(X1), np.array(X2), np.array(y)
+        #return np.array(X1), np.array(y)
+
+    def enable_supervision(self, nb_labels_per_spk=100):
+        self.supervised_sampler = SupervisedTrainingSampler(
+                self.labels,
+                self.batch_size,
+                nb_labels_per_spk
+        )
+        self.indices = self.supervised_sampler(self.epoch)
 
     def on_epoch_end(self):
-        # Randomize samples manually after each epoch
-        np.random.shuffle(self.indices)
+        self.epoch += 1
+        if self.supervised_sampler:
+            self.indices = self.supervised_sampler(self.epoch)
+        else:
+            np.random.shuffle(self.indices)
 
 class AudioDatasetLoader:
 
-    def __init__(self, config, labels_ratio=1):
+    def __init__(self, config):
         self.config = config
 
         # Create augmentation module
@@ -137,7 +139,6 @@ class AudioDatasetLoader:
             )
         
         self.load_data()
-        self.filter_data(labels_ratio)
 
     def load_data(self):
         # Create lists of audio paths and labels
@@ -155,20 +156,6 @@ class AudioDatasetLoader:
                 labels_id[label] = self.nb_classes
                 self.nb_classes += 1
             self.labels.append(labels_id[label])
-
-    def filter_data(self, labels_ratio):
-        self.labels = np.array(self.labels) # To be able to use np.where
-        files_ = []
-        labels_ = []
-        nb_utt_per_speaker = np.bincount(self.labels)
-        for speaker_id, nb_utt in enumerate(nb_utt_per_speaker):
-            nb_utt_to_keep = int(labels_ratio * nb_utt)
-            idx = np.where(self.labels == speaker_id)[0][:nb_utt_to_keep]
-            for i in idx:
-                files_.append(self.files[i])
-                labels_.append(self.labels[i])
-        self.files = files_
-        self.labels = labels_
 
     def get_input_shape(self):
         if self.config.extract_mfcc:

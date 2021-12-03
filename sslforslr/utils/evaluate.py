@@ -3,6 +3,7 @@ from operator import itemgetter
 import numpy as np
 import soundfile as sf
 from scipy.spatial.distance import cosine
+from sklearn.preprocessing import normalize
 from sklearn.metrics import roc_curve
 
 from sslforslr.dataset.utils import load_audio, extract_mfcc
@@ -13,6 +14,7 @@ def extract_embeddings_from_batch(curr_batch_data, model):
     batch = batch.reshape((B * N, T, C))
 
     feats = model(batch).numpy()
+    feats = normalize(feats, axis=1)
     feats = feats.reshape((B, N, -1))
     feats = feats.mean(axis=1)
     return feats
