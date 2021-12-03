@@ -3,32 +3,40 @@ import torch
 import torch.nn.functional as F
 import torchaudio
 import soundfile as sf
-from collections import OrderedDict
 from io import BytesIO
+import glob
+import os
+from tqdm import tqdm
 
-AUDIO_FILE_CACHE_ENABLE = False
-AUDIO_FILE_CACHE_LIMIT = -1
+AUDIO_CACHE_ENABLE = True
+AUDIO_CACHE_LIMIT = -1
 
-class AudioFileCache:
-    data = OrderedDict()
+class AudioCache:
+    data = {}
+    base_path = None
+
+def create_audio_cache():
+    base_path = AudioCache.base_path
+
+    files = []
+    files += glob.glob(os.path.join(base_path, 'simulated_rirs', '*/*/*.wav'))
+    files += glob.glob(os.path.join(base_path, 'musan_split', '*/*/*.wav'))
+    files += glob.glob(os.path.join(base_path, 'voxceleb1', '*/*/*.wav'))
+    
+    print('Creating cache of audio files...')
+    for path in tqdm(files):
+        if AUDIO_CACHE_LIMIT > 0 and len(AudioCache.data) > AUDIO_CACHE_LIMIT:
+            break
+        with open(path, 'rb') as file_data:
+            AudioCache.data[path] = file_data.read()
 
 def read_audio(path):
-    if not AUDIO_FILE_CACHE_ENABLE:
-        return sf.read(path)
-
-    # Retrieve file from cache
-    if path in AudioFileCache.data:
-        return sf.read(BytesIO(AudioFileCache.data[path]))
-
-    # Store file raw data in cache
-    with open(path, 'rb') as file_data:
-        AudioFileCache.data[path] = file_data.read()
-
-    if AUDIO_FILE_CACHE_LIMIT > 0:
-        if len(AudioFileCache.data) >= AUDIO_FILE_CACHE_LIMIT:
-            AudioFileCache.data.popitem(last=False)
-
-    return sf.read(BytesIO(AudioFileCache.data[path]))
+    if AUDIO_CACHE_ENABLE:
+        if not AudioCache.data:
+            create_audio_cache()
+        if path in AudioCache.data:
+            return sf.read(BytesIO(AudioCache.data[path]))
+    return sf.read(path)
 
 def load_audio(path, frame_length, num_frames=1, min_length=None):
     audio, sr = read_audio(path)
