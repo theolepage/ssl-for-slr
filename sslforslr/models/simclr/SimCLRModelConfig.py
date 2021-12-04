@@ -13,6 +13,8 @@ class SimCLRModelConfig(ModelConfig):
     vic_reg_var_weight: float = 1.0
     vic_reg_cov_weight: float = 0.04
     
+    barlow_twins_factor: float = 0.0
+    
     enable_mse_clean_aug: bool = False
     mse_clean_aug_factor: float = 0.1
     

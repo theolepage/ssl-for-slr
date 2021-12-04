@@ -6,6 +6,7 @@ from tensorflow.keras.layers import Layer, Dense, BatchNormalization, ReLU
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
 
 from sslforslr.modules.VICReg import VICReg
+from sslforslr.modules.BarlowTwins import BarlowTwins
 
 class SimCLRModel(Model):
     '''
@@ -25,6 +26,7 @@ class SimCLRModel(Model):
         self.enable_mse_clean_aug = config.enable_mse_clean_aug
         self.infonce_loss_factor = config.infonce_loss_factor
         self.vic_reg_factor = config.vic_reg_factor
+        self.barlow_twins_factor = config.barlow_twins_factor
         self.mse_clean_aug_factor = config.mse_clean_aug_factor
         self.reg = regularizers.l2(config.weight_reg)
 
@@ -36,6 +38,7 @@ class SimCLRModel(Model):
             config.vic_reg_var_weight,
             config.vic_reg_cov_weight
         )
+        self.barlow_twins = BarlowTwins()
 
     def compile(self, optimizer, **kwargs):
         super().compile(**kwargs)
@@ -76,6 +79,7 @@ class SimCLRModel(Model):
             loss, accuracy = self.infonce_loss((Z_1_aug, Z_2_aug))
             loss = self.infonce_loss_factor * loss
             loss += self.vic_reg_factor * self.vic_reg((Z_1_aug, Z_2_aug))
+            loss += self.barlow_twins_factor * self.barlow_twins((Z_1_aug, Z_2_aug))
 
             if self.enable_mse_clean_aug:
                 Z_1_clean, Z_2_clean = self.get_embeddings(X_1_clean, X_2_clean)
