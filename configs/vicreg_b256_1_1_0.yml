@@ -1,4 +1,4 @@
-name: 'vicreg_b512'
+name: 'vicreg_b256_1_1_0'
 encoder:
   type: 'thinresnet34'
 model:
@@ -6,9 +6,12 @@ model:
   enable_mlp: true
   infonce_loss_factor: 0.0
   vic_reg_factor: 1.0
+  vic_reg_inv_weight: 1.0
+  vic_reg_var_weight: 1.0
+  vic_reg_cov_weight: 0.0
 training:
   epochs: 300
-  batch_size: 512
+  batch_size: 256
   learning_rate: 0.001
 dataset:
   frame_length: 32000

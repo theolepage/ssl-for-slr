@@ -1,14 +1,16 @@
-name: 'vicreg_b256_2xmse'
+name: 'vicreg_b256_1_0.5_0.1'
 encoder:
   type: 'thinresnet34'
 model:
   type: 'simclr'
   enable_mlp: true
-  enable_mse_clean_aug: true
-  loss_factor: 0.0
-  vic_reg_factor: 25.0
+  infonce_loss_factor: 0.0
+  vic_reg_factor: 1.0
+  vic_reg_inv_weight: 1.0
+  vic_reg_var_weight: 0.5
+  vic_reg_cov_weight: 0.1
 training:
-  epochs: 500
+  epochs: 300
   batch_size: 256
   learning_rate: 0.001
 dataset:
@@ -17,7 +19,6 @@ dataset:
   extract_mfcc: true
   train: './data/voxceleb1_train_list'
   val_ratio: 0.0
-  provide_clean_and_aug: true
   spec_augment: false
   wav_augment:
     enable: true

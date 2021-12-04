@@ -12,26 +12,26 @@ VOX_DOWNLOADS = [
     ('http://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox1_dev_wav_partab', 'bbfaaccefab65d82b21903e81a8a8020'),
     ('http://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox1_dev_wav_partac', '017d579a2a96a077f40042ec33e51512'),
     ('http://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox1_dev_wav_partad', '7bb1e9f70fddc7a678fa998ea8b3ba19'),
-    ('http://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox2_dev_aac_partaa', 'da070494c573e5c0564b1d11c3b20577'),
-    ('http://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox2_dev_aac_partab', '17fe6dab2b32b48abaf1676429cdd06f'),
-    ('http://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox2_dev_aac_partac', '1de58e086c5edf63625af1cb6d831528'),
-    ('http://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox2_dev_aac_partad', '5a043eb03e15c5a918ee6a52aad477f9'),
-    ('http://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox2_dev_aac_partae', 'cea401b624983e2d0b2a87fb5d59aa60'),
-    ('http://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox2_dev_aac_partaf', 'fc886d9ba90ab88e7880ee98effd6ae9'),
-    ('http://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox2_dev_aac_partag', 'd160ecc3f6ee3eed54d55349531cb42e'),
-    ('http://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox2_dev_aac_partah', '6b84a81b9af72a9d9eecbb3b1f602e65'),
+    # ('http://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox2_dev_aac_partaa', 'da070494c573e5c0564b1d11c3b20577'),
+    # ('http://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox2_dev_aac_partab', '17fe6dab2b32b48abaf1676429cdd06f'),
+    # ('http://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox2_dev_aac_partac', '1de58e086c5edf63625af1cb6d831528'),
+    # ('http://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox2_dev_aac_partad', '5a043eb03e15c5a918ee6a52aad477f9'),
+    # ('http://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox2_dev_aac_partae', 'cea401b624983e2d0b2a87fb5d59aa60'),
+    # ('http://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox2_dev_aac_partaf', 'fc886d9ba90ab88e7880ee98effd6ae9'),
+    # ('http://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox2_dev_aac_partag', 'd160ecc3f6ee3eed54d55349531cb42e'),
+    # ('http://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox2_dev_aac_partah', '6b84a81b9af72a9d9eecbb3b1f602e65'),
     ('http://thor.robots.ox.ac.uk/~vgg/data/voxceleb/vox1a/vox1_test_wav.zip',   '185fdc63c3c739954633d50379a3d102')
 ]
 
 VOX_CONCATENATE = [
     ('vox1_dev_wav_parta*', 'vox1_dev_wav.zip', 'ae63e55b951748cc486645f532ba230b'),
-    ('vox2_dev_aac_parta*', 'vox2_dev_aac.zip', 'bbc063c46078a602ca71605645c2a402')
+    # ('vox2_dev_aac_parta*', 'vox2_dev_aac.zip', 'bbc063c46078a602ca71605645c2a402')
 ]
 
 VOX_EXTRACT = [
     'vox1_dev_wav.zip',
     'vox1_test_wav.zip',
-    'vox2_dev_aac.zip'
+    # 'vox2_dev_aac.zip'
 ]
 
 AUG_DOWNLOAD = [
@@ -57,52 +57,46 @@ def get_md5(path):
     return hash_md5.hexdigest()
 
 
-def download(entries, output_path):
+def download(entries):
     for url, md5 in entries:
         filename = url.split('/')[-1]
-        out = os.path.join(output_path, filename)
-
-        status = subprocess.call('wget %s -O %s' % (url, out), shell=True)
+        status = subprocess.call('wget %s -O %s' % (url, filename), shell=True)
         if status != 0:
             raise Exception('Download of %s failed' % filename)
 
-        if md5 != get_md5(out):
+        if md5 != get_md5(filename):
             raise Warning('Checksum of %s failed' % filename)
 
 
-def concatenate(entries, output_path):
-    for src_filename, dst_filename, md5 in entries:
-        src_path = os.path.join(output_path, src_filename)
-        dst_path = os.path.join(output_path, dst_filename)
+def concatenate(entries):
+    for src, dst, md5 in entries:
+        subprocess.call('cat %s > %s' % (src, dst), shell=True)
+        subprocess.call('rm %s' % (src), shell=True)
 
-        subprocess.call('cat %s > %s' % (src_path, dst_path), shell=True)
-        subprocess.call('rm %s' % (src_path), shell=True)
-
-        if md5 != get_md5(dst_path):
-            raise Warning('Checksum of %s failed' % dst_filename)
+        if md5 != get_md5(dst):
+            raise Warning('Checksum of %s failed' % dst)
 
 
-def extract(entries, output_path):
+def extract(entries):
     for filename in entries:
-        filename = os.path.join(output_path, filename)
         if filename.endswith('.tar.gz'):
             subprocess.call('tar xf %s' % (filename), shell=True)
         elif filename.endswith('.zip'):
             subprocess.call('unzip %s' % (filename), shell=True)
 
 
-def fix_vox_structure(output_path):
-    subprocess.call('mkdir %s/voxceleb1' % (output_path), shell=True)
-    subprocess.call('mv %s/wav/* %s/voxceleb1' % (output_path, output_path), shell=True)
-    subprocess.call('rm -r %s/wav' % (output_path), shell=True)
-    subprocess.call('mkdir %s/voxceleb2' % (output_path), shell=True)
-    subprocess.call('mv %s/dev/aac/* %s/voxceleb2' % (output_path, output_path), shell=True)
-    subprocess.call('rm -r %s/dev' % (output_path), shell=True)
-    subprocess.call('rm -r %s/vox*.zip' % (output_path), shell=True)
+def fix_vox_structure():
+    subprocess.call('mkdir voxceleb1', shell=True)
+    subprocess.call('mv wav/* voxceleb1', shell=True)
+    subprocess.call('rm -r wav', shell=True)
+    # subprocess.call('mkdir voxceleb2', shell=True)
+    # subprocess.call('mv dev/aac/* voxceleb2', shell=True)
+    # subprocess.call('rm -r dev', shell=True)
+    subprocess.call('rm -r vox*.zip', shell=True)
 
 
-def convert_to_wav(output_path):
-    files = glob.glob('%s/voxceleb2/*/*/*.m4a' % output_path)
+def convert_vox2_to_wav():
+    files = glob.glob('voxceleb2/*/*/*.m4a')
 
     for src in tqdm(files):
         dst = src.replace('.m4a', '.wav')
@@ -115,20 +109,20 @@ def convert_to_wav(output_path):
         subprocess.call('rm %s' % src, shell=True)
 
 
-def fix_aug_structure(output_path):
-    subprocess.call('mv %s/RIRS_NOISES/simulated_rirs %s' % (output_path, output_path), shell=True)
-    subprocess.call('rm -r %s/RIRS_NOISES' % (output_path), shell=True)
-    subprocess.call('rm -r %s/rirs_noises.zip' % (output_path), shell=True)
-    subprocess.call('rm -r %s/musan.tar.gz' % (output_path), shell=True)
+def fix_aug_structure():
+    subprocess.call('mv RIRS_NOISES/simulated_rirs .', shell=True)
+    subprocess.call('rm -r RIRS_NOISES', shell=True)
+    subprocess.call('rm -r rirs_noises.zip', shell=True)
+    subprocess.call('rm -r musan.tar.gz', shell=True)
 
 
-def split_musan(output_path, length=16000*8, stride=16000*8):
-    files = glob.glob('%s/musan/*/*/*.wav' % output_path)
+def split_musan(length=16000*8, stride=16000*8):
+    files = glob.glob('musan/*/*/*.wav')
 
     for file in tqdm(files):
         audio, fs = sf.read(file)
         
-        directory = os.path.dirname(file).replace('/musan/', '/musan_split/')
+        directory = os.path.dirname(file).replace('musan/', 'musan_split/')
         os.makedirs(directory, exist_ok=True)
         
         for st in range(0, len(audio) - length, stride):
@@ -136,10 +130,10 @@ def split_musan(output_path, length=16000*8, stride=16000*8):
             filename = directory + '/' + filename
             sf.write(filename, audio[st:st+length], fs)
 
-    subprocess.call('rm -r %s/musan' % (output_path), shell=True)
+    subprocess.call('rm -r musan', shell=True)
 
 
-def split_2_ssd(output_path):
+def split_2_ssd():
     dirs = glob.glob('dev/aac/*')
     
     for src in dirs:
@@ -158,9 +152,9 @@ def split_2_ssd(output_path):
         shutil.copytree(src, dst)
 
 
-def create_vox1_train_list_file(output_path):
+def create_vox1_train_list_file():
     test_speakers = set()
-    with open(os.path.join(output_path, TRIALS_FILENAME)) as trials:
+    with open(TRIALS_FILENAME) as trials:
         for line in trials.readlines():
             parts = line.rstrip().split()
             spkr_id_a = parts[1].split('/')[0]
@@ -168,9 +162,9 @@ def create_vox1_train_list_file(output_path):
             test_speakers.add(spkr_id_a)
             test_speakers.add(spkr_id_b)
 
-    files = glob.glob('%s/voxceleb1/*/*/*.wav' % output_path)
+    files = glob.glob('voxceleb1/*/*/*.wav')
     files.sort()
-    out_file = open('%s/%s' % (output_path, VOX1_TRAIN_LIST), 'w')
+    out_file = open(VOX1_TRAIN_LIST, 'w')
     for file in files:
         spkr_id = file.split('/')[-3]
         file = '/'.join(file.split('/')[-3:])
@@ -180,10 +174,10 @@ def create_vox1_train_list_file(output_path):
     out_file.close()
 
 
-def create_vox2_train_list_file(output_path):
-    files = glob.glob('%s/voxceleb2/*/*/*.wav' % output_path)
+def create_vox2_train_list_file():
+    files = glob.glob('voxceleb2/*/*/*.wav')
     files.sort()
-    out_file = open('%s/%s' % (output_path, VOX2_TRAIN_LIST), 'w')
+    out_file = open(VOX2_TRAIN_LIST, 'w')
     for file in files:
         spkr_id = file.split('/')[-3]
         file = '/'.join(file.split('/')[-3:])
@@ -192,9 +186,8 @@ def create_vox2_train_list_file(output_path):
     out_file.close()
 
 
-def download_trials_file(output_path):
-    out = os.path.join(output_path, TRIALS_FILENAME)
-    status = subprocess.call('wget %s -O %s' % (TRIALS_URL, out), shell=True)
+def download_trials_file():
+    status = subprocess.call('wget %s -O %s' % (TRIALS_URL, TRIALS_FILENAME), shell=True)
     if status != 0:
         raise Exception('Download of %s failed' % TRIALS_FILENAME)
 
@@ -204,19 +197,21 @@ if __name__ == "__main__":
     parser.add_argument('output_path', help='Path to store datasets.')
     args = parser.parse_args()
 
+    os.chdir(args.output_path)
+
     # VoxCeleb1 and VoxCeleb2
-    download(VOX_DOWNLOADS, args.output_path)
-    concatenate(VOX_CONCATENATE, args.output_path)
-    extract(VOX_EXTRACT, args.output_path)
-    fix_vox_structure(args.output_path)
-    convert_to_wav(args.output_path)
+    download(VOX_DOWNLOADS)
+    concatenate(VOX_CONCATENATE)
+    extract(VOX_EXTRACT)
+    fix_vox_structure()
+    # convert_vox2_to_wav()
 
     # Augmentation: MUSAN and simulated_rirs
-    download(AUG_DOWNLOAD, args.output_path)
-    extract(AUG_EXTRACT, args.output_path)
-    fix_aug_structure(args.output_path)
-    split_musan(args.output_path)
+    download(AUG_DOWNLOAD)
+    extract(AUG_EXTRACT)
+    fix_aug_structure()
+    split_musan()
 
-    download_trials_file(args.output_path)
-    create_vox1_train_list_file(args.output_path)
-    create_vox2_train_list_file(args.output_path)
+    download_trials_file()
+    create_vox1_train_list_file()
+    # create_vox2_train_list_file()

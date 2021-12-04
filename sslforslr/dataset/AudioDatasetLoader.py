@@ -97,18 +97,20 @@ class AudioDatasetGenerator(Sequence):
                     X1.append(self.preprocess_data(frame1))
                     X2.append(self.preprocess_data(frame2))
                 y.append(self.labels[index])
-            else:
-                data1 = load_audio(self.files[index[0]], self.frame_length) # (1, T)
-                data1 = self.preprocess_data(data1)
-                X1.append(data1)
-                data2 = load_audio(self.files[index[1]], self.frame_length) # (1, T)
-                data2 = self.preprocess_data(data2)
-                X2.append(data2)
+            elif self.supervised_sampler:
+                frame1 = load_audio(self.files[index[0]], self.frame_length)
+                frame2 = load_audio(self.files[index[1]], self.frame_length)
+                X1.append(self.preprocess_data(frame1))
+                X2.append(self.preprocess_data(frame2))
                 y.append(self.labels[index[0]])
+            else:
+                frame = load_audio(self.files[index], self.frame_length)
+                X1.append(self.preprocess_data(frame))
+                y.append(self.labels[index])
 
-        #if self.frame_split:
-        return np.array(X1), np.array(X2), np.array(y)
-        #return np.array(X1), np.array(y)
+        if self.frame_split or self.supervised_sampler:
+            return np.array(X1), np.array(X2), np.array(y)
+        return np.array(X1), np.array(y)
 
     def enable_supervision(self, nb_labels_per_spk=100):
         self.supervised_sampler = SupervisedTrainingSampler(

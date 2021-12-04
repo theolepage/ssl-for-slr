@@ -4,10 +4,10 @@ encoder:
 model:
   type: 'simclr'
   enable_mlp: true
-  loss_factor: 0.0
-  vic_reg_factor: 25.0
+  infonce_loss_factor: 0.0
+  vic_reg_factor: 1.0
 training:
-  epochs: 500
+  epochs: 300
   batch_size: 256
   learning_rate: 0.001
 dataset:

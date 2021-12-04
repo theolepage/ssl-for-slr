@@ -23,7 +23,7 @@ class SimCLRModel(Model):
 
         self.enable_mlp = config.enable_mlp
         self.enable_mse_clean_aug = config.enable_mse_clean_aug
-        self.loss_factor = config.loss_factor
+        self.infonce_loss_factor = config.infonce_loss_factor
         self.vic_reg_factor = config.vic_reg_factor
         self.mse_clean_aug_factor = config.mse_clean_aug_factor
         self.reg = regularizers.l2(config.weight_reg)
@@ -31,7 +31,11 @@ class SimCLRModel(Model):
         self.encoder = encoder
         self.mlp = MLP()
         self.infonce_loss = InfoNCELoss()
-        self.vic_reg = VICReg()
+        self.vic_reg = VICReg(
+            config.vic_reg_inv_weight,
+            config.vic_reg_var_weight,
+            config.vic_reg_cov_weight
+        )
 
     def compile(self, optimizer, **kwargs):
         super().compile(**kwargs)
@@ -70,7 +74,7 @@ class SimCLRModel(Model):
             Z_1_aug, Z_2_aug = self.get_embeddings(X_1_aug, X_2_aug)
 
             loss, accuracy = self.infonce_loss((Z_1_aug, Z_2_aug))
-            loss = self.loss_factor * loss
+            loss = self.infonce_loss_factor * loss
             loss += self.vic_reg_factor * self.vic_reg((Z_1_aug, Z_2_aug))
 
             if self.enable_mse_clean_aug:

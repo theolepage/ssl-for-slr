@@ -8,12 +8,17 @@ def off_diagonal(matrix):
 
 class VICReg(Layer):
 
-    def __init__(self, lamda=1, mu=1, nu=0.04):
+    def __init__(
+        self,
+        inv_weight=1.0,
+        var_weight=1.0,
+        cov_weight=0.04
+    ):
         super().__init__()
 
-        self.lamda = lamda
-        self.mu = mu
-        self.nu = nu
+        self.inv_weight = inv_weight
+        self.var_weight = var_weight
+        self.cov_weight = cov_weight
 
     def call(self, data):
         X_a, X_b = data
@@ -25,14 +30,14 @@ class VICReg(Layer):
         X_b_mean, X_b_var = tf.nn.moments(X_b, axes=[0])
 
         # Invariance loss
-        sim_loss = tf.keras.metrics.mean_squared_error(X_a, X_b)
-        sim_loss = tf.math.reduce_mean(sim_loss)
+        inv_loss = tf.keras.metrics.mean_squared_error(X_a, X_b)
+        inv_loss = tf.math.reduce_mean(inv_loss)
 
         # Variance loss
         X_a_std = tf.math.sqrt(X_a_var + 1e-04)
         X_b_std = tf.math.sqrt(X_b_var + 1e-04)
-        std_loss = tf.math.reduce_mean(tf.nn.relu(1 - X_a_std))
-        std_loss += tf.math.reduce_mean(tf.nn.relu(1 - X_b_std))
+        var_loss = tf.math.reduce_mean(tf.nn.relu(1 - X_a_std))
+        var_loss += tf.math.reduce_mean(tf.nn.relu(1 - X_b_std))
 
         # Covariance loss
         X_a = X_a - X_a_mean
@@ -42,7 +47,7 @@ class VICReg(Layer):
         cov_loss = tf.math.reduce_sum(tf.math.pow(off_diagonal(X_a_cov), 2)) / D
         cov_loss += tf.math.reduce_sum(tf.math.pow(off_diagonal(X_b_cov), 2)) / D
 
-        loss = self.lamda * sim_loss
-        loss += self.mu * std_loss
-        loss += self.nu * cov_loss
+        loss = self.inv_weight * inv_loss
+        loss += self.var_weight * var_loss
+        loss += self.cov_weight * cov_loss
         return loss

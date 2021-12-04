@@ -3,10 +3,10 @@ encoder:
   type: 'thinresnet34'
 model:
   type: 'simclr'
-  loss_factor: 1.0
+  infonce_loss_factor: 1.0
   vic_reg_factor: 0.1
 training:
-  epochs: 150
+  epochs: 300
   batch_size: 256
   learning_rate: 0.001
 dataset:
