@@ -1,14 +1,11 @@
-name: 'vicreg_b256_1_1_0.04'
+name: 'simclr_b256'
 encoder:
   type: 'thinresnet34'
 model:
   type: 'simclr'
   enable_mlp: true
-  infonce_loss_factor: 0.0
-  vic_reg_factor: 1.0
-  vic_reg_inv_weight: 1.0
-  vic_reg_var_weight: 1.0
-  vic_reg_cov_weight: 0.04
+  infonce_loss_factor: 1.0
+  vic_reg_factor: 0.0
 training:
   epochs: 500
   batch_size: 256

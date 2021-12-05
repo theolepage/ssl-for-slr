@@ -17,7 +17,7 @@ from dataclasses import dataclass
 
 @dataclass
 class ThinResNet34EncoderConfig():
-    encoded_dim: int = 512
+    encoded_dim: int = 1024
     scale: int = 1
     weight_reg: float = 1e-4
 

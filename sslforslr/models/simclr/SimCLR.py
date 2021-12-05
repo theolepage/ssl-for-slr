@@ -38,7 +38,7 @@ class SimCLRModel(Model):
             config.vic_reg_var_weight,
             config.vic_reg_cov_weight
         )
-        self.barlow_twins = BarlowTwins()
+        self.barlow_twins = BarlowTwins(config.barlow_twins_lambda)
 
     def compile(self, optimizer, **kwargs):
         super().compile(**kwargs)
@@ -109,7 +109,7 @@ class MLP(Model):
         self.fc2 = Dense(2048)
         self.bn2 = BatchNormalization()
 
-        self.fc3 = Dense(512)
+        self.fc3 = Dense(2048)
 
     def call(self, X):
         Z = self.fc1(X)

@@ -1,12 +1,15 @@
-name: 'simclr_vicreg_0.1'
+name: 'barlowtwins_b256_0.005'
 encoder:
   type: 'thinresnet34'
 model:
   type: 'simclr'
-  infonce_loss_factor: 1.0
-  vic_reg_factor: 0.1
+  enable_mlp: true
+  infonce_loss_factor: 0.0
+  vic_reg_factor: 0.0
+  barlow_twins_factor: 1.0
+  barlow_twins_lambda: 0.005
 training:
-  epochs: 300
+  epochs: 500
   batch_size: 256
   learning_rate: 0.001
 dataset:

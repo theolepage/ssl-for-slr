@@ -44,11 +44,11 @@ def create_callbacks(config, checkpoint_dir):
                     histogram_freq=1)
     )
 
-    # callbacks.append(
-    #     EarlyStopping(monitor='test_eer',
-    #                   mode='min',
-    #                   patience=10)
-    # )
+    callbacks.append(
+        EarlyStopping(monitor='test_eer',
+                      mode='min',
+                      patience=50)
+    )
 
     return callbacks
 
