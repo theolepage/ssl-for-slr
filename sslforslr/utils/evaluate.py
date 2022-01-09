@@ -22,7 +22,7 @@ def extract_embeddings_from_batch(curr_batch_data, model):
 def extract_embeddings(
     model,
     dataset_config,
-    batch_size=128,
+    batch_size=64,
     num_frames=6
 ):
     # Get a list of unique utterances

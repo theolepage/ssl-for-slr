@@ -31,7 +31,7 @@ class SimCLRModel(Model):
         self.reg = regularizers.l2(config.weight_reg)
 
         self.encoder = encoder
-        self.mlp = MLP()
+        self.mlp = MLP(config.mlp_dim)
         self.infonce_loss = InfoNCELoss()
         self.vic_reg = VICReg(
             config.vic_reg_inv_weight,
@@ -91,6 +91,7 @@ class SimCLRModel(Model):
             trainable_params += self.mlp.trainable_weights
 
         grads = tape.gradient(loss, trainable_params)
+        # grads, _ = tf.clip_by_global_norm(grads, 5.0)
         self.optimizer.apply_gradients(zip(grads, trainable_params))
 
         return { 'loss': loss, 'accuracy': accuracy }
@@ -98,18 +99,18 @@ class SimCLRModel(Model):
 
 class MLP(Model):
 
-    def __init__(self):
+    def __init__(self, dim):
         super().__init__()
 
         self.relu = ReLU()
 
-        self.fc1 = Dense(2048)
+        self.fc1 = Dense(dim)
         self.bn1 = BatchNormalization()
 
-        self.fc2 = Dense(2048)
+        self.fc2 = Dense(dim)
         self.bn2 = BatchNormalization()
 
-        self.fc3 = Dense(2048)
+        self.fc3 = Dense(dim)
 
     def call(self, X):
         Z = self.fc1(X)

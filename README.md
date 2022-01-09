@@ -64,10 +64,9 @@ Then, you can evaluate model on speaker verification (EER, minDCF) with `python 
 ## To-Do
 
 - [ ] Pytorch implementation
-
----
-
+- [ ] Change repo/project name -> `ssl-for-sv`?
 - [ ] Make sure other models work (MoCo/XVectorEncoder, CPC/CPCEncoder, LIM/SincEncoder, Wav2Spk)
+- [ ] Get model name with config filename
 - [ ] CPC/LIM: @tf.function warning when doing tensor[1, :]
 - [ ] Fix warning when loading: some weights are not used
 - [ ] Allow restore optimizer

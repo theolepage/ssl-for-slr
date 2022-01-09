@@ -13,18 +13,17 @@ AUDIO_CACHE_LIMIT = -1
 
 class AudioCache:
     data = {}
-    base_path = None
 
-def create_audio_cache():
-    base_path = AudioCache.base_path
-
+def create_audio_cache(base_path, verbose):
     files = []
     files += glob.glob(os.path.join(base_path, 'simulated_rirs', '*/*/*.wav'))
     files += glob.glob(os.path.join(base_path, 'musan_split', '*/*/*.wav'))
     files += glob.glob(os.path.join(base_path, 'voxceleb1', '*/*/*.wav'))
+    # files += glob.glob(os.path.join(base_path, 'voxceleb2', '*/*/*.wav'))
     
     print('Creating cache of audio files...')
-    for path in tqdm(files):
+    if verbose: files = tqdm(files)
+    for path in files:
         if AUDIO_CACHE_LIMIT > 0 and len(AudioCache.data) > AUDIO_CACHE_LIMIT:
             break
         with open(path, 'rb') as file_data:

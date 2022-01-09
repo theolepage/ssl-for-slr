@@ -5,6 +5,7 @@ from sslforslr.configs import ModelConfig
 @dataclass
 class SimCLRModelConfig(ModelConfig):
     enable_mlp: bool = False
+    mlp_dim: int = 2048
     
     infonce_loss_factor: float = 1.0
 

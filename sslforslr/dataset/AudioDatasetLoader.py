@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 
 from sslforslr.dataset.AudioAugmentation import AudioAugmentation
 from sslforslr.dataset.SupervisedTrainingSampler import SupervisedTrainingSampler
-from sslforslr.dataset.utils import load_audio, extract_mfcc, AudioCache
+from sslforslr.dataset.utils import load_audio, extract_mfcc
 
 def sample_frames(audio, frame_length):
     audio_length = audio.shape[1]
@@ -139,8 +139,6 @@ class AudioDatasetLoader:
                 self.config.wav_augment,
                 self.config.base_path
             )
-        
-        AudioCache.base_path = self.config.base_path
 
         self.load_data()
 

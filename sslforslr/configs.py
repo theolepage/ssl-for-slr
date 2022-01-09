@@ -11,6 +11,8 @@ class TrainingConfig:
 @dataclass
 class WavAugmentConfig:
     enable: bool = False
+    rir: bool = True
+    musan: bool = True
     musan_noise_snr: Tuple[int, int] = (0, 15)
     musan_speech_snr: Tuple[int, int] = (13, 20)
     musan_music_snr: Tuple[int, int] = (5, 15)

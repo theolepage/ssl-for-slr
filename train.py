@@ -13,6 +13,7 @@ from tensorflow.keras.callbacks import LearningRateScheduler
 
 from sslforslr.utils.helpers import load_config, load_dataset, load_model
 from sslforslr.utils.callbacks import SVMetricsCallback
+from sslforslr.dataset.utils import create_audio_cache
 
 from sslforslr.models.moco import MoCoUpdateCallback
 
@@ -52,7 +53,7 @@ def create_callbacks(config, checkpoint_dir):
 
     return callbacks
 
-def train(config_path):
+def train(config_path, verbose):
     config, checkpoint_dir = load_config(config_path)
     (train_gen, val_gen), input_shape, _ = load_dataset(config)
     model = load_model(config, input_shape)
@@ -67,17 +68,21 @@ def train(config_path):
     if tf.train.latest_checkpoint(checkpoint_dir):
         raise Exception('%s has already been trained.' % config.name)
 
+    create_audio_cache(config.dataset.base_path, verbose)
+
     callbacks = create_callbacks(config, checkpoint_dir)
     history = model.fit(train_gen,
                         validation_data=val_gen,
                         epochs=config.training.epochs,
-                        callbacks=callbacks)
+                        callbacks=callbacks,
+                        verbose=(1 if verbose else 2))
 
     np.save(checkpoint_dir + '/history.npy', history.history)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('config', help='Path to model config file.')
+    parser.add_argument('--verbose', action='store_true', help='Show interactive progress bars.')
     args = parser.parse_args()
 
-    train(args.config)
+    train(args.config, args.verbose)

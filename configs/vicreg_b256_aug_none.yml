@@ -1,13 +1,11 @@
-name: 'barlowtwins_b256_0.05'
+name: 'vicreg_b256_aug_none'
 encoder:
   type: 'thinresnet34'
 model:
   type: 'simclr'
   enable_mlp: true
   infonce_loss_factor: 0.0
-  vic_reg_factor: 0.0
-  barlow_twins_factor: 1.0
-  barlow_twins_lambda: 0.05
+  vic_reg_factor: 1.0
 training:
   epochs: 500
   batch_size: 256
@@ -21,3 +19,5 @@ dataset:
   spec_augment: false
   wav_augment:
     enable: true
+    rir: false
+    musan: false
