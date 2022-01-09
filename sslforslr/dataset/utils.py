@@ -15,6 +15,9 @@ class AudioCache:
     data = {}
 
 def create_audio_cache(base_path, verbose):
+    if not AUDIO_CACHE_ENABLE:
+        return
+
     files = []
     files += glob.glob(os.path.join(base_path, 'simulated_rirs', '*/*/*.wav'))
     files += glob.glob(os.path.join(base_path, 'musan_split', '*/*/*.wav'))
