@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 
 from sslforslr.configs import ModelConfig
 
@@ -16,10 +17,12 @@ class SimCLRModelConfig(ModelConfig):
     
     barlow_twins_factor: float = 0.0
     barlow_twins_lambda: float = 0.05
-    
-    enable_mse_clean_aug: bool = False
-    mse_clean_aug_factor: float = 0.1
-    
+
+    representations_loss_vic: bool = False
+    representations_loss_nce: bool = False
+    embeddings_loss_vic: bool = True
+    embeddings_loss_nce: bool = True
+
     weight_reg: float = 1e-4
 
 SimCLRModelConfig.__NAME__ = 'simclr'

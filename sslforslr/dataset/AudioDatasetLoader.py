@@ -41,7 +41,6 @@ class AudioDatasetGenerator(Sequence):
         labels,
         indices,
         wav_augment=None,
-        provide_clean_and_aug=False,
         extract_mfcc=False
     ):
         self.epoch = 0
@@ -54,7 +53,6 @@ class AudioDatasetGenerator(Sequence):
         self.labels = labels
         self.indices = indices
         self.wav_augment = wav_augment
-        self.provide_clean_and_aug = provide_clean_and_aug
         self.extract_mfcc = extract_mfcc
 
     def __len__(self):
@@ -86,16 +84,8 @@ class AudioDatasetGenerator(Sequence):
                     min_length=2*self.frame_length
                 ) # (1, T)
                 frame1, frame2 = sample_frames(data, self.frame_length)
-                if self.provide_clean_and_aug:
-                    frame1_clean = self.preprocess_data(frame1, augment=False)
-                    frame1_aug = self.preprocess_data(frame1)
-                    X1.append(np.stack((frame1_clean, frame1_aug), axis=-1))
-                    frame2_clean = self.preprocess_data(frame2, augment=False)
-                    frame2_aug = self.preprocess_data(frame2)
-                    X2.append(np.stack((frame2_clean, frame2_aug), axis=-1))
-                else:
-                    X1.append(self.preprocess_data(frame1))
-                    X2.append(self.preprocess_data(frame2))
+                X1.append(self.preprocess_data(frame1))
+                X2.append(self.preprocess_data(frame2))
                 y.append(self.labels[index])
             elif self.supervised_sampler:
                 frame1 = load_audio(self.files[index[0]], self.frame_length)
@@ -184,7 +174,6 @@ class AudioDatasetLoader:
             self.labels,
             train_indices,
             self.wav_augment,
-            self.config.provide_clean_and_aug,
             self.config.extract_mfcc
         )
 
@@ -198,7 +187,6 @@ class AudioDatasetLoader:
                 self.labels,
                 val_indices,
                 self.wav_augment,
-                self.config.provide_clean_and_aug,
                 self.config.extract_mfcc
             )
 

@@ -23,12 +23,15 @@ class SimCLRModel(Model):
         super().__init__()
 
         self.enable_mlp = config.enable_mlp
-        self.enable_mse_clean_aug = config.enable_mse_clean_aug
         self.infonce_loss_factor = config.infonce_loss_factor
         self.vic_reg_factor = config.vic_reg_factor
         self.barlow_twins_factor = config.barlow_twins_factor
-        self.mse_clean_aug_factor = config.mse_clean_aug_factor
         self.reg = regularizers.l2(config.weight_reg)
+
+        self.representations_loss_vic = config.representations_loss_vic
+        self.representations_loss_nce = config.representations_loss_nce
+        self.embeddings_loss_vic = config.embeddings_loss_vic
+        self.embeddings_loss_nce = config.embeddings_loss_nce
 
         self.encoder = encoder
         self.mlp = MLP(config.mlp_dim)
@@ -45,56 +48,65 @@ class SimCLRModel(Model):
         self.optimizer = optimizer
 
     def call(self, X):
-        if len(X.shape) == 4 and self.enable_mse_clean_aug:
-            X, _ = self.extract_clean_and_aug(X)
         return self.encoder(X)
 
     @tf.function
-    def get_embeddings(self, X_1, X_2):
-        Z_1 = self.encoder(X_1, training=True)
-        Z_2 = self.encoder(X_2, training=True)
-        if self.enable_mlp:
-            Z_1 = self.mlp(Z_1, training=True)
-            Z_2 = self.mlp(Z_2, training=True)
-        return Z_1, Z_2
+    def representations_loss(self, Z_1, Z_2):
+        loss, accuracy = 0, 0
+        if self.representations_loss_nce:
+            loss, accuracy = self.infonce_loss((Z_1, Z_2))
+            loss = self.infonce_loss_factor * loss
+        if self.representations_loss_vic:
+            loss += self.vic_reg_factor * self.vic_reg((Z_1, Z_2))
+        return loss, accuracy
 
     @tf.function
-    def extract_clean_and_aug(self, X):
-        X_clean, X_aug = tf.split(X, 2, axis=-1)
-        X_clean = tf.squeeze(X_clean, axis=-1)
-        X_aug = tf.squeeze(X_aug, axis=-1)
-        return X_clean, X_aug
+    def embeddings_loss(self, Z_1, Z_2):
+        loss, accuracy = 0, 0
+        if self.embeddings_loss_nce:
+            loss, accuracy = self.infonce_loss((Z_1, Z_2))
+            loss = self.infonce_loss_factor * loss
+        if self.embeddings_loss_vic:
+            loss += self.vic_reg_factor * self.vic_reg((Z_1, Z_2))
+        return loss, accuracy
 
     def train_step(self, data):
-        X_1_aug, X_2_aug, _ = data
+        X_1, X_2, _ = data
         # X shape: (B, H, W, C) = (B, 40, 200, 1)
 
-        if self.enable_mse_clean_aug:
-            X_1_clean, X_1_aug = self.extract_clean_and_aug(X_1_aug)
-            X_2_clean, X_2_aug = self.extract_clean_and_aug(X_2_aug)
-
         with tf.GradientTape() as tape:
-            Z_1_aug, Z_2_aug = self.get_embeddings(X_1_aug, X_2_aug)
+            Z_1 = self.encoder(X_1, training=True)
+            Z_2 = self.encoder(X_2, training=True)
+            representations_loss, representations_accuracy = self.representations_loss(
+                Z_1,
+                Z_2
+            )
 
-            loss, accuracy = self.infonce_loss((Z_1_aug, Z_2_aug))
-            loss = self.infonce_loss_factor * loss
-            loss += self.vic_reg_factor * self.vic_reg((Z_1_aug, Z_2_aug))
-            loss += self.barlow_twins_factor * self.barlow_twins((Z_1_aug, Z_2_aug))
+            if self.enable_mlp:
+                Z_1 = self.mlp(Z_1, training=True)
+                Z_2 = self.mlp(Z_2, training=True)
+                embeddings_loss, embeddings_accuracy = self.embeddings_loss(
+                    Z_1,
+                    Z_2
+                )
 
-            if self.enable_mse_clean_aug:
-                Z_1_clean, Z_2_clean = self.get_embeddings(X_1_clean, X_2_clean)
-                loss += self.mse_clean_aug_factor * mse_loss(Z_1_clean, Z_1_aug)
-                loss += self.mse_clean_aug_factor * mse_loss(Z_2_clean, Z_2_aug)
+        # Apply representations loss
+        params = self.encoder.trainable_weights
+        grads = tape.gradient(representations_loss, params)
+        self.optimizer.apply_gradients(zip(grads, params))
 
-        trainable_params = self.encoder.trainable_weights
-        if self.enable_mlp:
-            trainable_params += self.mlp.trainable_weights
+        # Aplly embeddings loss
+        params = self.encoder.trainable_weights
+        params += self.mlp.trainable_weights
+        grads = tape.gradient(embeddings_loss, params)
+        self.optimizer.apply_gradients(zip(grads, params))
 
-        grads = tape.gradient(loss, trainable_params)
-        # grads, _ = tf.clip_by_global_norm(grads, 5.0)
-        self.optimizer.apply_gradients(zip(grads, trainable_params))
-
-        return { 'loss': loss, 'accuracy': accuracy }
+        return {
+            'representations_loss': representations_loss,
+            'representations_accuracy': representations_accuracy,
+            'embeddings_loss': embeddings_loss,
+            'embeddings_accuracy': embeddings_accuracy
+        }
 
 
 class MLP(Model):
@@ -157,9 +169,3 @@ class InfoNCELoss(Layer):
         accuracy = tf.math.count_nonzero(preds_acc, dtype=tf.int32) / batch_size
 
         return loss, accuracy
-
-
-@tf.function
-def mse_loss(Z_clean, Z_aug):
-    mse = tf.keras.metrics.mean_squared_error(Z_clean, Z_aug)
-    return tf.math.reduce_mean(mse)

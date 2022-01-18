@@ -1,0 +1,25 @@
+name: 'vicreg_b256_comp_4'
+encoder:
+  type: 'thinresnet34'
+model:
+  type: 'simclr'
+  enable_mlp: true
+  infonce_loss_factor: 1.0
+  vic_reg_factor: 0.1
+  representations_loss_vic: false
+  representations_loss_nce: false
+  embeddings_loss_vic: true
+  embeddings_loss_nce: true
+training:
+  epochs: 500
+  batch_size: 256
+  learning_rate: 0.001
+dataset:
+  frame_length: 32000
+  frame_split: true
+  extract_mfcc: true
+  train: './data/voxceleb1_train_list'
+  val_ratio: 0.0
+  spec_augment: false
+  wav_augment:
+    enable: true

@@ -96,7 +96,6 @@ def train(
     # Disable features required only by self-supervised training
     config.dataset.wav_augment.enable = False
     config.dataset.frame_split = False
-    config.dataset.provide_clean_and_aug = False
 
     gens, input_shape, nb_classes = load_dataset(config)
     (train_gen, val_gen) = gens
